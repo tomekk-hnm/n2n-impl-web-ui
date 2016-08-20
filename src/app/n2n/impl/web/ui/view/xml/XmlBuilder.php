@@ -19,11 +19,11 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\xml;
+namespace n2n\impl\web\ui\view\xml;
 
 use n2n\core\N2N;
 use n2n\web\ui\Raw;
-use n2n\web\ui\view\impl\html\HtmlUtils;
+use n2n\impl\web\ui\view\html\HtmlUtils;
 
 class XmlBuilder {
 	private $view;

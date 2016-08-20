@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\html;
+namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\ui\UiException;
 use n2n\io\ob\OutputBuffer;
@@ -114,7 +114,7 @@ class HtmlView extends View {
 		return $this->htmlProperties;
 	}
 	/**
-	 * @return \n2n\web\ui\view\impl\html\HtmlBuilder
+	 * @return \n2n\impl\web\ui\view\html\HtmlBuilder
 	 */
 	public function getHtmlBuilder() {
 		return $this->htmlBuilder;
@@ -163,7 +163,7 @@ class HtmlView extends View {
 	
 	/**
 	 * @param HtmlView $view
-	 * @return \n2n\web\ui\view\impl\html\HtmlBuilder
+	 * @return \n2n\impl\web\ui\view\html\HtmlBuilder
 	 */
 	public static function html(HtmlView $view) {
 		return $view->getHtmlBuilder();
@@ -186,5 +186,5 @@ class NoHttpControllerContextAssignetException extends UiException {
  * hack to provide autocompletion in views
  */
 return;
-$html = new \n2n\web\ui\view\impl\html\HtmlBuilder();
+$html = new \n2n\impl\web\ui\view\html\HtmlBuilder();
 $formHtml = new \n2n\web\dispatch\ui\FormHtmlBuilder();

@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\json;
+namespace n2n\impl\web\ui\view\json;
 
 use n2n\web\ui\view\View;
 use n2n\io\ob\OutputBuffer;
@@ -41,7 +41,7 @@ class JsonView extends View {
 		$this->jsonBuilder = null;
 	}
 	/**
-	 * @return \n2n\web\ui\view\impl\json\JsonBuilder
+	 * @return \n2n\impl\web\ui\view\json\JsonBuilder
 	 */
 	public function getJsonBuilder() {
 		return $this->jsonBuilder;
@@ -55,4 +55,4 @@ class JsonView extends View {
  * hack to provide autocompletion in views
  */
 return;
-$json = new \n2n\web\ui\view\impl\json\JsonBuilder();
+$json = new \n2n\impl\web\ui\view\json\JsonBuilder();
