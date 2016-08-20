@@ -19,11 +19,11 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\html;
+namespace n2n\impl\web\ui\view\html;
 
 use n2n\core\N2N;
 
-use n2n\web\ui\view\impl\html\HtmlElement;
+use n2n\impl\web\ui\view\html\HtmlElement;
 
 class HiddenCommand extends HtmlElement {
 	public function __construct(Form $form, $dispatchMethod, array $attrs = null) {

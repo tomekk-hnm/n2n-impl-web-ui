@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\xml;
+namespace n2n\impl\web\ui\view\xml;
 
 use n2n\web\ui\view\View;
 use n2n\core\N2N;
@@ -47,7 +47,7 @@ class XmlView extends View {
 	
 	/**
 	 * @param XmlView $xmlView
-	 * @return \n2n\web\ui\view\impl\xml\XmlBuilder
+	 * @return \n2n\impl\web\ui\view\xml\XmlBuilder
 	 */
 	public static function xml(XmlView $xmlView): XmlBuilder {
 		return $xmlView->getXmlBuilder();
@@ -58,4 +58,4 @@ class XmlView extends View {
  * hack to provide autocompletion in views
  */
 return;
-$xml = new \n2n\web\ui\view\impl\xml\XmlBuilder();
+$xml = new \n2n\impl\web\ui\view\xml\XmlBuilder();

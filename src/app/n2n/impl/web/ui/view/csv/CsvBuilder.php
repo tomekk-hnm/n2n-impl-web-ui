@@ -19,9 +19,9 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\csv;
+namespace n2n\impl\web\ui\view\csv;
 
-use n2n\web\ui\view\impl\csv\CsvView;
+use n2n\impl\web\ui\view\csv\CsvView;
 
 class CsvBuilder {
 	private $view;

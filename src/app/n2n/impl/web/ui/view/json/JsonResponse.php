@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\web\ui\view\impl\json;
+namespace n2n\impl\web\ui\view\json;
 
 use n2n\web\http\BufferedResponseContent;
 use n2n\web\http\Response;
