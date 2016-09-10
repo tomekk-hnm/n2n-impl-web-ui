@@ -69,7 +69,7 @@ class HtmlUtils {
 			$contents = ReflectionUtils::getTypeInfo($contents);
 		}
 		
-		return htmlspecialchars((string) $contents, ENT_SUBSTITUTE);
+		return htmlspecialchars((string) $contents);
 	}
 	
 	public static function escape($contents, \Closure $pcf = null) {
@@ -78,11 +78,11 @@ class HtmlUtils {
 		if ($contents === null) {
 			$html = '';
 		} else if (is_scalar($contents)) {
-			$html = htmlspecialchars((string) $contents, ENT_SUBSTITUTE);
+			$html = htmlspecialchars((string) $contents);
 		} else if ($contents instanceof UiComponent) {
-			return htmlspecialchars($contents->getContents(), ENT_SUBSTITUTE);
+			return htmlspecialchars($contents->getContents());
 		} else if (is_object($contents) && method_exists($contents, '__toString')) {
-			$html = htmlspecialchars((string) $contents, ENT_SUBSTITUTE);
+			$html = htmlspecialchars((string) $contents);
 		} else {
 			throw new \InvalidArgumentException('Could not convert type to escaped string: ' 
 					. ReflectionUtils::getTypeInfo($contents));
