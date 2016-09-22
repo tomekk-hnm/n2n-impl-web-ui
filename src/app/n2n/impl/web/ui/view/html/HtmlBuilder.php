@@ -136,12 +136,15 @@ class HtmlBuilder {
 	 * @param mixed $contents
 	 */
 	public function out($contents) {
+		$this->view->out($this->getOut($contents));
+	}
+	
+	public function getOut($contents) {
 		if ($contents instanceof UiComponent) {
-			$this->view->out($contents);		
-			return;
+			return $contents;
 		}
 		
-		$this->esc($contents);
+		return $this->getEsc($contents);
 	}
 	
 	public function getUic($arg) {
