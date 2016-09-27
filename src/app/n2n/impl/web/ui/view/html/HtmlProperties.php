@@ -76,6 +76,7 @@ class HtmlProperties {
 	}
 	
 	public function add($name, $key, UiComponent $value, $prepend = false) {
+		
 		if ($prepend) {
 			if ($this->prependedAttributes->hasKey($name, $key)) return;
 			$this->prependedAttributes->add($name, $key, $value);
@@ -93,16 +94,29 @@ class HtmlProperties {
 	public function remove($name) {
 		$this->prependedAttributes->remove($name);
 		$this->attributes->remove($name);
+		
+		if ($this->contentHtmlProperties !== null) {
+			$this->contentHtmlProperties->remove($name);
+		}
 	}
 	
 	public function removeKey($name, $key) {
 		$this->prependedAttributes->removeKey($name, $key);
 		$this->attributes->removeKey($name, $key);
+		
+		if ($this->contentHtmlProperties !== null) {
+			$this->contentHtmlProperties->removeKey($name, $key);
+		}
 	}
 	
 	public function containsName($name) {
 		return ($this->prependedAttributes->contains($name) || $this->attributes->contains($name))
 				|| ($this->contentHtmlProperties !== null && $this->contentHtmlProperties->containsName($name));
+	}
+	
+	public function hasKey($name, $key) {
+		return ($this->prependedAttributes->hasKey($name, $key) || $this->attributes->hasKey($name, $key))
+				|| ($this->contentHtmlProperties !== null && $this->contentHtmlProperties->hasKey($name, $key));
 	}
 	
 	public function getAttributesCollection() {
