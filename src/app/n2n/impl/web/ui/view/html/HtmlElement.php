@@ -70,11 +70,22 @@ class HtmlElement implements UiComponent {
 		$this->contents[] = $content;
 	}
 	
+	public function prependContent($content) {
+		$this->contents[] = $content;
+	}
+	
 	public function appendNl($content = null) {
 		if ($content !== null) {
 			$this->appendContent($content);
 		}
 		$this->contents[] = PHP_EOL;
+	}
+	
+	public function prependNl($content = null) {
+		array_unshift($this->contents, PHP_EOL);
+		if ($content !== null) {
+			$this->prependContent($content);
+		}
 	}
 	
 	public function getContents(): string {
