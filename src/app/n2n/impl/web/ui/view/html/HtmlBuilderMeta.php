@@ -334,7 +334,7 @@ class BodyBuilderMeta {
 	}
 
 	public function addJsCode($code, bool $defer = false, $prepend = false, array $attrs = null) {
-		$this->meta->addJsUrl($code, $defer, $prepend, $attrs, $this->target);
+		$this->meta->addJscode($code, $defer, $prepend, $attrs, $this->target);
 	}
 	
 	public function addHtml($html, bool $prepend = false) {
