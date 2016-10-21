@@ -25,19 +25,18 @@ use n2n\web\ui\UiException;
 use n2n\io\ob\OutputBuffer;
 use n2n\core\N2N;
 use n2n\web\ui\view\View;
-use n2n\web\ui\view\ViewCacheReader;
-use n2n\web\ui\view\ViewCacheWriter;
 use n2n\reflection\ArgUtils;
-use n2n\web\ui\ViewStuffFailedException;
 use n2n\web\http\Response;
-use n2n\web\dispatch\ui\FormHtmlBuilder;
+use n2n\impl\web\dispatch\ui\FormHtmlBuilder;
 use n2n\web\ui\view\ViewCacheControl;
 use n2n\core\module\Module;
+use n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder;
 
 class HtmlView extends View {
 	private $htmlProperties = null;
 	private $htmlBuilder;
 	private $formHtmlBuilder;
+	private $ariaFormHtmlBuilder;
 	
 	/**
 	 * {@inheritDoc}
@@ -62,9 +61,11 @@ class HtmlView extends View {
 		}
 		
 		$this->htmlBuilder = new HtmlBuilder($this, $contentBuffer);
-		$this->formHtmlBuilder = new FormHtmlBuilder($this, $contentBuffer);
+		$this->formHtmlBuilder = new FormHtmlBuilder($this);
+		$this->ariaFormHtmlBuilder = new AriaFormHtmlBuilder($this);
 		
-		$attrs = array('view' => $this, 'html' => $this->htmlBuilder, 'formHtml' => $this->formHtmlBuilder);
+		$attrs = array('view' => $this, 'html' => $this->htmlBuilder, 'formHtml' => $this->formHtmlBuilder,
+				'ariaFormHtml' => $this->ariaFormHtmlBuilder);
 		if ($this->getN2nContext()->isHttpContextAvailable()) {
 			$httpContext = $this->getHttpContext();
 			$attrs['httpContext'] = $httpContext;
@@ -80,6 +81,7 @@ class HtmlView extends View {
 				
 		$this->htmlBuilder = null;
 		$this->formHtmlBuilder = null;
+		$this->ariaFormHtmlBuilder = null;
 	} 
 	
 	protected function createImportView(string $viewNameExpression, $params = null, 
@@ -107,23 +109,33 @@ class HtmlView extends View {
 	public function setHtmlProperties(HtmlProperties $htmlProperties) {
 		$this->htmlProperties = $htmlProperties;
 	}
+	
 	/**
 	 * @return HtmlProperties
 	 */
 	public function getHtmlProperties() {
 		return $this->htmlProperties;
 	}
+	
 	/**
 	 * @return \n2n\impl\web\ui\view\html\HtmlBuilder
 	 */
 	public function getHtmlBuilder() {
 		return $this->htmlBuilder;
 	}
+	
 	/**
-	 * @return \n2n\web\dispatch\ui\FormHtmlBuilder
+	 * @return \n2n\impl\web\dispatch\ui\FormHtmlBuilder
 	 */
 	public function getFormHtmlBuilder() {
 		return $this->formHtmlBuilder;
+	}
+	
+	/**
+	 * @return \n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder
+	 */
+	public function getAriaFormHtmlBuilder() {
+		return $this->ariaFormHtmlBuilder;
 	}
 	
 // 	public function readCachedContents(ViewCacheReader $cacheReader) {
@@ -171,10 +183,18 @@ class HtmlView extends View {
 	
 	/**
 	 * @param HtmlView $view
-	 * @return \n2n\web\dispatch\ui\FormHtmlBuilder
+	 * @return \n2n\impl\web\dispatch\ui\FormHtmlBuilder
 	 */
 	public static function formHtml(HtmlView $view): FormHtmlBuilder {
 		return $view->getFormHtmlBuilder();
+	}
+	
+	/**
+	 * @param HtmlView $view
+	 * @return \n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder
+	 */
+	public static function ariaFormHtml(HtmlView $view): AriaFormHtmlBuilder {
+		return $view->getAriaFormHtmlBuilder();
 	}
 }
 
@@ -187,4 +207,5 @@ class NoHttpControllerContextAssignetException extends UiException {
  */
 return;
 $html = new \n2n\impl\web\ui\view\html\HtmlBuilder();
-$formHtml = new \n2n\web\dispatch\ui\FormHtmlBuilder();
+$formHtml = new \n2n\impl\web\dispatch\ui\FormHtmlBuilder();
+$ariaFormHtml = new \n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder();

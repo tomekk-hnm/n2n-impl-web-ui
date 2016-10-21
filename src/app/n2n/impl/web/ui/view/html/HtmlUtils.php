@@ -40,7 +40,7 @@ class HtmlUtils {
 		}
 	}
 	
-	public static function mergeAttrs(array $attrs, array $customAttrs) {
+	public static function mergeAttrs(array $attrs, array $customAttrs, bool $overwrite = false) {
 		foreach ($customAttrs as $name => $value) {
 			if (is_numeric($name)) {
 				if (in_array($value, $attrs)) continue;
@@ -48,10 +48,10 @@ class HtmlUtils {
 				if ($name == 'class') {
 					$attrs['class'] .= ' ' . $value;
 					continue;
+				} else if (!$overwrite) {
+					throw new AttributeNameIsReservedException('Html attribute \'' . $name . '\' is reserved.'
+							. ' Reserved attributes: ' . implode(', ', array_keys($attrs)));
 				}
-				
-				throw new AttributeNameIsReservedException('Html attribute \'' . $name . '\' is reserved.' 
-						. ' Reserved attributes: ' . implode(', ', array_keys($attrs)));
 			}
 			
 			$attrs[$name] = $value;
