@@ -479,6 +479,10 @@ class HtmlBuilder {
 		return $this->getEsc($this->view->getL10nCurrency($value, $currency));
 	}
 	
+	/**
+	 * @param unknown $value
+	 * @param unknown $currency ISO 4217 
+	 */
 	public function l10nCurrency($value, $currency = null) {
 		$this->view->out($this->getL10nCurrency($value, $currency));
 	}
