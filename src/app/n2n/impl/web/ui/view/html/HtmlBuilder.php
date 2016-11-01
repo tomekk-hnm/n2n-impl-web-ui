@@ -28,8 +28,11 @@ use n2n\web\ui\Raw;
 use n2n\io\ob\OutputBuffer;
 use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\web\ui\UiException;
-use n2n\io\managed\img\ThumbStrategy;
 use n2n\util\uri\Url;
+use n2n\io\managed\img\impl\ImgComposer;
+use n2n\reflection\ArgUtils;
+use n2n\io\managed\img\ThumbStrategy;
+use n2n\impl\web\ui\view\html\img\UiComponentFactory;
 
 class HtmlBuilder {
 	private $view;
@@ -291,7 +294,6 @@ class HtmlBuilder {
 				. HtmlElement::buildAttrsHtml($alternateAttrs ?? $attrs) . '>');
 	}
 	
-	
 	public function linkEnd() {
 		$this->view->out($this->getLinkEnd());
 	}
@@ -523,16 +525,22 @@ class HtmlBuilder {
 	 * IMAGE UTILS
 	 */
 	
-	public function image(File $file = null, ThumbStrategy $thumbStrategy = null, array $attrs = null, 
+	public function image(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $attrWidth = true, bool $attrHeight = true) {
-		$this->view->out($this->getImage($file, $thumbStrategy, $attrs, $attrWidth, $attrHeight));
+		$this->view->out($this->getImage($file, $imgComposer, $attrs, $attrWidth, $attrHeight));
 	}
 	
-	public function getImage(File $file = null, ThumbStrategy $thumbStrategy = null, array $attrs = null, 
+	public function getImage(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		if ($file === null) return null;
 		
-		return UiComponentFactory::createImg($file, $thumbStrategy, $attrs, $addWidthAttr, $addHeightAttr);
+		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
+		
+		if ($imgComposer instanceof ImgComposer) {
+			$imgSet = $imgComposer->createImgSet();
+		}
+		
+		return UiComponentFactory::createImg($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
 	}
 	
 	public function imageAsset($pathExt, $alt, array $attrs = null, string $moduleNamespace = null) {
