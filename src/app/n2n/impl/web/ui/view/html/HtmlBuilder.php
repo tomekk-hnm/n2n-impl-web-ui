@@ -33,6 +33,9 @@ use n2n\io\managed\img\impl\ImgComposer;
 use n2n\reflection\ArgUtils;
 use n2n\io\managed\img\ThumbStrategy;
 use n2n\impl\web\ui\view\html\img\UiComponentFactory;
+use n2n\impl\web\ui\view\html\img\ImgSet;
+use n2n\web\ui\CouldNotRenderUiComponentException;
+use n2n\io\managed\img\ImageFile;
 
 class HtmlBuilder {
 	private $view;
@@ -530,6 +533,8 @@ class HtmlBuilder {
 		$this->view->out($this->getImage($file, $imgComposer, $attrs, $attrWidth, $attrHeight));
 	}
 	
+	
+	
 	public function getImage(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		if ($file === null) return null;
@@ -537,11 +542,46 @@ class HtmlBuilder {
 		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
 		
 		if ($imgComposer instanceof ImgComposer) {
-			$imgSet = $imgComposer->createImgSet();
+			$imgSet = $imgComposer->createImgSet($file);
+			
+			if ($imgSet->isPictureRequired()) {
+				return UiComponentFactory::createPicture($imgSet, $attrs);
+			} else {
+				return UiComponentFactory::createImg($imgSet, $attrs);
+			}
 		}
 		
-		return UiComponentFactory::createImg($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
+		return $this->getImg($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
 	}
+	
+	public function getImg(File $file = null, $imgComposer = null, array $attrs = null, 
+			bool $addWidthAttr = true, bool $addHeightAttr = true) {
+		if ($file === null) return null;
+				
+		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
+		
+		if ($imgComposer instanceof ImgComposer) {
+			$imgSet = $imgComposer->createImgSet($file);
+				
+			if ($imgSet->isPictureRequired()) {
+				throw new CouldNotRenderUiComponentException('ImgComposer requires picture element.');
+			} 
+			
+			return UiComponentFactory::createImg($imgSet, $attrs, $addWidthAttr, $addHeightAttr);
+		}
+		
+		return UiComponentFactory::createImgFromThSt($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
+	}
+	
+	public function getPicture(File $file = null, ImgComposer $imgComposer = null, array $attrs = null) {
+		if ($imgComposer === null) {
+			return UiComponentFactory::createPicture($imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
+		}
+				
+		return UiComponentFactory::createPicture($imgComposer->createImgSet($file, $this->view->getN2nContext()), 
+				$attrs, $addWidthAttr, $addHeightAttr);
+	}
+	
 	
 	public function imageAsset($pathExt, $alt, array $attrs = null, string $moduleNamespace = null) {
 		$this->view->out($this->getImageAsset($pathExt, $alt, $attrs, $moduleNamespace));

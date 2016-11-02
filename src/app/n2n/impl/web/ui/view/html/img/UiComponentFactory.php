@@ -22,16 +22,24 @@
 namespace n2n\impl\web\ui\view\html\img;
 
 use n2n\io\managed\File;
-use n2n\web\ui\UiComponent;
 use n2n\io\managed\img\ThumbStrategy;
 use n2n\io\managed\img\ImageFile;
 use n2n\io\managed\img\ImageDimension;
 use n2n\impl\web\ui\view\html\HtmlElement;
+use n2n\impl\web\ui\view\html\HtmlUtils;
 
 class UiComponentFactory {
 		
+	/**
+	 * @param File $file
+	 * @param ThumbStrategy $thumbStrategy
+	 * @param array $attrs
+	 * @param bool $addWidthAttr
+	 * @param bool $addHeightAttr
+	 * @return \n2n\impl\web\ui\view\html\HtmlElement
+	 */
 	public static function createImgFromThSt(File $file, ThumbStrategy $thumbStrategy = null, 
-			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true): UiComponent {
+			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		
 		if (!$file->isValid()) {
 			return self::createInvalidImg($thumbStrategy !== null ? $thumbStrategy->getImageDimension() : null, 
@@ -47,7 +55,7 @@ class UiComponentFactory {
 			$thumbImageFile = $imageFile->getOrCreateThumb($thumbStrategy);
 		}
 				
-		$elemAttrs = array('src' => self::buildImgSrc($thumbImageFile));
+		$elemAttrs = array('src' => self::createImgSrc($thumbImageFile));
 		if ($addWidthAttr) $elemAttrs['width'] = $thumbImageFile->getWidth();
 		if ($addHeightAttr) $elemAttrs['height'] = $thumbImageFile->getHeight();
 		$attrs = HtmlUtils::mergeAttrs($elemAttrs, (array) $attrs);
@@ -57,29 +65,47 @@ class UiComponentFactory {
 	}
 	
 	
-	public static function createPicture(ImgSet $imgSet) {
-		$htmlElement = new HtmlElement('picture');
+	public static function createPicture(ImgSet $imgSet, array $attrs = null) {
+		$htmlElement = new HtmlElement('picture', $attrs);
 		
 		foreach ($imgSet->getImageSourceSets() as $imageSourceSet) {
-			$htmlElement->appendNl(new HtmlElement('source', array(
-					'media' => $imageSourceSet->getMedia(), 'srcset' => $imageSourceSet->getImgSrcs())))
+			$htmlElement->appendNl(new HtmlElement('source', HtmlUtils::mergeAttrs(
+					array('media' => $imageSourceSet->getMediaAttr(), 'srcset' => $imageSourceSet->getSrcsetAttr()), 
+					$imageSourceSet->getAttrs())));
 		}
 		
-		$htmlElement->setAttrs($attrs)
-	}
-	
-	public static function createImg() {
+		$htmlElement->appendNl(new HtmlElement('img', array('src' => $imgSet->getDefaultImageSrc(), 
+				'alt' => $imgSet->getDefaultAltAttr())));
 		
+		return $htmlElement;
 	}
 	
-	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
-			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
-		if (!$file->isValid()) {
-			return self::createInvalidImg($imageDimension, $attrs, $addWidthAttr, $addHeightAttr);
+	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
+			bool $addHeightAttr = true) {
+		
+		$attrs = array('src' => $imgSet->getDefaultImageSrc(), 'alt' => $imgSet->getDefaultAlt());
+		
+		$imageSourceSets = $imgSet->getImageSourceSets(); 
+		if (empty($imageSourceSets)) {
+			if ($addWidthAttr) $attrs['width'] = $imgSet->getWidthAttr();
+			if ($addHeightAttr) $attrs['height'] = $imgSet->getHeightAttr();
+		} else {
+			$imageSourceSet = current($imageSourceSet);
+			$attrs['srcset'] = $imageSourceSet->getSrcsetAttr();
+			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
 		}
-		
-		
+
+		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, (array) $customAttrs));
 	}
+	
+// 	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
+// 			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
+// 		if (!$file->isValid()) {
+// 			return self::createInvalidImg($imageDimension, $attrs, $addWidthAttr, $addHeightAttr);
+// 		}
+		
+		
+// 	}
 	
 	public static function createImgSrc(ImageFile $imageFile): string {
 		$fileSource = $imageFile->getFile()->getFileSource();
