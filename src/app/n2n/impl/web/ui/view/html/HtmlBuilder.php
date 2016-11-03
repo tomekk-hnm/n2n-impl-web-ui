@@ -29,13 +29,12 @@ use n2n\io\ob\OutputBuffer;
 use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\web\ui\UiException;
 use n2n\util\uri\Url;
-use n2n\io\managed\img\impl\ImgComposer;
+use n2n\impl\web\ui\view\html\img\ImgComposer;
 use n2n\reflection\ArgUtils;
 use n2n\io\managed\img\ThumbStrategy;
 use n2n\impl\web\ui\view\html\img\UiComponentFactory;
 use n2n\impl\web\ui\view\html\img\ImgSet;
 use n2n\web\ui\CouldNotRenderUiComponentException;
-use n2n\io\managed\img\ImageFile;
 
 class HtmlBuilder {
 	private $view;
@@ -542,7 +541,7 @@ class HtmlBuilder {
 		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
 		
 		if ($imgComposer instanceof ImgComposer) {
-			$imgSet = $imgComposer->createImgSet($file);
+			$imgSet = $imgComposer->createImgSet($file, $this->view->getN2nContext());
 			
 			if ($imgSet->isPictureRequired()) {
 				return UiComponentFactory::createPicture($imgSet, $attrs);

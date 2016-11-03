@@ -29,7 +29,6 @@ use n2n\impl\web\ui\view\html\HtmlElement;
 use n2n\impl\web\ui\view\html\HtmlUtils;
 
 class UiComponentFactory {
-		
 	/**
 	 * @param File $file
 	 * @param ThumbStrategy $thumbStrategy
@@ -74,7 +73,7 @@ class UiComponentFactory {
 					$imageSourceSet->getAttrs())));
 		}
 		
-		$htmlElement->appendNl(new HtmlElement('img', array('src' => $imgSet->getDefaultImageSrc(), 
+		$htmlElement->appendNl(new HtmlElement('img', array('src' => $imgSet->getDefaultSrcAttr(), 
 				'alt' => $imgSet->getDefaultAltAttr())));
 		
 		return $htmlElement;
@@ -83,14 +82,14 @@ class UiComponentFactory {
 	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
 			bool $addHeightAttr = true) {
 		
-		$attrs = array('src' => $imgSet->getDefaultImageSrc(), 'alt' => $imgSet->getDefaultAlt());
+		$attrs = array('src' => $imgSet->getDefaultSrcAttr(), 'alt' => $imgSet->getDefaultAltAttr());
 		
 		$imageSourceSets = $imgSet->getImageSourceSets(); 
 		if (empty($imageSourceSets)) {
 			if ($addWidthAttr) $attrs['width'] = $imgSet->getWidthAttr();
 			if ($addHeightAttr) $attrs['height'] = $imgSet->getHeightAttr();
 		} else {
-			$imageSourceSet = current($imageSourceSet);
+			$imageSourceSet = current($imageSourceSets);
 			$attrs['srcset'] = $imageSourceSet->getSrcsetAttr();
 			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
 		}

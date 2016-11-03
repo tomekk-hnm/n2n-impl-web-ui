@@ -1,11 +1,10 @@
 <?php
 namespace n2n\impl\web\ui\view\html\img;
 
-use n2n\io\managed\img\impl\ImgComposer;
 use n2n\io\managed\File;
 use n2n\core\container\N2nContext;
-use n2n\io\managed\img\ImageDimension;
 use n2n\io\managed\img\ImageFile;
+use n2n\io\managed\img\impl\ProportionalThumbStrategy;
 
 class ProportionalImgComposer implements ImgComposer {
 	private $width;
@@ -117,8 +116,9 @@ class ProportionalImgComposer implements ImgComposer {
 		}
 
 		$defaultImageFile = reset($imageFiles);
-		return new ImgSet(reset($imgSrcs), $defaultImageFile->getOriginalName(),
-				$defaultImageFile->getWidth(), $defaultImageFile->getHeight(), $imgSrcs);
+		return new ImgSet(reset($imgSrcs), $file->getOriginalName(),
+				$defaultImageFile->getWidth(), $defaultImageFile->getHeight(), 
+				array(new ImageSourceSet(array_reverse($imgSrcs, true))));
 	}
 
 	const MIN_SIZE_GAB = 51200;
@@ -160,6 +160,6 @@ class ProportionalImgComposer implements ImgComposer {
 			return null;
 		}
 
-		return $imageFile->getOrCreateVariationFile($strategy);
+		return $imageFile->getOrCreateVariation($strategy);
 	}
 }

@@ -19,9 +19,8 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\io\managed\img\impl;
+namespace n2n\impl\web\ui\view\html\img;
 
-use n2n\io\managed\img\impl\ProportionalThumbStrategy;
 use n2n\io\img\ImageResource;
 
 class Img {
@@ -30,29 +29,29 @@ class Img {
 	 * @param int $width
 	 * @param int $height
 	 * @param bool $scaleUpAllowed
-	 * @return \n2n\io\managed\img\impl\ProportionalThumbStrategy
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
 	 */
 	public static function prop(int $width, int $height, bool $scaleUpAllowed = true) {
-		return new ProportionalThumbStrategy($width, $height, null, $scaleUpAllowed);	
+		return new ProportionalImgComposer($width, $height, null, $scaleUpAllowed);	
 	}
 	
 	/**
 	 * @param int $width
 	 * @param int $height
 	 * @param bool $scaleUpAllowed
-	 * @return \n2n\io\managed\img\impl\ProportionalThumbStrategy
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
 	 */
 	public static function crop(int $width, int $height, bool $scaleUpAllowed = true) {
-		return new ProportionalThumbStrategy($width, $height, ImageResource::AUTO_CROP_MODE_CENTER, $scaleUpAllowed);
+		return new ProportionalImgComposer($width, $height, ImageResource::AUTO_CROP_MODE_CENTER, $scaleUpAllowed);
 	}
 	
 	/**
 	 * @param int $width
 	 * @param int $height
 	 * @param bool $scaleUpAllowed
-	 * @return \n2n\io\managed\img\impl\ProportionalThumbStrategy
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
 	 */
 	public static function cropTop(int $width, int $height, bool $scaleUpAllowed = true) {
-		return new ProportionalThumbStrategy($width, $height, ImageResource::AUTO_CROP_MODE_TOP, $scaleUpAllowed);
+		return new ProportionalImgComposer($width, $height, ImageResource::AUTO_CROP_MODE_TOP, $scaleUpAllowed);
 	}
 }
