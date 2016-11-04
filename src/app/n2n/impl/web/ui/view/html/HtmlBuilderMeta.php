@@ -242,10 +242,10 @@ class HtmlBuilderMeta {
 	}
 	
 // 	/**
-// 	 * @param Murlable $murlBuilder
+// 	 * @param UrlComposer $murlBuilder
 // 	 * @return \n2n\impl\web\ui\view\html\Url
 // 	 */
-// 	public function buildUrl(Murlable $murlBuilder) {
+// 	public function buildUrl(UrlComposer $murlBuilder) {
 // 		return $murlBuilder->toUrl($this->view->getHttpContext(), $this->view->getControllerContext());
 // 	}
 

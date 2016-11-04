@@ -86,8 +86,8 @@ class UiComponentFactory {
 		
 		$imageSourceSets = $imgSet->getImageSourceSets(); 
 		if (empty($imageSourceSets)) {
-			if ($addWidthAttr) $attrs['width'] = $imgSet->getWidthAttr();
-			if ($addHeightAttr) $attrs['height'] = $imgSet->getHeightAttr();
+			if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
+			if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
 		} else {
 			$imageSourceSet = current($imageSourceSets);
 			$attrs['srcset'] = $imageSourceSet->getSrcsetAttr();

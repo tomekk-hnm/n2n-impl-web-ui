@@ -76,7 +76,8 @@ class ProportionalImgComposer implements ImgComposer {
 		$largestWidth = reset($widths);
 		$largestHeight = $this->calcHeight($largestWidth);
 		
-		return new ImgSet(UiComponentFactory::createInvalidImgSrc($largestWidth, $largestHeight), array());
+		return new ImgSet(UiComponentFactory::createInvalidImgSrc($largestWidth, $largestHeight), 
+				UiComponentFactory::INVALID_IMG_DEFAULT_ALT, $largestWidth, $largestHeight, array());
 	}
 	
 	public function createImgSet(File $file = null, N2nContext $n2nContext): ImgSet {
