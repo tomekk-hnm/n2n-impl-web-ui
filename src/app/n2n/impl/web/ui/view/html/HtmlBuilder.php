@@ -152,13 +152,13 @@ class HtmlBuilder {
 		return $this->getEsc($contents);
 	}
 	
-	public function getUic($arg) {
-		if ($arg instanceof UiComponent) {
-			return $arg;
-		}
+// 	public function getUic($arg) {
+// 		if ($arg instanceof UiComponent) {
+// 			return $arg;
+// 		}
 		
-		return new Raw($arg);
-	}
+// 		return new Raw($arg);
+// 	}
 	
 	/**
 	 * @param mixed $contents
