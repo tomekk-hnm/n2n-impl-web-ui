@@ -35,6 +35,7 @@ use n2n\io\managed\img\ThumbStrategy;
 use n2n\impl\web\ui\view\html\img\UiComponentFactory;
 use n2n\impl\web\ui\view\html\img\ImgSet;
 use n2n\web\ui\CouldNotRenderUiComponentException;
+use n2n\l10n\DynamicTextCollection;
 
 class HtmlBuilder {
 	private $view;
@@ -435,9 +436,6 @@ class HtmlBuilder {
 	 * L10N UTILS 
 	 */
 	
-	const REPLACEMENT_PREFIX = '[';
-	const REPLACEMENT_SUFFIX = ']';
-	
 	/**
 	 * @param unknown $code
 	 * @param array $args
@@ -456,12 +454,12 @@ class HtmlBuilder {
 	}
 		
 	public function getL10nText($key, array $args = null, $num = null, array $replacements = null, $module = null) {
-		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, $module));
+		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, null, $module));
 		if (empty($replacements)) return $textRaw;
 		
 		$textHtml = (string) $textRaw;
 		foreach ($replacements as $key => $replacement) {
-			$textHtml = str_replace(self::REPLACEMENT_PREFIX . $key . self::REPLACEMENT_SUFFIX, 
+			$textHtml = str_replace(DynamicTextCollection::REPLACEMENT_PREFIX . $key . DynamicTextCollection::REPLACEMENT_SUFFIX, 
 					HtmlUtils::contentsToHtml($replacement), $textHtml);
 		}
 		return new Raw($textHtml);
