@@ -25,7 +25,7 @@ class ImageSourceSet {
 		foreach ($this->imgSrcs as $htmlLength => $imgSrc) {
 			$attrs[] = $imgSrc . ' ' . $htmlLength;
 		}
-		return implode(' ', $attrs);
+		return implode(', ', $attrs);
 	}
 
 	public function getAttrs() {
