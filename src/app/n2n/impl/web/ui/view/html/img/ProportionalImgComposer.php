@@ -115,11 +115,16 @@ class ProportionalImgComposer implements ImgComposer {
 		foreach ($imageFiles as $width => $imageFile) {
 			$imgSrcs[$width . 'w'] = UiComponentFactory::createImgSrc($imageFile);
 		}
-
-		$defaultImageFile = reset($imageFiles);
-		return new ImgSet(reset($imgSrcs), $file->getOriginalName(),
-				$defaultImageFile->getWidth(), $defaultImageFile->getHeight(), 
-				array(new ImageSourceSet(array_reverse($imgSrcs, true))));
+		
+		$defaultImageFile = end($imageFiles);
+		
+		$imageSourceSets = array();
+		if (count($imgSrcs) > 1) {
+			$imageSourceSets = array(new ImageSourceSet(array_reverse($imgSrcs, true)));
+		}
+		
+		return new ImgSet(end($imgSrcs), $file->getOriginalName(), $defaultImageFile->getWidth(), 
+				$defaultImageFile->getHeight(), $imageSourceSets);
 	}
 
 	const MIN_SIZE_GAB = 51200;
