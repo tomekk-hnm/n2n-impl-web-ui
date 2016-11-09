@@ -188,9 +188,6 @@ class UiComponentFactory {
 								}
 					
 								.picture-frame {
-									height: 100px;  
-									width: 60px;
-					
 									fill: #B3B3B3;
 									stroke: #b3b3b3;
 								}
