@@ -35,15 +35,26 @@ class CsvView extends View {
 	
 	protected function compile(OutputBuffer $contentBuffer) {
 		$this->csvBuilder = new CsvBuilder($this);
+		
+		$httpContext = $this->getHttpContext();
+		
 		parent::bufferContents(array('view' => $this,
-				'httpContext' => $this->httpContext, 
-				'request' => $this->getN2nContext()->getRequest(), 
-				'response' => $this->getN2nContext()->getResponse(),
+				'httpContext' => $httpContext, 
+				'request' => $httpContext->getRequest(), 
+				'response' => $httpContext->getResponse(),
 				'csv' => $this->csvBuilder));
 	}
 	
-	public static function csv(CsvView $view) {
+	public function getCsvBuilder() {
 		return $this->csvBuilder;
+	}
+	
+	/**
+	 * @param CsvView $view
+	 * @return \n2n\impl\web\ui\view\csv\CsvBuilder
+	 */
+	public static function csv(CsvView $view) {
+		return $view->getCsvBuilder();
 	}
 }
 
