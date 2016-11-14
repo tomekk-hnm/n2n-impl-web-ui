@@ -37,10 +37,10 @@ class UiComponentFactory {
 	 * @param bool $addHeightAttr
 	 * @return \n2n\impl\web\ui\view\html\HtmlElement
 	 */
-	public static function createImgFromThSt(File $file, ThumbStrategy $thumbStrategy = null, 
+	public static function createImgFromThSt(File $file = null, ThumbStrategy $thumbStrategy = null, 
 			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		
-		if (!$file->isValid()) {
+		if ($file === null || !$file->isValid()) {
 			return self::createInvalidImg($thumbStrategy !== null ? $thumbStrategy->getImageDimension() : null, 
 					$attrs, $addWidthAttr, $addHeightAttr);
 		}

@@ -534,8 +534,6 @@ class HtmlBuilder {
 	
 	public function getImage(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $addWidthAttr = true, bool $addHeightAttr = true) {
-		if ($file === null) return null;
-		
 		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
 		
 		if ($imgComposer instanceof ImgComposer) {
@@ -553,8 +551,6 @@ class HtmlBuilder {
 	
 	public function getImg(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $addWidthAttr = true, bool $addHeightAttr = true) {
-		if ($file === null) return null;
-				
 		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
 		
 		if ($imgComposer instanceof ImgComposer) {
@@ -572,11 +568,11 @@ class HtmlBuilder {
 	
 	public function getPicture(File $file = null, ImgComposer $imgComposer = null, array $attrs = null) {
 		if ($imgComposer === null) {
-			return UiComponentFactory::createPicture($imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
+			return UiComponentFactory::createPicture($imgComposer, $attrs);
 		}
 				
 		return UiComponentFactory::createPicture($imgComposer->createImgSet($file, $this->view->getN2nContext()), 
-				$attrs, $addWidthAttr, $addHeightAttr);
+				$attrs);
 	}
 	
 	
