@@ -44,7 +44,7 @@ class HtmlUtils {
 		foreach ($customAttrs as $name => $value) {
 			if (is_numeric($name)) {
 				if (in_array($value, $attrs)) continue;
-			} else if (array_key_exists($name, $attrs)) {
+			} else if (isset($attrs[$name])) {
 				if ($name == 'class') {
 					$attrs['class'] .= ' ' . $value;
 					continue;

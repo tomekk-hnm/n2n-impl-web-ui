@@ -28,8 +28,14 @@ use n2n\web\ui\Raw;
 use n2n\io\ob\OutputBuffer;
 use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\web\ui\UiException;
-use n2n\io\managed\img\ThumbStrategy;
 use n2n\util\uri\Url;
+use n2n\impl\web\ui\view\html\img\ImgComposer;
+use n2n\reflection\ArgUtils;
+use n2n\io\managed\img\ThumbStrategy;
+use n2n\impl\web\ui\view\html\img\UiComponentFactory;
+use n2n\impl\web\ui\view\html\img\ImgSet;
+use n2n\web\ui\CouldNotRenderUiComponentException;
+use n2n\l10n\DynamicTextCollection;
 
 class HtmlBuilder {
 	private $view;
@@ -147,13 +153,13 @@ class HtmlBuilder {
 		return $this->getEsc($contents);
 	}
 	
-	public function getUic($arg) {
-		if ($arg instanceof UiComponent) {
-			return $arg;
-		}
+// 	public function getUic($arg) {
+// 		if ($arg instanceof UiComponent) {
+// 			return $arg;
+// 		}
 		
-		return new Raw($arg);
-	}
+// 		return new Raw($arg);
+// 	}
 	
 	/**
 	 * @param mixed $contents
@@ -290,7 +296,6 @@ class HtmlBuilder {
 		return new Raw('<' . $this->linkStartedTagNameHtml . ' ' 
 				. HtmlElement::buildAttrsHtml($alternateAttrs ?? $attrs) . '>');
 	}
-	
 	
 	public function linkEnd() {
 		$this->view->out($this->getLinkEnd());
@@ -431,9 +436,6 @@ class HtmlBuilder {
 	 * L10N UTILS 
 	 */
 	
-	const REPLACEMENT_PREFIX = '[';
-	const REPLACEMENT_SUFFIX = ']';
-	
 	/**
 	 * @param unknown $code
 	 * @param array $args
@@ -452,12 +454,12 @@ class HtmlBuilder {
 	}
 		
 	public function getL10nText($key, array $args = null, $num = null, array $replacements = null, $module = null) {
-		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, $module));
+		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, null, $module));
 		if (empty($replacements)) return $textRaw;
 		
 		$textHtml = (string) $textRaw;
 		foreach ($replacements as $key => $replacement) {
-			$textHtml = str_replace(self::REPLACEMENT_PREFIX . $key . self::REPLACEMENT_SUFFIX, 
+			$textHtml = str_replace(DynamicTextCollection::REPLACEMENT_PREFIX . $key . DynamicTextCollection::REPLACEMENT_SUFFIX, 
 					HtmlUtils::contentsToHtml($replacement), $textHtml);
 		}
 		return new Raw($textHtml);
@@ -479,6 +481,10 @@ class HtmlBuilder {
 		return $this->getEsc($this->view->getL10nCurrency($value, $currency));
 	}
 	
+	/**
+	 * @param unknown $value
+	 * @param unknown $currency ISO 4217 
+	 */
 	public function l10nCurrency($value, $currency = null) {
 		$this->view->out($this->getL10nCurrency($value, $currency));
 	}
@@ -519,17 +525,56 @@ class HtmlBuilder {
 	 * IMAGE UTILS
 	 */
 	
-	public function image(File $file = null, ThumbStrategy $thumbStrategy = null, array $attrs = null, 
+	public function image(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $attrWidth = true, bool $attrHeight = true) {
-		$this->view->out($this->getImage($file, $thumbStrategy, $attrs, $attrWidth, $attrHeight));
+		$this->view->out($this->getImage($file, $imgComposer, $attrs, $attrWidth, $attrHeight));
 	}
 	
-	public function getImage(File $file = null, ThumbStrategy $thumbStrategy = null, array $attrs = null, 
+	
+	
+	public function getImage(File $file = null, $imgComposer = null, array $attrs = null, 
 			bool $addWidthAttr = true, bool $addHeightAttr = true) {
-		if ($file === null) return null;
+		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
 		
-		return UiComponentFactory::createImg($file, $thumbStrategy, $attrs, $addWidthAttr, $addHeightAttr);
+		if ($imgComposer instanceof ImgComposer) {
+			$imgSet = $imgComposer->createImgSet($file, $this->view->getN2nContext());
+			
+			if ($imgSet->isPictureRequired()) {
+				return UiComponentFactory::createPicture($imgSet, $attrs);
+			} else {
+				return UiComponentFactory::createImg($imgSet, $attrs);
+			}
+		}
+		
+		return $this->getImg($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
 	}
+	
+	public function getImg(File $file = null, $imgComposer = null, array $attrs = null, 
+			bool $addWidthAttr = true, bool $addHeightAttr = true) {
+		ArgUtils::valType($imgComposer, array(ImgComposer::class, ThumbStrategy::class), true);
+		
+		if ($imgComposer instanceof ImgComposer) {
+			$imgSet = $imgComposer->createImgSet($file);
+				
+			if ($imgSet->isPictureRequired()) {
+				throw new CouldNotRenderUiComponentException('ImgComposer requires picture element.');
+			} 
+			
+			return UiComponentFactory::createImg($imgSet, $attrs, $addWidthAttr, $addHeightAttr);
+		}
+		
+		return UiComponentFactory::createImgFromThSt($file, $imgComposer, $attrs, $addWidthAttr, $addHeightAttr);
+	}
+	
+	public function getPicture(File $file = null, ImgComposer $imgComposer = null, array $attrs = null) {
+		if ($imgComposer === null) {
+			return UiComponentFactory::createPicture($imgComposer, $attrs);
+		}
+				
+		return UiComponentFactory::createPicture($imgComposer->createImgSet($file, $this->view->getN2nContext()), 
+				$attrs);
+	}
+	
 	
 	public function imageAsset($pathExt, $alt, array $attrs = null, string $moduleNamespace = null) {
 		$this->view->out($this->getImageAsset($pathExt, $alt, $attrs, $moduleNamespace));

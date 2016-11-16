@@ -19,24 +19,32 @@
  * Bert Hofmänner.......: Idea, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\impl\web\ui\view\html;
+namespace n2n\impl\web\ui\view\html\img;
 
 use n2n\io\managed\File;
-use n2n\web\ui\UiComponent;
 use n2n\io\managed\img\ThumbStrategy;
 use n2n\io\managed\img\ImageFile;
 use n2n\io\managed\img\ImageDimension;
+use n2n\impl\web\ui\view\html\HtmlElement;
+use n2n\impl\web\ui\view\html\HtmlUtils;
 
 class UiComponentFactory {
+	/**
+	 * @param File $file
+	 * @param ThumbStrategy $thumbStrategy
+	 * @param array $attrs
+	 * @param bool $addWidthAttr
+	 * @param bool $addHeightAttr
+	 * @return \n2n\impl\web\ui\view\html\HtmlElement
+	 */
+	public static function createImgFromThSt(File $file = null, ThumbStrategy $thumbStrategy = null, 
+			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		
-	public static function createImg(File $file, ThumbStrategy $thumbStrategy = null, 
-			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true): UiComponent {
-		
-		if (!$file->isValid()) {
+		if ($file === null || !$file->isValid()) {
 			return self::createInvalidImg($thumbStrategy !== null ? $thumbStrategy->getImageDimension() : null, 
 					$attrs, $addWidthAttr, $addHeightAttr);
 		}
-				
+		
 		$imageFile = new ImageFile($file);
 		
 		$thumbImageFile = null;
@@ -46,7 +54,7 @@ class UiComponentFactory {
 			$thumbImageFile = $imageFile->getOrCreateThumb($thumbStrategy);
 		}
 				
-		$elemAttrs = array('src' => self::buildImgSrc($thumbImageFile));
+		$elemAttrs = array('src' => self::createImgSrc($thumbImageFile));
 		if ($addWidthAttr) $elemAttrs['width'] = $thumbImageFile->getWidth();
 		if ($addHeightAttr) $elemAttrs['height'] = $thumbImageFile->getHeight();
 		$attrs = HtmlUtils::mergeAttrs($elemAttrs, (array) $attrs);
@@ -56,16 +64,49 @@ class UiComponentFactory {
 	}
 	
 	
-	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
-			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
-		if (!$file->isValid()) {
-			return self::createInvalidImg($imageDimension, $attrs, $addWidthAttr, $addHeightAttr);
+	public static function createPicture(ImgSet $imgSet, array $attrs = null) {
+		$htmlElement = new HtmlElement('picture', $attrs);
+		
+		foreach ($imgSet->getImageSourceSets() as $imageSourceSet) {
+			$htmlElement->appendNl(new HtmlElement('source', HtmlUtils::mergeAttrs(
+					array('media' => $imageSourceSet->getMediaAttr(), 'srcset' => $imageSourceSet->getSrcsetAttr()), 
+					$imageSourceSet->getAttrs())));
 		}
 		
+		$htmlElement->appendNl(new HtmlElement('img', array('src' => $imgSet->getDefaultSrcAttr(), 
+				'alt' => $imgSet->getDefaultAltAttr())));
 		
+		return $htmlElement;
 	}
 	
-	public static function buildImgSrc(ImageFile $imageFile): string {
+	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
+			bool $addHeightAttr = true) {
+		
+		$attrs = array('src' => $imgSet->getDefaultSrcAttr(), 'alt' => $imgSet->getDefaultAltAttr());
+		
+		$imageSourceSets = $imgSet->getImageSourceSets(); 
+		if (empty($imageSourceSets)) {
+			if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
+			if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
+		} else {
+			$imageSourceSet = current($imageSourceSets);
+			$attrs['srcset'] = $imageSourceSet->getSrcsetAttr();
+			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
+		}
+
+		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, (array) $customAttrs));
+	}
+	
+// 	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
+// 			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
+// 		if (!$file->isValid()) {
+// 			return self::createInvalidImg($imageDimension, $attrs, $addWidthAttr, $addHeightAttr);
+// 		}
+		
+		
+// 	}
+	
+	public static function createImgSrc(ImageFile $imageFile): string {
 		$fileSource = $imageFile->getFile()->getFileSource();
 		if ($fileSource->isHttpaccessible()) {
 			return $fileSource->getUrl();
@@ -89,7 +130,7 @@ class UiComponentFactory {
 			$height = $imageDimension->getHeight();
 		}
 
-		$elemAttrs = array('src' => self::buildInvalidImgSrc($width, $height));
+		$elemAttrs = array('src' => self::createInvalidImgSrc($width, $height));
 		if ($addWidthAttr) $elemAttrs['width'] = $width;
 		if ($addHeightAttr) $elemAttrs['height'] = $height;
 		$attrs = HtmlUtils::mergeAttrs($elemAttrs, (array) $attrs);
@@ -98,8 +139,8 @@ class UiComponentFactory {
 		return new HtmlElement('img', $attrs);
 	}
 	
-	private static function buildInvalidImgSrc(int $width, int $height) {
-		return 'data:image/svg+xml;base64,' . base64_encode(self::buildInvalidImgSvg($width, $height));
+	public static function createInvalidImgSrc(int $width, int $height) {
+		return 'data:image/svg+xml;base64,' . base64_encode(self::createInvalidImgSvg($width, $height));
 
 		// return 'data:image/svg+xml;base64,'
 		//		. base64_encode('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full"'
@@ -109,8 +150,7 @@ class UiComponentFactory {
 		//		. '</svg>');
 	}
 
-
-	public static function buildInvalidImgSvg(int $width, int $height) {
+	public static function createInvalidImgSvg(int $width, int $height) {
 		$topMargin = ($height / 2) - 100;
 		$leftMargin = ($width / 2) - 100;
 
@@ -148,9 +188,6 @@ class UiComponentFactory {
 								}
 					
 								.picture-frame {
-									height: 100px;  
-									width: 60px;
-					
 									fill: #B3B3B3;
 									stroke: #b3b3b3;
 								}
