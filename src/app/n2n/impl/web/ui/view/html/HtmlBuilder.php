@@ -477,13 +477,17 @@ class HtmlBuilder {
 		$this->view->out($this->getL10nNumber($value, $style, $pattern));
 	}
 	
+	/**
+	 * @see self::getL10nCurrency()
+	 * @return \n2n\web\ui\Raw
+	 */
 	public function getL10nCurrency($value, $currency = null) {
 		return $this->getEsc($this->view->getL10nCurrency($value, $currency));
 	}
 	
 	/**
-	 * @param unknown $value
-	 * @param unknown $currency ISO 4217 
+	 * @param float $value
+	 * @param string $currency The 3-letter ISO 4217 currency code indicating the currency to use.
 	 */
 	public function l10nCurrency($value, $currency = null) {
 		$this->view->out($this->getL10nCurrency($value, $currency));
