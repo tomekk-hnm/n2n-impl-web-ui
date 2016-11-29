@@ -16,6 +16,10 @@ class ImageSourceSet {
 		return $this->mediaAttr;
 	}
 	
+	public function setMediaAttr(string $mediaAttr) {
+		$this->mediaAttr = $mediaAttr;
+	}
+	
 	public function getImgSrcs() {
 		return $this->imgSrcs;
 	}
