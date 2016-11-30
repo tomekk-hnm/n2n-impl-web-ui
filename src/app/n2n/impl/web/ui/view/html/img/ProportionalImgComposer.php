@@ -7,16 +7,16 @@ use n2n\io\managed\img\ImageFile;
 use n2n\io\managed\img\impl\ProportionalThumbStrategy;
 
 class ProportionalImgComposer implements ImgComposer {
-	private $width;
-	private $height;
-	private $autoCropMode;
-	private $scaleUpAllowed;
+	protected $width;
+	protected $height;
+	protected $autoCropMode;
+	protected $scaleUpAllowed;
 
-	private $fixedWidths;
-	private $maxWidth;
-	private $minWidth;
+	protected $fixedWidths;
+	protected $maxWidth;
+	protected $minWidth;
 	
-	private $sizesAttr;
+	protected $sizesAttr;
 
 	/**
 	 * @param int $width
@@ -182,5 +182,18 @@ class ProportionalImgComposer implements ImgComposer {
 	public function sizes(string $sizesAttr) {
 		$this->sizesAttr = $sizesAttr;
 		return $this;
+	}
+	
+	/**
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
+	 */
+	public function copy() {
+		$pic = new ProportionalImgComposer($this->width, $this->height, $this->autoCropMode, $this->scaleUpAllowed);
+		$pic->fixedWidths = $this->fixedWidths;
+		$pic->maxWidth = $this->maxWidth;
+		$pic->minWidth = $this->minWidth;
+	
+		$pic->sizesAttr = $this->sizesAttr;
+		return $pic;
 	}
 }
