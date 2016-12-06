@@ -7,14 +7,16 @@ use n2n\io\managed\img\ImageFile;
 use n2n\io\managed\img\impl\ProportionalThumbStrategy;
 
 class ProportionalImgComposer implements ImgComposer {
-	private $width;
-	private $height;
-	private $autoCropMode;
-	private $scaleUpAllowed;
+	protected $width;
+	protected $height;
+	protected $autoCropMode;
+	protected $scaleUpAllowed;
 
-	private $fixedWidths;
-	private $maxWidth;
-	private $minWidth;
+	protected $fixedWidths;
+	protected $maxWidth;
+	protected $minWidth;
+	
+	protected $sizesAttr;
 
 	/**
 	 * @param int $width
@@ -61,8 +63,12 @@ class ProportionalImgComposer implements ImgComposer {
 		}
 		return $this;
 	}
+	
+	public function getWidth() {
+		return $this->width;
+	}
 
-	private function getWidths() {
+	public function getWidths() {
 		$widths = $this->fixedWidths;
 		$widths[$this->minWidth] = $this->minWidth;
 		$widths[$this->width] = $this->width;
@@ -70,7 +76,7 @@ class ProportionalImgComposer implements ImgComposer {
 		krsort($widths, SORT_NUMERIC);
 		return $widths;
 	}
-	
+		
 	private function createPlaceholderImgSet() {
 		$widths = $this->getWidths();
 		$largestWidth = reset($widths);
@@ -120,7 +126,7 @@ class ProportionalImgComposer implements ImgComposer {
 		
 		$imageSourceSets = array();
 		if (count($imgSrcs) > 1) {
-			$imageSourceSets = array(new ImageSourceSet(array_reverse($imgSrcs, true)));
+			$imageSourceSets = array(new ImageSourceSet(array_reverse($imgSrcs, true), null, array('sizes' => $this->sizesAttr)));
 		}
 		
 		return new ImgSet(end($imgSrcs), $file->getOriginalName(), $defaultImageFile->getWidth(), 
@@ -167,5 +173,27 @@ class ProportionalImgComposer implements ImgComposer {
 		}
 
 		return $imageFile->getOrCreateVariation($strategy);
+	}
+	
+	/**
+	 * @param string $sizesAttr
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
+	 */
+	public function sizes(string $sizesAttr) {
+		$this->sizesAttr = $sizesAttr;
+		return $this;
+	}
+	
+	/**
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
+	 */
+	public function copy() {
+		$pic = new ProportionalImgComposer($this->width, $this->height, $this->autoCropMode, $this->scaleUpAllowed);
+		$pic->fixedWidths = $this->fixedWidths;
+		$pic->maxWidth = $this->maxWidth;
+		$pic->minWidth = $this->minWidth;
+	
+		$pic->sizesAttr = $this->sizesAttr;
+		return $pic;
 	}
 }

@@ -23,7 +23,7 @@ namespace n2n\impl\web\ui\view\html\img;
 
 use n2n\io\img\ImageResource;
 
-class Img {
+class Mimg {
 	
 	/**
 	 * @param int $width

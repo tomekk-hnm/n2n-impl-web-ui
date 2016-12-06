@@ -74,7 +74,7 @@ class HtmlElement implements UiComponent {
 		$this->contents[] = $content;
 	}
 	
-	public function appendNl($content = null) {
+	public function appendLn($content = null) {
 		if ($content !== null) {
 			$this->appendContent($content);
 		}
