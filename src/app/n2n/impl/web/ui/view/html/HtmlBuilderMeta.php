@@ -196,7 +196,7 @@ class HtmlBuilderMeta {
 	}
 
 	public function addHtml($html, bool $prepend = false, $target = self::TARGET_BODY_START) {
-		ArgUtils::valEnumArgument(1, array(self::TARGET_BODY_START, self::TARGET_BODY_END, self::TARGET_HEAD));
+		ArgUtils::valEnum(1, array(self::TARGET_BODY_START, self::TARGET_BODY_END, self::TARGET_HEAD));
 
 		$this->htmlProperties->push($target, new Raw((string) $html), $prepend);
 	}

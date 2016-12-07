@@ -22,20 +22,16 @@
 namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\ui\UiComponent;
-
-use n2n\core\SysTextUtils;
 use n2n\web\ui\UiException;
 use n2n\util\HashUtils;
 use n2n\reflection\ReflectionUtils;
-use n2n\web\ui\view\View;
 
 class HtmlUtils {
 	public static function validateCustomAttrs(array $customAttrs, array $reservedAttrNames) {
 		foreach ($customAttrs as $name => $value) {
 			if (in_array($name, $reservedAttrNames)) {
-				throw new AttributeNameIsReservedException(
-						SysTextUtils::get('n2n_error_view_html_attribute_is_reserved',
-								array('reservedAttributes' => implode(', ', $reservedAttrNames), 'attribute' => $name)));
+				throw new AttributeNameIsReservedException('Attribute is reserved: ' . $name 
+						. ' All reserved attributes: ' . implode(', ', $reservedAttrNames));
 			}
 		}
 	}

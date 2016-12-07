@@ -24,6 +24,7 @@ namespace n2n\impl\web\ui\view\html;
 use n2n\core\N2N;
 
 use n2n\impl\web\ui\view\html\HtmlElement;
+use n2n\impl\web\dispatch\ui\Form;
 
 class HiddenCommand extends HtmlElement {
 	public function __construct(Form $form, $dispatchMethod, array $attrs = null) {
