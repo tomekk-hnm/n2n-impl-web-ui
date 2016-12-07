@@ -84,10 +84,10 @@ class AjahResponse implements BufferedResponseContent {
 		return 'Ajah Response';
 	}
 	
-	public static function creataFromHtmlView(HtmlView $view, array $additionalData = null) {
-		if (null !== $additionalData) {
-			$data = $additionalData;
-		}
-		return new AjahResponse(array_merge(self::extractJsonableArray($view), $additionalData));
-	}
+// 	public static function creataFromHtmlView(HtmlView $view, array $additionalData = null) {
+// 		if (null !== $additionalData) {
+// 			$data = $additionalData;
+// 		}
+// 		return new AjahResponse(array_merge(self::extractJsonableArray($view), $additionalData));
+// 	}
 }

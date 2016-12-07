@@ -101,7 +101,9 @@ class ProportionalImgComposer implements ImgComposer {
 				continue;
 			}
 				
-			$imageFiles[$width] = $this->createVariation($thumbFile, $width);
+			if (null !== ($imageFile = $this->buildVariation($thumbFile, $width))) {
+				$imageFiles[$width] = $imageFile;
+			}
 		}
 
 		$lastSize = null;
@@ -166,7 +168,7 @@ class ProportionalImgComposer implements ImgComposer {
 		return $imageFile->getOrCreateThumb($this->createStrategy($width));
 	}
 
-	private function createVariation(ImageFile $imageFile, int $width) {
+	private function buildVariation(ImageFile $imageFile, int $width) {
 		$strategy = $this->createStrategy($width);
 		if ($strategy->matches($imageFile->getImageSource())) {
 			return null;

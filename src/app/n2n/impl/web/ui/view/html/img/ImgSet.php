@@ -14,7 +14,7 @@ class ImgSet {
 			int $defaultHeightAttr, array $imageSourceSets) {
 		ArgUtils::valArray($imageSourceSets, ImageSourceSet::class);
 		$this->defaultSrcAttr = $defaultSrcAttr;
-		$this->defualtAltAttr = $defaultAltAttr;
+		$this->defaultAltAttr = $defaultAltAttr;
 		$this->defaultWidthAttr = $defaultWidthAttr;
 		$this->defaultHeightAttr = $defaultHeightAttr;
 		$this->setImageSourceSets($imageSourceSets);

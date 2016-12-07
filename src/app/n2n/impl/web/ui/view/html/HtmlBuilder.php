@@ -33,7 +33,6 @@ use n2n\impl\web\ui\view\html\img\ImgComposer;
 use n2n\reflection\ArgUtils;
 use n2n\io\managed\img\ThumbStrategy;
 use n2n\impl\web\ui\view\html\img\UiComponentFactory;
-use n2n\impl\web\ui\view\html\img\ImgSet;
 use n2n\web\ui\CouldNotRenderUiComponentException;
 use n2n\l10n\DynamicTextCollection;
 
