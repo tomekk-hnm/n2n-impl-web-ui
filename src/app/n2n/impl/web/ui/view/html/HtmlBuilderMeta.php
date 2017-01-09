@@ -234,11 +234,11 @@ class HtmlBuilderMeta {
 				->fragment($fragment)->ssl($ssl)->subsystem($subsystem));
 	}
 	
-	public function getAssetUrl($urlExt, string $moduleNamespace = null) {
+	public function getAssetUrl($urlExt, string $moduleNamespace = null, bool $absolute = false) {
 		if ($moduleNamespace === null) {
 			$moduleNamespace = $this->view->getModuleNamespace();
 		}
-		return $this->view->getHttpContext()->getAssetsUrl($moduleNamespace)->ext($urlExt);
+		return $this->view->getHttpContext()->getAssetsUrl($moduleNamespace, $absolute)->ext($urlExt);
 	}
 	
 // 	/**
