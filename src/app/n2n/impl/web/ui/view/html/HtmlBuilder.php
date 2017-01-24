@@ -233,7 +233,7 @@ class HtmlBuilder {
 	 * @param string $murl
 	 * @param mixed $label
 	 * @param array $attrs
-	 * @throws UnavailableMurlException
+	 * @throws UnavailableUrlException
 	 * @return \n2n\impl\web\ui\view\html\Link
 	 */
 	public function getLink($murl, $label = null, array $attrs = null, string $alternateTagName = null, 
