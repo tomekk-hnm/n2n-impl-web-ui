@@ -90,9 +90,9 @@ class ProportionalImgComposer implements ImgComposer {
 		if ($file === null || !$file->isValid()) {
 			return $this->createPlaceholderImgSet();
 		}
-		
+	
 		$imageFile = new ImageFile($file);
-
+	
 		$thumbFile = null;
 		$imageFiles = array();
 		foreach ($this->getWidths() as $width) {
@@ -100,38 +100,37 @@ class ProportionalImgComposer implements ImgComposer {
 				$imageFiles[$width] = $thumbFile = $this->createThumb($imageFile, $width);
 				continue;
 			}
-				
+	
 			if (null !== ($imageFile = $this->buildVariation($thumbFile, $width))) {
 				$imageFiles[$width] = $imageFile;
 			}
 		}
-
+	
 		$lastSize = null;
 		$lastWidth = null;
 		foreach ($imageFiles as $width => $imageFile) {
 			if ($width > $this->maxWidth || $width < $this->minWidth) continue;
-				
+	
 			// 			$size = $imageFile->getFile()->getFileSource()->getSize();
 			// 			if (!$this->isSizeGabTooLarge($lastWidth, $lastWidth = $size)) continue;
-				
+	
 			// 			if ($lastSize > $size) {
-
+	
 			// 			}
 		}
-
+	
 		$imgSrcs = array();
 		foreach ($imageFiles as $width => $imageFile) {
 			$imgSrcs[$width . 'w'] = UiComponentFactory::createImgSrc($imageFile);
 		}
-		
-		$defaultImageFile = end($imageFiles);
-		
+	
 		$imageSourceSets = array();
 		if (count($imgSrcs) > 1) {
 			$imageSourceSets = array(new ImageSourceSet(array_reverse($imgSrcs, true), null, array('sizes' => $this->sizesAttr)));
 		}
-		
-		return new ImgSet(end($imgSrcs), $file->getOriginalName(), $defaultImageFile->getWidth(), 
+	
+		$defaultImageFile = reset($imageFiles);
+		return new ImgSet(reset($imgSrcs), $file->getOriginalName(), $defaultImageFile->getWidth(),
 				$defaultImageFile->getHeight(), $imageSourceSets);
 	}
 
