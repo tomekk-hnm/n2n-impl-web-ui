@@ -49,12 +49,6 @@ class HtmlView extends View {
 	 * @see \n2n\web\ui\view\View::compile($contentBuffer)
 	 */
 	protected function compile(OutputBuffer $contentBuffer) {
-		$contentView = $this->getContentView();
-		if ($contentView instanceof HtmlView) {
-			$this->getHtmlProperties()->setContentHtmlProperties($contentView->getHtmlProperties());
-		}
-		
-		
 		$this->htmlBuilder = new HtmlBuilder($this, $contentBuffer);
 		$this->formHtmlBuilder = new FormHtmlBuilder($this);
 		$this->ariaFormHtmlBuilder = new AriaFormHtmlBuilder($this);
