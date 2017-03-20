@@ -28,8 +28,6 @@ use n2n\web\ui\view\View;
 use n2n\reflection\ArgUtils;
 use n2n\web\http\Response;
 use n2n\impl\web\dispatch\ui\FormHtmlBuilder;
-use n2n\web\ui\view\ViewCacheControl;
-use n2n\core\module\Module;
 use n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder;
 
 class HtmlView extends View {
@@ -51,14 +49,11 @@ class HtmlView extends View {
 	 * @see \n2n\web\ui\view\View::compile($contentBuffer)
 	 */
 	protected function compile(OutputBuffer $contentBuffer) {
-		if ($this->htmlProperties === null) {
-			$this->htmlProperties = new HtmlProperties();
-			
-			$contentView = $this->getContentView();
-			if ($contentView instanceof HtmlView) {
-				$this->htmlProperties->setContentHtmlProperties($contentView->getHtmlProperties());
-			}
+		$contentView = $this->getContentView();
+		if ($contentView instanceof HtmlView) {
+			$this->getHtmlProperties()->setContentHtmlProperties($contentView->getHtmlProperties());
 		}
+		
 		
 		$this->htmlBuilder = new HtmlBuilder($this, $contentBuffer);
 		$this->formHtmlBuilder = new FormHtmlBuilder($this);
@@ -84,26 +79,31 @@ class HtmlView extends View {
 		$this->ariaFormHtmlBuilder = null;
 	} 
 	
-	protected function createImportView(string $viewNameExpression, $params = null, 
-			ViewCacheControl $viewCacheControl = null, Module $module = null) {
-		$view = parent::createImportView($viewNameExpression, $params, $viewCacheControl, $module);
-		if ($view instanceof HtmlView) {
-			$view->setHtmlProperties($this->htmlProperties);
-		}
-		return $view;
-	}
+// 	protected function createImportView(string $viewNameExpression, $params = null, 
+// 			ViewCacheControl $viewCacheControl = null, Module $module = null) {
+// 		$view = parent::createImportView($viewNameExpression, $params, $viewCacheControl, $module);
+// 		if ($view instanceof HtmlView) {
+// 			$view->setHtmlProperties($this->htmlProperties);
+// 		}
+// 		return $view;
+// 	}
 	
-	public function out($uiComponent) {
-		// @todo think
-		if ($uiComponent instanceof HtmlView) {
-			if (!$uiComponent->isInitialized()) {
-				$uiComponent->setHtmlProperties($this->htmlProperties);
-			} else if ($this->htmlProperties->getContentHtmlProperties() !== ($htmlProperties = $uiComponent->getHtmlProperties())){
-				$this->htmlProperties->merge($htmlProperties);
-			} 
+	public function getOut($uiComponent) {
+		if (!($uiComponent instanceof HtmlView)) {
+			return parent::getOut($uiComponent);
 		}
 		
-		parent::out($uiComponent);
+		if (!$uiComponent->isInitialized()) {
+			$uiComponent->getHtmlProperties()->setForm($this->getHtmlProperties()->getForm());
+		}
+		
+		$contents = parent::getOut($uiComponent);
+		
+// 		if ($uiComponent->getHtmlProperties() !== $this->getHtmlProperties()) {
+			$this->htmlProperties->merge($uiComponent->getHtmlProperties());
+// 		}
+		
+		return $contents;
 	}
 	
 	public function setHtmlProperties(HtmlProperties $htmlProperties) {
@@ -114,6 +114,10 @@ class HtmlView extends View {
 	 * @return HtmlProperties
 	 */
 	public function getHtmlProperties() {
+		if ($this->htmlProperties === null) {
+			$this->htmlProperties = new HtmlProperties();
+		}
+		
 		return $this->htmlProperties;
 	}
 	
