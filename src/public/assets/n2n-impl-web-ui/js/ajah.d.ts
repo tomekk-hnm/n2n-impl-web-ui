@@ -25,5 +25,6 @@ interface Dispatch {
 }
 interface N2n {
 	dispatch: Dispatch;
+	ajah: Dispatch;
 }
 declare var n2n: N2n;

@@ -164,4 +164,5 @@ module n2n {
 		}
 	}
 	export var dispatch = new Dispatch();
+	export var ajah = new Dispatch();
 }

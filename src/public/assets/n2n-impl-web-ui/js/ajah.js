@@ -169,4 +169,5 @@ var n2n;
         return Dispatch;
     }());
     n2n.dispatch = new Dispatch();
+    n2n.ajah = n2n.dispatch;
 })(n2n || (n2n = {}));
