@@ -52,7 +52,7 @@ class JsonResponse implements BufferedResponseContent {
 	/* (non-PHPdoc)
 	 * @see \n2n\web\http\ResponseThing::toKownResponseString()
 	 */
-	public function toKownResponseString() {
+	public function toKownResponseString(): string {
 		return 'Json Response';
 	}	
 }
