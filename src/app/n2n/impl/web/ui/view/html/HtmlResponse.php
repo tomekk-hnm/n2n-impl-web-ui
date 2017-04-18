@@ -51,7 +51,7 @@ class HtmlResponse implements BufferedResponseContent {
 	 * {@inheritDoc}
 	 * @see \n2n\web\http\ResponseThing::toKownResponseString()
 	 */
-	public function toKownResponseString() {
+	public function toKownResponseString(): string {
 		return 'Html Response';
 	}
 }
