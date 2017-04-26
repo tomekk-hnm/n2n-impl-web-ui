@@ -364,7 +364,7 @@ class HtmlBuilder {
 
 	public function linkToUrl($pathExt, $label, array $attrs = null, $query = null, $fragment = null, 
 			$ssl = null, $subsystem = null) {
-		$this->view->out($this->getLinkToUrl($pathExt, $attrs, $query, $fragment, $ssl, $subsystem));
+		$this->view->out($this->getLinkToUrl($pathExt, $label, $attrs, $query, $fragment, $ssl, $subsystem));
 	}
 
 	public function getLinkToUrl($pathExt = null, $label = null, array $attrs = null, $query = null, 
