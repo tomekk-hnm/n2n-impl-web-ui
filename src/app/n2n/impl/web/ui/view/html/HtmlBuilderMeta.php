@@ -147,12 +147,28 @@ class HtmlBuilderMeta {
 		$this->htmlProperties->add($target, 'type:javascript:src:' . $src, $htmlElement, $prepend);
 	}
 	
-	public function addMeta(array $attrs) {
-		$this->htmlProperties->push(self::HEAD_META_KEY, new HtmlElement('meta', $attrs));
+	private function buildKey(array $attrs, string $uniqueAttrName = null) {
+		if ($uniqueAttrName === null) {
+			return 'type:attrs:' . serialize($attrs);
+		}
+		
+		if (!array_key_exists($uniqueAttrName, $attrs)) {
+			throw new \InvalidArgumentException('Passed unique attrs name does not exist. Available attr names: '
+					. implode(', ', array_keys($attrs)));
+		}
+		
+		return 'type:key:' . $uniqueAttrName . ':' . (string) $attrs[$uniqueAttrName];
+		
 	}
 	
-	public function addLink(array $attrs) {
-		$this->htmlProperties->push(self::HEAD_LINK_KEY, new HtmlElement('link', $attrs));
+	public function addMeta(array $attrs, string $uniqueAttrName = null) {
+		$this->htmlProperties->add(self::HEAD_META_KEY, $this->buildKey($attrs, $uniqueAttrName),
+				new HtmlElement('meta', $attrs));
+	}
+	
+	public function addLink(array $attrs, $uniqueAttrName = null) {
+		$this->htmlProperties->add(self::HEAD_LINK_KEY, $this->buildKey($attrs, $uniqueAttrName), 
+				new HtmlElement('link', $attrs));
 	} 
 
 	const HEAD_TITLE_KEY = 'head.title';
