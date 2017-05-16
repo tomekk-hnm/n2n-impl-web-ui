@@ -93,12 +93,17 @@ class HtmlBuilderMeta {
 			$module = $this->view->getModuleNamespace();
 		}
 		
-		$this->addCssUrl($this->view->getHttpContext()->getAssetsUrl($module)->ext($relativeUrl), $media, $prepend);
+		$this->addCssUrl($this->view->getHttpContext()->getAssetsUrl($module)->ext($relativeUrl), 
+				$media, $prepend, $attrs, $target);
 	}
 
 	public function addCssUrl($href, $media = null, $prepend = false, array $attrs = null, 
 			$target = self::TARGET_HEAD) {
-		$this->htmlProperties->add(self::HEAD_LINK_KEY, 'rel:stylesheet:' . (string) $href . ':' . (string) $media,
+		if ($target == self::TARGET_HEAD) {
+			$target = self::HEAD_SCRIPT_KEY;
+		}
+				
+		$this->htmlProperties->add($target, 'rel:stylesheet:' . (string) $href . ':' . (string) $media,
 				new HtmlElement('link', array('rel' => 'stylesheet', 'type' => 'text/css', 'media' => $media, 'href' => $href)),
 				$prepend);
 	}
