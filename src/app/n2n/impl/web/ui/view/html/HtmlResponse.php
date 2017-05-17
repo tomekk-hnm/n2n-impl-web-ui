@@ -35,7 +35,7 @@ class HtmlResponse implements BufferedResponseContent {
 	 * {@inheritDoc}
 	 * @see \n2n\web\http\BufferedResponseContent::getBufferedContents()
 	 */
-	public function getBufferedContents() {
+	public function getBufferedContents(): string {
 		return HtmlUtils::contentsToHtml($this->uiComponent);
 	}
 
