@@ -21,11 +21,11 @@
  */
 namespace n2n\impl\web\ui\view\json;
 
-use n2n\web\http\BufferedResponseContent;
+use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
 
-class JsonResponse implements BufferedResponseContent { 
+class JsonResponse extends BufferedResponseObject { 
 	private $jsonString;
 	/**
 	 * @param unknown $contentType
@@ -36,21 +36,21 @@ class JsonResponse implements BufferedResponseContent {
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\BufferedResponseContent::getBufferedContents()
+	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 		return $this->jsonString;
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseThing::prepareForResponse()
+	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 		$response->setHeader('Content-Type: application/json');
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseThing::toKownResponseString()
+	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
 	 */
 	public function toKownResponseString(): string {
 		return 'Json Response';
