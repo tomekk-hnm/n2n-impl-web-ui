@@ -130,7 +130,7 @@ class ProportionalImgComposer implements ImgComposer {
 		}
 	
 		$defaultImageFile = reset($imageFiles);
-		return new ImgSet(reset($imgSrcs), $file->getOriginalName(), $defaultImageFile->getWidth(),
+		return new ImgSet(reset($imgSrcs), '', $defaultImageFile->getWidth(),
 				$defaultImageFile->getHeight(), $imageSourceSets);
 	}
 
