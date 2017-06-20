@@ -82,7 +82,11 @@ class UiComponentFactory {
 	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
 			bool $addHeightAttr = true) {
 		
-		$attrs = array('src' => $imgSet->getDefaultSrcAttr(), 'alt' => $imgSet->getDefaultAltAttr());
+		$attrs = array('src' => $imgSet->getDefaultSrcAttr());
+		
+		if (!array_key_exists('alt', $customAttrs)) {
+			$attrs['alt'] = $imgSet->getDefaultAltAttr();
+		}
 		
 		$imageSourceSets = $imgSet->getImageSourceSets(); 
 		if (empty($imageSourceSets)) {
