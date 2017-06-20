@@ -82,7 +82,7 @@ class UiComponentFactory {
 	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
 			bool $addHeightAttr = true) {
 		
-		$attrs = array('src' => $imgSet->getDefaultSrcAttr(), 'alt' => $imgSet->getDefaultAltAttr());
+		$attrs = array('src' => $imgSet->getDefaultSrcAttr());
 		
 		$imageSourceSets = $imgSet->getImageSourceSets(); 
 		if (empty($imageSourceSets)) {
@@ -94,7 +94,12 @@ class UiComponentFactory {
 			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
 		}
 
-		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, (array) $customAttrs));
+		$attrs = HtmlUtils::mergeAttrs($attrs, (array) $customAttrs);
+		if (!array_key_exists('alt', $attrs)) {
+			$attrs['alt'] = $imgSet->getDefaultAltAttr();
+		}
+		
+		return new HtmlElement('img', $attrs);
 	}
 	
 // 	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
