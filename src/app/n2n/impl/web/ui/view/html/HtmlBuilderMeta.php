@@ -35,7 +35,7 @@ class HtmlBuilderMeta {
 	private $htmlProperties;
 	
 	public function __construct(HtmlView $view) {
-		$this->view = $view;		
+		$this->view = $view;
 		$this->htmlProperties = $view->getHtmlProperties();
 	}
 	
@@ -47,7 +47,7 @@ class HtmlBuilderMeta {
 	}
 	
 	/**
-	 * @return HtmlProperties 
+	 * @return HtmlProperties
 	 */
 	public function getHtmlProperties() {
 		return $this->htmlProperties;
@@ -86,36 +86,36 @@ class HtmlBuilderMeta {
 	public function getPageName() {
 		return $this->view->getN2nContext()->lookup(GeneralConfig::class)->getPageName();
 	}
-
-	public function addCss($relativeUrl, $media = null, $module = null, $prepend = false, 
+	
+	public function addCss($relativeUrl, $media = null, $module = null, $prepend = false,
 			array $attrs = null, $target = self::TARGET_HEAD) {
-		if ($module === null) {
-			$module = $this->view->getModuleNamespace();
-		}
-		
-		$this->addCssUrl($this->view->getHttpContext()->getAssetsUrl($module)->ext($relativeUrl), 
-				$media, $prepend, $attrs, $target);
-	}
-
-	public function addCssUrl($href, $media = null, $prepend = false, array $attrs = null, 
-			$target = self::TARGET_HEAD) {
-		if ($target == self::TARGET_HEAD) {
-			$target = self::HEAD_SCRIPT_KEY;
-		}
+				if ($module === null) {
+					$module = $this->view->getModuleNamespace();
+				}
 				
-		$this->htmlProperties->add($target, 'rel:stylesheet:' . (string) $href . ':' . (string) $media,
-				new HtmlElement('link', array('rel' => 'stylesheet', 'type' => 'text/css', 'media' => $media, 'href' => $href)),
-				$prepend);
+				$this->addCssUrl($this->view->getHttpContext()->getAssetsUrl($module)->ext($relativeUrl),
+						$media, $prepend, $attrs, $target);
 	}
-
+	
+	public function addCssUrl($href, $media = null, $prepend = false, array $attrs = null,
+			$target = self::TARGET_HEAD) {
+				if ($target == self::TARGET_HEAD) {
+					$target = self::HEAD_SCRIPT_KEY;
+				}
+				
+				$this->htmlProperties->add($target, 'rel:stylesheet:' . (string) $href . ':' . (string) $media,
+						new HtmlElement('link', array('rel' => 'stylesheet', 'type' => 'text/css', 'media' => $media, 'href' => $href)),
+						$prepend);
+	}
+	
 	public function addAsyncJs($relativeUrl, $module = null, $prepend = false) {
 		if (is_null($module)) {
 			$module = $this->view->getModuleNamespace();
 		}
-
+		
 		$this->addAsyncJsUrl($this->view->getHttpContext()->getAssetsUrl($module)->ext($relativeUrl), (boolean) $prepend);
 	}
-
+	
 	public function addAsyncJsUrl($src, $prepend = false) {
 		$this->htmlProperties->add(self::HEAD_SCRIPT_KEY, 'type:javascript:src:' . $src,
 				new HtmlElement('script', array('type' => 'text/javascript'),
@@ -123,17 +123,17 @@ class HtmlBuilderMeta {
 						addslashes($src) . '";var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(b,a)})();' . "\r\n" . '//]]>' . "\r\n"),
 				$prepend);
 	}
-
-	public function addJs($relativeUrl, $moduleNamespace = null, bool $defer = false, bool $prepend = false, 
-			array $attrs = null, $target = self::TARGET_HEAD) {
-		if (null === $moduleNamespace) {
-			$moduleNamespace = $this->view->getModuleNamespace();
-		}
 	
-		$this->addJsUrl($this->view->getHttpContext()->getAssetsUrl($moduleNamespace)->ext($relativeUrl), $defer, 
-				$prepend, $attrs, $target);
+	public function addJs($relativeUrl, $moduleNamespace = null, bool $defer = false, bool $prepend = false,
+			array $attrs = null, $target = self::TARGET_HEAD) {
+				if (null === $moduleNamespace) {
+					$moduleNamespace = $this->view->getModuleNamespace();
+				}
+				
+				$this->addJsUrl($this->view->getHttpContext()->getAssetsUrl($moduleNamespace)->ext($relativeUrl), $defer,
+						$prepend, $attrs, $target);
 	}
-
+	
 	public function addJsUrl($src, bool $defer = false, bool $prepend = false, array $attrs = null, $target = self::TARGET_HEAD) {
 		ArgUtils::valEnum($target, array(self::TARGET_HEAD, self::TARGET_BODY_START, self::TARGET_BODY_END));
 		
@@ -147,7 +147,7 @@ class HtmlBuilderMeta {
 		}
 		
 		$htmlElement = new HtmlElement('script', HtmlUtils::mergeAttrs(
-							array('type' => 'text/javascript', 'src' => (string) $src), $attrs), '');
+				array('type' => 'text/javascript', 'src' => (string) $src), $attrs), '');
 		
 		$this->htmlProperties->add($target, 'type:javascript:src:' . $src, $htmlElement, $prepend);
 	}
@@ -172,10 +172,10 @@ class HtmlBuilderMeta {
 	}
 	
 	public function addLink(array $attrs, $uniqueAttrName = null) {
-		$this->htmlProperties->add(self::HEAD_LINK_KEY, $this->buildKey($attrs, $uniqueAttrName), 
+		$this->htmlProperties->add(self::HEAD_LINK_KEY, $this->buildKey($attrs, $uniqueAttrName),
 				new HtmlElement('link', $attrs));
-	} 
-
+	}
+	
 	const HEAD_TITLE_KEY = 'head.title';
 	const HEAD_SCRIPT_KEY = 'head.script';
 	const HEAD_LINK_KEY = 'head.link';
@@ -201,7 +201,7 @@ class HtmlBuilderMeta {
 	public function addJsCode($code, bool $defer = false, $prepend = false, array $attrs = null, $target = self::TARGET_HEAD) {
 		ArgUtils::valEnum($target, array(self::TARGET_HEAD, self::TARGET_BODY_START, self::TARGET_BODY_END));
 		$code = (string) $code;
-
+		
 		if ($target == self::TARGET_HEAD) {
 			$target = self::HEAD_SCRIPT_KEY;
 		}
@@ -215,10 +215,23 @@ class HtmlBuilderMeta {
 				new HtmlElement('script', $attrs, new Raw("\r\n" . $code . "\r\n" . "\r\n")),
 				$prepend);
 	}
-
+	
+	public function addCssCode($code, $prepend = false, array $attrs = null, $target = self::TARGET_HEAD) {
+		ArgUtils::valEnum($target, array(self::TARGET_HEAD, self::TARGET_BODY_START, self::TARGET_BODY_END));
+		$code = (string) $code;
+		
+		if ($target == self::TARGET_HEAD) {
+			$target = self::HEAD_SCRIPT_KEY;
+		}
+		
+		$this->htmlProperties->push($target,
+				new HtmlElement('style', $attrs, new Raw("\r\n" . $code . "\r\n" . "\r\n")),
+				$prepend);
+	}
+	
 	public function addHtml($html, bool $prepend = false, $target = self::TARGET_BODY_START) {
 		ArgUtils::valEnum($target, array(self::TARGET_BODY_START, self::TARGET_BODY_END, self::TARGET_HEAD));
-
+		
 		$this->htmlProperties->push($target, new Raw((string) $html), $prepend);
 	}
 	
@@ -229,7 +242,7 @@ class HtmlBuilderMeta {
 		
 		$library->apply($this->view, $this);
 	}
-
+	
 	public function getMessages($groupName = null, $severity = null, $translate = true) {
 		$n2nContext = $this->view->getN2nContext();
 		$messages = $n2nContext->lookup(MessageContainer::class)->getAll($groupName, $severity);
@@ -244,15 +257,15 @@ class HtmlBuilderMeta {
 	public function getContextUrl($pathExt, $query = null, $fragment = null, $ssl = null, $subsystem = null) {
 		return $this->view->buildUrl(Murl::context()->pathExt($pathExt)->queryExt($query)->fragment($fragment)->ssl($ssl)
 				->subsystem($subsystem));
-// 		return $this->view->getHttpContext()->completeUrl($this->view->getHttpContext()->getRequest()->getContextPath()->ext($pathExt)
-// 						->toUrl($query, $fragment), 
-// 				$ssl, $subsystem);
+		// 		return $this->view->getHttpContext()->completeUrl($this->view->getHttpContext()->getRequest()->getContextPath()->ext($pathExt)
+		// 						->toUrl($query, $fragment),
+		// 				$ssl, $subsystem);
 	}
-
-	public function getControllerUrl($pathExt, $query = null, $fragment = null, 
+	
+	public function getControllerUrl($pathExt, $query = null, $fragment = null,
 			$controllerContext = null, $ssl = null, $subsystem = null) {
-		return $this->view->buildUrl(Murl::controller($controllerContext)->pathExt($pathExt)->queryExt($query)
-				->fragment($fragment)->ssl($ssl)->subsystem($subsystem));
+				return $this->view->buildUrl(Murl::controller($controllerContext)->pathExt($pathExt)->queryExt($query)
+						->fragment($fragment)->ssl($ssl)->subsystem($subsystem));
 	}
 	
 	public function getAssetUrl($urlExt, string $moduleNamespace = null, bool $absolute = false) {
@@ -262,14 +275,14 @@ class HtmlBuilderMeta {
 		return $this->view->getHttpContext()->getAssetsUrl($moduleNamespace, $absolute)->ext($urlExt);
 	}
 	
-// 	/**
-// 	 * @param UrlComposer $murlBuilder
-// 	 * @return \n2n\impl\web\ui\view\html\Url
-// 	 */
-// 	public function buildUrl(UrlComposer $murlBuilder) {
-// 		return $murlBuilder->toUrl($this->view->getHttpContext(), $this->view->getControllerContext());
-// 	}
-
+	// 	/**
+	// 	 * @param UrlComposer $murlBuilder
+	// 	 * @return \n2n\impl\web\ui\view\html\Url
+	// 	 */
+	// 	public function buildUrl(UrlComposer $murlBuilder) {
+	// 		return $murlBuilder->toUrl($this->view->getHttpContext(), $this->view->getControllerContext());
+	// 	}
+	
 	/**
 	 * @param string $pathExt
 	 * @param array $query
@@ -278,12 +291,12 @@ class HtmlBuilderMeta {
 	 * @param string $subsystem
 	 * @return Url
 	 */
-	public function getPath($pathExt = null, $query = null, $fragment = null, 
+	public function getPath($pathExt = null, $query = null, $fragment = null,
 			$ssl = null, $subsystem = null) {
-		return $this->view->getHttpContext()->buildContextUrl($ssl, $subsystem)
+				return $this->view->getHttpContext()->buildContextUrl($ssl, $subsystem)
 				->extR($this->view->getRequest()->getCmdPath()->ext($pathExt), $query, $fragment);
 	}
-
+	
 	/**
 	 * @param string $pathExt
 	 * @param array $query
@@ -292,10 +305,10 @@ class HtmlBuilderMeta {
 	 * @param string $subsystem
 	 * @return Url
 	 */
-	public function getUrl($pathExt = null, $query = null, $fragment = null, 
+	public function getUrl($pathExt = null, $query = null, $fragment = null,
 			$ssl = null, $subsystem = null) {
-		$request = $this->view->getRequest();
-		return $this->view->getHttpContext()->buildContextUrl($ssl, $subsystem)
+				$request = $this->view->getRequest();
+				return $this->view->getHttpContext()->buildContextUrl($ssl, $subsystem)
 				->extR($request->getCmdPath(), $request->getQuery())
 				->extR($pathExt, $query, $fragment);
 	}
@@ -347,13 +360,13 @@ class BodyBuilderMeta {
 	
 	public function addJs($relativeUrl, string $moduleNamespace = null, bool $defer = false, bool $prepend = false,
 			array $attrs = null) {
-		$this->meta->addJs($relativeUrl, $moduleNamespace, $defer, $prepend, $attrs, $this->target);
+				$this->meta->addJs($relativeUrl, $moduleNamespace, $defer, $prepend, $attrs, $this->target);
 	}
 	
 	public function addJsUrl($src, bool $defer = false, bool $prepend = false, array $attrs = null) {
 		$this->meta->addJsUrl($src, $defer, $prepend, $attrs, $this->target);
 	}
-
+	
 	public function addJsCode($code, bool $defer = false, $prepend = false, array $attrs = null) {
 		$this->meta->addJscode($code, $defer, $prepend, $attrs, $this->target);
 	}
