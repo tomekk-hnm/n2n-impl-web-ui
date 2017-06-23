@@ -83,6 +83,7 @@ class UiComponentFactory {
 			bool $addHeightAttr = true) {
 		
 		$attrs = array('src' => $imgSet->getDefaultSrcAttr());
+		$customAttrs = (array) $customAttrs;
 		
 		if (!array_key_exists('alt', $customAttrs)) {
 			$attrs['alt'] = $imgSet->getDefaultAltAttr();
@@ -98,7 +99,7 @@ class UiComponentFactory {
 			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
 		}
 
-		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, (array) $customAttrs));
+		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, $customAttrs));
 	}
 	
 // 	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
