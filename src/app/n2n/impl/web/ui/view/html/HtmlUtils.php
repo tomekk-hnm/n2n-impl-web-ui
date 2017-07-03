@@ -115,6 +115,10 @@ class HtmlUtils {
 	public static function encodedEmailUrl($email) {
 		return HtmlUtils::encode('mailto:' . urlencode($email));
 	}
+
+	public static function stripHtml($content) {
+		return strip_tags($content);
+	}
 }
 
 
