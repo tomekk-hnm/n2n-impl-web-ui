@@ -545,7 +545,7 @@ class HtmlBuilder {
 			if ($imgSet->isPictureRequired()) {
 				return UiComponentFactory::createPicture($imgSet, $attrs);
 			} else {
-				return UiComponentFactory::createImg($imgSet, $attrs);
+				return UiComponentFactory::createImg($imgSet, $attrs, $addWidthAttr, $addHeightAttr);
 			}
 		}
 		
