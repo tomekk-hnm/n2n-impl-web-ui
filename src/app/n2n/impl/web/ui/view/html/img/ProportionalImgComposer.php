@@ -111,17 +111,17 @@ class ProportionalImgComposer implements ImgComposer {
 			return $this->createPlaceholderImgSet();
 		}
 	
-		$imageFile = new ImageFile($file);
+		$orgImageFile = new ImageFile($file);
 	
 		$thumbFile = null;
 		$imageFiles = array();
 		foreach ($this->getWidths() as $width) {
 			if ($thumbFile === null) {
-				$imageFiles[$width] = $thumbFile = $this->createThumb($imageFile, $width);
+				$imageFiles[$width] = $thumbFile = $this->createThumb($orgImageFile, $width);
 				continue;
 			}
 	
-			if (null !== ($imageFile = $this->buildVariation($thumbFile, $width, $imageFile))) {
+			if (null !== ($imageFile = $this->buildVariation($thumbFile, $width, $orgImageFile))) {
 				$imageFiles[$width] = $imageFile;
 			}
 		}
