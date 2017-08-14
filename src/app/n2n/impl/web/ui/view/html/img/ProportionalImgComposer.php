@@ -192,8 +192,13 @@ class ProportionalImgComposer implements ImgComposer {
 		if ($strategy->matches($imageFile->getImageSource())) {
 			return null;
 		}
+		
+		$orgImageSource = null;
+		if ($orgImageFile !== null) {
+			$orgImageSource = $orgImageFile->getImageSource();
+		}
 
-		return $imageFile->getOrCreateVariation($strategy, $orgImageFile->getImageSource());
+		return $imageFile->getOrCreateVariation($strategy, $orgImageSource);
 	}
 	
 	/**
