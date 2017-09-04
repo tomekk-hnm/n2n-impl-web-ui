@@ -28,7 +28,6 @@ use n2n\web\ui\Raw;
 use n2n\io\ob\OutputBuffer;
 use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\web\ui\UiException;
-use n2n\util\uri\Url;
 use n2n\impl\web\ui\view\html\img\ImgComposer;
 use n2n\reflection\ArgUtils;
 use n2n\io\managed\img\ThumbStrategy;
@@ -241,16 +240,7 @@ class HtmlBuilder {
 		if ($label === null) {
 			$suggestedLabel = null;
 			$murl = $this->view->buildUrlStr($murl, $required, $suggestedLabel);
-			if ($suggestedLabel !== null) {
-				$label = $suggestedLabel;
-			} else {
-				$url = Url::create($murl);
-				if (null !== ($hostName = $url->getAuthority()->getHost())) {
-					$label = $hostName;
-				} else {
-					$label = str_replace(array('http://', 'https://'), '', $murl);
-				}	
-			}
+			$label = $this->meta->buildLinkLabel($murl, $suggestedLabel);
 		}
 		
 		$raw = new Raw();
@@ -261,7 +251,13 @@ class HtmlBuilder {
 		return $raw;
 	}
 	
-	private $linkStartedTagNameHtml = null;
+	private $linkStartedData = null;
+	
+	private function ensureLinkStarted() {
+		if ($this->linkStartedData === null) {
+			throw new UiException('No Link started.');
+		}
+	}
 	
 	public function linkStart($murl, array $attrs = null, string $alternateTagName = null, 
 			array $alternateAttrs = null, bool $required = false) {
@@ -270,30 +266,52 @@ class HtmlBuilder {
 	
 	public function getLinkStart($murl, array $attrs = null, string $alternateTagName = null, 
 			array $alternateAttrs = null, bool $required = false) {
-		if ($this->linkStartedTagNameHtml !== null) {
+		if ($this->linkStartedData !== null) {
 			throw new UiException('Link already started.');
 		}
 		
 		$href = null;
+		$suggestedLabel = null;
 		if ($murl !== null) {
-			$href = $this->view->buildUrlStr($murl, $required);
+			$href = $this->view->buildUrlStr($murl, $required, $suggestedLabel);
 		}
 		$attrs = (array) $attrs;
-		
 		if ($href !== null) {
-			$this->linkStartedTagNameHtml = 'a';
+			$this->linkStartedData = array('tagNameHtml' => 'a', 'href' =>  $href, 'suggestedLabel' => $suggestedLabel);
 			$attrs = HtmlUtils::mergeAttrs(array('href' =>  $href), $attrs);
 			return new Raw('<a ' . HtmlElement::buildAttrsHtml($attrs) . '>');
 		} 
 		
 		if ($alternateTagName !== null) {
-			$this->linkStartedTagNameHtml = $this->getEsc($alternateTagName);
+			$this->linkStartedData = array('tagNameHtml' => $this->getEsc($alternateTagName));
 		} else {
-			$this->linkStartedTagNameHtml = 'a';
+			$this->linkStartedData = array('tagNameHtml' => 'a');
 		}
 		
-		return new Raw('<' . $this->linkStartedTagNameHtml . ' ' 
+		return new Raw('<' . $this->linkStartedData['tagNameHtml'] . ' ' 
 				. HtmlElement::buildAttrsHtml($alternateAttrs ?? $attrs) . '>');
+	}
+	
+	public function linkLabel($label = null) {
+		$this->view->out($this->getLinkLabel($label));
+	}
+	
+	public function getLinkLabel($label = null) {
+		$this->ensureLinkStarted();
+		
+		if ($label !== null) {
+			return $this->getOut($label);
+		}
+		
+		if (isset($this->linkStartedData['suggestedLabel'])) {
+			return $this->getOut($this->linkStartedData['suggestedLabel']);
+		}
+		
+		if (isset($this->linkStartedData['href'])) { 
+			return $this->getOut($this->meta->buildLinkLabel($this->linkStartedData['href']));
+		}
+		
+		return null;
 	}
 	
 	public function linkEnd() {
@@ -301,12 +319,10 @@ class HtmlBuilder {
 	}
 	
 	public function getLinkEnd() {
-		if ($this->linkStartedTagNameHtml === null) {
-			throw new UiException('No Link started.');
-		}
+		$this->ensureLinkStarted();
 		
-		$raw = new Raw('</' . $this->linkStartedTagNameHtml . '>');
-		$this->linkStartedTagNameHtml = null;
+		$raw = new Raw('</' . $this->linkStartedData['tagNameHtml'] . '>');
+		$this->linkStartedData = null;
 		return $raw;
 	}
 
