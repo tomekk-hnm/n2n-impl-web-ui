@@ -312,6 +312,17 @@ class HtmlBuilderMeta {
 				->extR($request->getCmdPath(), $request->getQuery())
 				->extR($pathExt, $query, $fragment);
 	}
+	
+	public function buildLinkLabel($url, string $label = null) {
+		if (null !== $label) return $label;
+		
+		$url = Url::create($url);
+		if (null !== ($hostName = $url->getAuthority()->getHost())) {
+			return $hostName;
+		}
+		
+		return str_replace(array('http://', 'https://', 'mailto:', 'tel:'), '', $url);
+	}
 }
 
 class HeadBuilderMeta extends BodyBuilderMeta {
