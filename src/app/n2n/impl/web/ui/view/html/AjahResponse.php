@@ -33,7 +33,7 @@ class AjahResponse extends BufferedResponseObject {
 	const CONTENT_KEY = 'content';
 	
 	private $htmlView;
-	private $additionalDataJson;
+	private $additionalAttrs;
 	
 	public function __construct(HtmlView $htmlView, array $additionalAttrs = array())  {
 		$this->htmlView = $htmlView;
@@ -41,7 +41,7 @@ class AjahResponse extends BufferedResponseObject {
 	}
 		
 	public function setAdditionalAttrs(array $additionalAttrs) {
-		$this->additionalDataJson = $additionalAttrs;
+		$this->additionalAttrs = $additionalAttrs;
 	}
 	
 	/* (non-PHPdoc)
@@ -53,7 +53,7 @@ class AjahResponse extends BufferedResponseObject {
 		}
 		
 		$data = array(self::HEAD_KEY => array(), self::BODY_START => array(),
-				self::BODY_END => array(), self::ADDITIONAL_KEY => $this->additionalDataJson,
+				self::BODY_END => array(), self::ADDITIONAL_KEY => $this->additionalAttrs,
 				self::CONTENT_KEY => $this->htmlView->getContents());
 		
 		foreach ($this->htmlView->getHtmlProperties()->fetchUiComponentHtmlSnipplets(HtmlBuilderMeta::getKeys()) 
@@ -67,7 +67,6 @@ class AjahResponse extends BufferedResponseObject {
 					$data[self::HEAD_KEY] = array_merge($data[self::HEAD_KEY], $htmlSnipplets);
 			}
 		}
-		
 		
 		return StringUtils::jsonEncode($data);
 	}
