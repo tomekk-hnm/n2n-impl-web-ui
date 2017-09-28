@@ -29,6 +29,9 @@ use n2n\reflection\ArgUtils;
 use n2n\web\http\Response;
 use n2n\impl\web\dispatch\ui\FormHtmlBuilder;
 use n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder;
+use n2n\web\ui\view\ViewStateListener;
+use n2n\core\module\Module;
+use n2n\web\ui\view\ViewCacheControl;
 
 class HtmlView extends View {
 	private $htmlProperties = null;
@@ -81,24 +84,74 @@ class HtmlView extends View {
 // 		}
 // 		return $view;
 // 	}
+
+	public function getImport($viewNameExpression, array $params = null,
+			ViewCacheControl $viewCacheControl = null, Module $module = null) {
+		$view = parent::getImport($viewNameExpression, $params, $viewCacheControl, $module);
+				
+		if (!($view instanceof HtmlView)) {
+			return $view;
+		}
+
+		if ($view->isInitialized()) {
+			$this->htmlProperties->merge($view->getHtmlProperties());
+			return $view;
+			
+		}
+		
+		$view->getHtmlProperties()->setForm($this->getHtmlProperties()->getForm());
+		$view->registerStateListener(new class($this->htmlProperties, $view) implements ViewStateListener {
+			private $htmlProperties;
+			private $view;
+			
+			public function __construct(HtmlProperties $htmlProperties, HtmlView $view) {
+				$this->htmlProperties = $htmlProperties;
+				$this->view = $view;
+			}
+			/**
+			 * {@inheritDoc}
+			 * @see \n2n\web\ui\view\ViewStateListener::onViewContentsBuffering()
+			 */
+			public function onViewContentsBuffering(\n2n\web\ui\view\View $view) {
+				$this->htmlProperties->merge($this->view->getHtmlProperties());
+			}
+		
+			/**
+			 * {@inheritDoc}
+			 * @see \n2n\web\ui\view\ViewStateListener::viewContentsInitialized()
+			 */
+			public function viewContentsInitialized(\n2n\web\ui\view\View $view) {
+			}
+		
+			/**
+			 * {@inheritDoc}
+			 * @see \n2n\web\ui\view\ViewStateListener::onPanelImport()
+			 */
+			public function onPanelImport(\n2n\web\ui\view\View $view, $panelName) {
+			}
+		
+		});
+		
+		return $view;
+	}
 	
-	public function getOut($uiComponent) {
-		if (!($uiComponent instanceof HtmlView)) {
-			return parent::getOut($uiComponent);
-		}
-		
-		if (!$uiComponent->isInitialized()) {
-			$uiComponent->getHtmlProperties()->setForm($this->getHtmlProperties()->getForm());
-		}
-		
-		$contents = parent::getOut($uiComponent);
-		
-// 		if ($uiComponent->getHtmlProperties() !== $this->getHtmlProperties()) {
-			$this->htmlProperties->merge($uiComponent->getHtmlProperties());
+// 	public function getOut($uiComponent) {
+// 		if (!($uiComponent instanceof HtmlView)) {
+// 			return parent::getOut($uiComponent);
 // 		}
 		
-		return $contents;
-	}
+// 		if (!$uiComponent->isInitialized()) {
+// 			$uiComponent->getHtmlProperties()->setForm($this->getHtmlProperties()->getForm());
+// 		}
+		
+// 		$contents = parent::getOut($uiComponent);
+		
+// // 		if ($uiComponent->getHtmlProperties() !== $this->getHtmlProperties()) {
+// 			$this->htmlProperties->merge($uiComponent->getHtmlProperties());
+// // 		}
+		
+// 		return $contents;
+// 	}
 	
 	public function setHtmlProperties(HtmlProperties $htmlProperties) {
 		$this->htmlProperties = $htmlProperties;
