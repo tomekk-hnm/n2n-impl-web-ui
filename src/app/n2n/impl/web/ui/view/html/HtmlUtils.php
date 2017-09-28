@@ -36,7 +36,9 @@ class HtmlUtils {
 		}
 	}
 	
-	public static function mergeAttrs(array $attrs, array $customAttrs, bool $overwrite = false) {
+	public static function mergeAttrs(array $attrs, array $customAttrs = null, bool $overwrite = false) {
+		if ($customAttrs === null) return $attrs;
+		
 		foreach ($customAttrs as $name => $value) {
 			if (is_numeric($name)) {
 				if (in_array($value, $attrs)) continue;
