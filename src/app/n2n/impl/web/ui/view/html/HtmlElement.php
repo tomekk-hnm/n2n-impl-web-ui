@@ -101,6 +101,10 @@ class HtmlElement implements UiComponent {
 		
 		return $html;
 	}
+	
+	public function getContents() {
+		return $this->__toString();
+	}
 	/**
 	 * 
 	 * @return string
