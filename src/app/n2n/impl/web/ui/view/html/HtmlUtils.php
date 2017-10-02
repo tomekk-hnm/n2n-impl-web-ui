@@ -25,6 +25,7 @@ use n2n\web\ui\UiComponent;
 use n2n\web\ui\UiException;
 use n2n\util\HashUtils;
 use n2n\reflection\ReflectionUtils;
+use n2n\web\ui\BuildContext;
 
 class HtmlUtils {
 	public static function validateCustomAttrs(array $customAttrs, array $reservedAttrNames) {
@@ -58,9 +59,9 @@ class HtmlUtils {
 		return $attrs;
 	}
 	
-	public static function contentsToHtml($contents) {
+	public static function contentsToHtml($contents, BuildContext $buildContext) {
 		if ($contents instanceof UiComponent) {
-			return $contents->getContents();
+			return $contents->build($buildContext);
 		}
 		
 		if (is_object($contents) && !method_exists($contents, '__toString')) {
@@ -78,7 +79,7 @@ class HtmlUtils {
 		} else if (is_scalar($contents)) {
 			$html = htmlspecialchars((string) $contents);
 		} else if ($contents instanceof UiComponent) {
-			return htmlspecialchars($contents->getContents());
+			return htmlspecialchars($contents->build());
 		} else if (is_object($contents) && method_exists($contents, '__toString')) {
 			$html = htmlspecialchars((string) $contents);
 		} else {

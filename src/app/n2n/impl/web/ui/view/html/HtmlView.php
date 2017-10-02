@@ -32,12 +32,15 @@ use n2n\impl\web\dispatch\ui\AriaFormHtmlBuilder;
 use n2n\web\ui\view\ViewStateListener;
 use n2n\core\module\Module;
 use n2n\web\ui\view\ViewCacheControl;
+use n2n\web\ui\BuildContext;
+use n2n\web\ui\SimpleBuildContext;
 
 class HtmlView extends View {
 	private $htmlProperties = null;
 	private $htmlBuilder;
 	private $formHtmlBuilder;
 	private $ariaFormHtmlBuilder;
+	protected $imported = false;
 	
 	/**
 	 * {@inheritDoc}
@@ -51,7 +54,12 @@ class HtmlView extends View {
 	 * {@inheritDoc}
 	 * @see \n2n\web\ui\view\View::compile($contentBuffer)
 	 */
-	protected function compile(OutputBuffer $contentBuffer) {
+	protected function compile(OutputBuffer $contentBuffer, BuildContext $buildContext) {
+		$contextView = null;
+		if (!$this->imported && ($buildContextView = $buildContext->getView()) instanceof HtmlView) {
+			$contextView = $buildContextView;
+		}
+		
 		$this->htmlBuilder = new HtmlBuilder($this, $contentBuffer);
 		$this->formHtmlBuilder = new FormHtmlBuilder($this);
 		$this->ariaFormHtmlBuilder = new AriaFormHtmlBuilder($this);
@@ -65,15 +73,24 @@ class HtmlView extends View {
 			$attrs['response'] = $httpContext->getResponse();
 		}
 		
+		if ($contextView !== null) {
+			$this->getHtmlProperties()->setForm($contextView->getHtmlProperties()->getForm());
+		}
+		
 		$htmlProperties = $this->htmlProperties;
+		$contentsBuildContext = $this->contentsBuildContext;
 		parent::bufferContents($attrs,
-				function (OutputBuffer $contentBuffer) use ($htmlProperties) {
-					$htmlProperties->out($contentBuffer);
+				function (OutputBuffer $contentBuffer) use ($htmlProperties, $contentsBuildContext) {
+					$htmlProperties->out($contentBuffer, $contentsBuildContext);
 				});
 				
 		$this->htmlBuilder = null;
 		$this->formHtmlBuilder = null;
 		$this->ariaFormHtmlBuilder = null;
+		
+		if ($contextView !== null) {
+			$contextView->getHtmlProperties()->merge($this->getHtmlProperties());
+		}
 	} 
 	
 // 	protected function createImportView(string $viewNameExpression, $params = null, 
@@ -89,10 +106,12 @@ class HtmlView extends View {
 			ViewCacheControl $viewCacheControl = null, Module $module = null) {
 		$view = parent::getImport($viewNameExpression, $params, $viewCacheControl, $module);
 				
-		if (!($view instanceof HtmlView)) {
+		if (!($view instanceof HtmlView) || $view->imported) {
 			return $view;
 		}
-
+		
+		$view->imported = true;
+		
 		if ($view->isInitialized()) {
 			$this->htmlProperties->merge($view->getHtmlProperties());
 			return $view;

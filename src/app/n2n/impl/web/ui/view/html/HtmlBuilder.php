@@ -243,9 +243,9 @@ class HtmlBuilder {
 			$label = $this->meta->buildLinkLabel($murl, $suggestedLabel);
 		}
 		
-		$raw = new Raw();
+		$raw = new HtmlSnippet();
 		$raw->append($this->getLinkStart($murl, $attrs, $alternateTagName, $alternateAttrs, $required));
-		$raw->append(HtmlUtils::contentsToHtml($label));
+		$raw->append($label);
 		$raw->append($this->getLinkEnd());
 		
 		return $raw;

@@ -22,6 +22,8 @@
 namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\ui\UiComponent;
+use n2n\web\ui\BuildContext;
+use n2n\web\ui\SimpleBuildContext;
 
 class HtmlElement implements UiComponent {
 	private $tagName;
@@ -56,12 +58,12 @@ class HtmlElement implements UiComponent {
 		return $this->attrs;
 	}
 	
-	public function buildContentHtml() {
+	public function buildContentHtml(BuildContext $buildContext) {
 		if (empty($this->contents)) return null;
 		
 		$contentHtml = '';
 		foreach ($this->contents as $content) {
-			$contentHtml .= HtmlUtils::contentsToHtml($content);	
+			$contentHtml .= HtmlUtils::contentsToHtml($content, $buildContext);	
 		}
 		return $contentHtml;
 	}
@@ -88,10 +90,10 @@ class HtmlElement implements UiComponent {
 		}
 	}
 	
-	public function getContents(): string {
+	public function build(BuildContext $buildContext): string {
 		$html = '<' . htmlspecialchars($this->tagName) . self::buildAttrsHtml($this->attrs);
 		
-		if (null !== ($contentHtml = $this->buildContentHtml())) {
+		if (null !== ($contentHtml = $this->buildContentHtml($buildContext))) {
 			$html .= '>' . $contentHtml . '</' . htmlspecialchars($this->tagName) . '>';
 		} else {
 			$html .= ' />';
@@ -104,7 +106,7 @@ class HtmlElement implements UiComponent {
 	 * @return string
 	 */
 	public function __toString(): string {
-		return $this->getContents();
+		return $this->build(new SimpleBuildContext());
 	}
 	
 	public static function buildAttrsHtml(array $attrs = null) {
