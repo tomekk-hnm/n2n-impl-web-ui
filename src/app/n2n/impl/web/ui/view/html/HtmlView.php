@@ -33,7 +33,6 @@ use n2n\web\ui\view\ViewStateListener;
 use n2n\core\module\Module;
 use n2n\web\ui\view\ViewCacheControl;
 use n2n\web\ui\BuildContext;
-use n2n\web\ui\SimpleBuildContext;
 
 class HtmlView extends View {
 	private $htmlProperties = null;
