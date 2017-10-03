@@ -475,7 +475,7 @@ class HtmlBuilder {
 		$textHtml = (string) $textRaw;
 		foreach ($replacements as $key => $replacement) {
 			$textHtml = str_replace(DynamicTextCollection::REPLACEMENT_PREFIX . $key . DynamicTextCollection::REPLACEMENT_SUFFIX, 
-					HtmlUtils::contentsToHtml($replacement), $textHtml);
+					HtmlUtils::contentsToHtml($replacement, $this->view->getContentsBuildContext()), $textHtml);
 		}
 		return new Raw($textHtml);
 	}
