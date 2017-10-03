@@ -23,6 +23,7 @@ namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\ui\UiComponent;
 use n2n\web\ui\BuildContext;
+use n2n\web\ui\SimpleBuildContext;
 
 class HtmlSnippet implements UiComponent {
 	private $contents = array();
@@ -46,5 +47,13 @@ class HtmlSnippet implements UiComponent {
 			$html .= HtmlUtils::contentsToHtml($content, $buildContext);
 		}
 		return $html;
+	}
+	
+	/**
+	 *
+	 * @return string
+	 */
+	public function __toString(): string {
+		return $this->build(new SimpleBuildContext());
 	}
 }
