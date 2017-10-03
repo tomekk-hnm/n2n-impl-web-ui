@@ -409,7 +409,7 @@ class HtmlBuilder {
 		HtmlUtils::validateCustomAttrs((array) $attrs, array('href'));
 		return new HtmlSnippet(
 				new Raw('<a href="' . $uriHtml . '"' . HtmlElement::buildAttrsHtml($attrs) . '>'),
-				($label !== null ? $label : HtmlUtils::encode($email)),
+				($label !== null ? $label : new Raw(HtmlUtils::encode($email))),
 				new Raw('</a>'));
 	}
 	
