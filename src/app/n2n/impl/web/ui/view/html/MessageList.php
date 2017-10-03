@@ -51,7 +51,7 @@ class MessageList implements UiComponent {
 			}
 			
 			$liElement = new HtmlElement('li', $attrs, $message->__toString());
-			$this->html .= $liElement->build() . "\r\n";
+			$this->html .= $liElement->getContents() . "\r\n";
 		}		
 		$this->html .= '</ul>';
 	}

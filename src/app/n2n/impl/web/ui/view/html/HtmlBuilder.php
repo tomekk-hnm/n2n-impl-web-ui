@@ -407,8 +407,10 @@ class HtmlBuilder {
 	public function getLinkEmail($email, $label = null, array $attrs = null) {
 		$uriHtml = HtmlUtils::encodedEmailUrl($email);
 		HtmlUtils::validateCustomAttrs((array) $attrs, array('href'));
-		return new Raw('<a href="' . $uriHtml . '"' . HtmlElement::buildAttrsHtml($attrs) . '>'
-				. ($label !== null ? HtmlUtils::contentsToHtml($label) : HtmlUtils::encode($email)) . '</a>');
+		return new HtmlSnippet(
+				new Raw('<a href="' . $uriHtml . '"' . HtmlElement::buildAttrsHtml($attrs) . '>'),
+				($label !== null ? $label : HtmlUtils::encode($email)),
+				new Raw('</a>'));
 	}
 	
 	/*
