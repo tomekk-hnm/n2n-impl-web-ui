@@ -24,6 +24,7 @@ namespace n2n\impl\web\ui\view\html;
 use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
+use n2n\web\ui\SimpleBuildContext;
 
 class AjahResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';
@@ -54,7 +55,7 @@ class AjahResponse extends BufferedResponseObject {
 		
 		$data = array(self::HEAD_KEY => array(), self::BODY_START => array(),
 				self::BODY_END => array(), self::ADDITIONAL_KEY => $this->additionalAttrs,
-				self::CONTENT_KEY => $this->htmlView->getContents());
+				self::CONTENT_KEY => $this->htmlView->build(new SimpleBuildContext()));
 		
 		foreach ($this->htmlView->getHtmlProperties()->fetchUiComponentHtmlSnipplets(HtmlBuilderMeta::getKeys()) 
 				as $name => $htmlSnipplets) {

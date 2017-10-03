@@ -26,11 +26,15 @@ use n2n\web\ui\UiComponent;
 use n2n\io\ob\OutputBuffer;
 use n2n\web\ui\ViewStuffFailedException;
 use n2n\impl\web\dispatch\ui\Form;
+use n2n\web\ui\BuildContext;
+use n2n\web\ui\SimpleBuildContext;
 
 class HtmlProperties {	
 	protected $prependedAttributes;
 	protected $attributes;
 	protected $contentHtmlProperties;
+	
+	private $buildContext;
 	private $form;
 	private $libraryHashCodes = array();
 	private $ids = array();
@@ -38,6 +42,7 @@ class HtmlProperties {
 	public function __construct() {
 		$this->prependedAttributes = new Attributes();
 		$this->attributes = new Attributes();
+		$this->buildContext = new SimpleBuildContext();
 	}
 	
 	public function setContentHtmlProperties(HtmlProperties $contentHtmlProperties = null) {
@@ -136,10 +141,10 @@ class HtmlProperties {
 		
 				if (is_array($value)) {
 					foreach ($value as $key => $uiComponent) {
-						$contents[$name][$key] = $uiComponent->getContents();
+						$contents[$name][$key] = $uiComponent->build($this->buildContext);
 					}
 				} else if ($value instanceof UiComponent) {
-					$contents[$name][] = $value->getContents();
+					$contents[$name][] = $value->build($this->buildContext);
 				}
 		
 				$attributes->remove($name);
@@ -158,10 +163,10 @@ class HtmlProperties {
 		
 				if (is_array($value)) {
 					foreach ($value as $uiComponent) {
-						$htmlSnipplets[$name] .= $uiComponent->getContents() . "\r\n";
+						$htmlSnipplets[$name] .= $uiComponent->build($this->buildContext) . "\r\n";
 					}
 				} else if ($value instanceof UiComponent) {
-					$htmlSnipplets[$name] = $value->getContents() . "\r\n";
+					$htmlSnipplets[$name] = $value->build($this->buildContext) . "\r\n";
 				}
 		
 				$attributes->remove($name);
@@ -171,23 +176,23 @@ class HtmlProperties {
 		return $htmlSnipplets;
 	}
 	
-	public function out(OutputBuffer $contentBuffer) {
-		$htmlSnipplets = $this->fetchHtmlSnipplets($contentBuffer->getBreakPointNames());
+	public function out(OutputBuffer $contentBuffer, BuildContext $buildContext) {
+		$htmlSnipplets = $this->fetchHtmlSnipplets($contentBuffer->getBreakPointNames(), $buildContext);
 				
 		foreach ($htmlSnipplets as $name => $htmlSnipplet) {
 			$contentBuffer->insertOnBreakPoint($name, $htmlSnipplets[$name]);
 		}
 	}
 	
-	private function getFirstHtmlSnipplet() {
+	private function getFirstHtmlSnipplet(BuildContext $buildContext) {
 		foreach ($this->getAttributesCollection() as $attributes) {
 			foreach ($attributes->toArray() as $value) {
 				if (is_array($value)) {
 					foreach ($value as $uiComponent) {
-						return $uiComponent->getContents();
+						return $uiComponent->build($buildContext);
 					}
 				} else if ($value instanceof UiComponent) {
-					return $value->getContents();
+					return $value->build($buildContext);
 				}
 			}
 		}
@@ -203,7 +208,7 @@ class HtmlProperties {
 		if ($this->isEmpty()) return;
 			
 		throw new ViewStuffFailedException('Unassigned html property: ' 
-				. $this->getFirstHtmlSnipplet());
+				. $this->getFirstHtmlSnipplet(new SimpleBuildContext()));
 	}
 	
 	public function registerLibrary(Library $library) {

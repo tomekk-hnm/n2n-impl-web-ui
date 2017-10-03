@@ -22,6 +22,7 @@
 namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\ui\UiComponent;
+use n2n\web\ui\BuildContext;
 
 class HtmlSnippet implements UiComponent {
 	private $contents = array();
@@ -39,10 +40,10 @@ class HtmlSnippet implements UiComponent {
 		$this->contents[] = PHP_EOL;
 	}
 	
-	public function getContents(): string {
+	public function build(BuildContext $buildContext): string {
 		$html = '';
 		foreach ($this->contents as $content) {
-			$html .= HtmlUtils::contentsToHtml($content);
+			$html .= HtmlUtils::contentsToHtml($content, $buildContext);
 		}
 		return $html;
 	}

@@ -23,6 +23,8 @@ namespace n2n\impl\web\ui\view\html;
 
 use n2n\l10n\Message;
 use n2n\web\ui\UiComponent;
+use n2n\web\ui\BuildContext;
+use n2n\web\ui\SimpleBuildContext;
 
 class MessageList implements UiComponent {
 	private $messages = array();
@@ -49,7 +51,7 @@ class MessageList implements UiComponent {
 			}
 			
 			$liElement = new HtmlElement('li', $attrs, $message->__toString());
-			$this->html .= $liElement->getContents() . "\r\n";
+			$this->html .= $liElement->build() . "\r\n";
 		}		
 		$this->html .= '</ul>';
 	}
@@ -58,7 +60,14 @@ class MessageList implements UiComponent {
 		return $this->messages;
 	}
 	
-	public function getContents(): string {
+	public function build(BuildContext $buildContext): string {
 		return $this->html;
+	}
+	
+	/**
+	 * @return string
+	 */
+	public function getContents() {
+		return $this->build(new SimpleBuildContext());
 	}
 }
