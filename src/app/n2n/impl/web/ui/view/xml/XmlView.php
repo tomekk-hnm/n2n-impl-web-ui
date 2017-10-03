@@ -24,6 +24,7 @@ namespace n2n\impl\web\ui\view\xml;
 use n2n\web\ui\view\View;
 use n2n\core\N2N;
 use n2n\io\ob\OutputBuffer;
+use n2n\web\ui\BuildContext;
 
 class XmlView extends View {
 
@@ -33,7 +34,7 @@ class XmlView extends View {
 		return 'text/xml; charset=' . N2N::CHARSET;
 	}
 	
-	protected function compile(OutputBuffer $contentBuffer) {
+	protected function compile(OutputBuffer $contentBuffer, BuildContext $buildContext) {
 		$this->xml = new XmlBuilder($this);
 		parent::bufferContents(array('view' => $this, 'request' => $this->getHttpContext()->getRequest(), 
 				'response' => $this->getHttpContext()->getResponse(), 'httpContext' => $this->getHttpContext(),

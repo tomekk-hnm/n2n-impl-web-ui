@@ -23,6 +23,7 @@ namespace n2n\impl\web\ui\view\json;
 
 use n2n\web\ui\view\View;
 use n2n\io\ob\OutputBuffer;
+use n2n\web\ui\BuildContext;
 
 class JsonView extends View {
 	private $jsonBuilder = null;
@@ -33,7 +34,7 @@ class JsonView extends View {
 		return 'application/json';
 	}
 
-	protected function compile(OutputBuffer $contentBuffer) {
+	protected function compile(OutputBuffer $contentBuffer, BuildContext $buildContext) {
 		$this->jsonBuilder = new JsonBuilder($this);
 		parent::bufferContents(array('view' => $this, 'httpContext' => $this->getHttpContext(), 
 				'request' => $this->getHttpContext()->getRequest(), 
