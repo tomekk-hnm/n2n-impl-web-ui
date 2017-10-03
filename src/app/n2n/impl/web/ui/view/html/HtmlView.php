@@ -109,29 +109,27 @@ class HtmlView extends View {
 			return $view;
 		}
 		
-		$view->imported = true;
-		
 		if ($view->isInitialized()) {
 			$this->htmlProperties->merge($view->getHtmlProperties());
-			return $view;
-			
+			return $view;	
 		}
+		
+		$view->imported = true;
 		
 		$view->getHtmlProperties()->setForm($this->getHtmlProperties()->getForm());
 		$view->registerStateListener(new class($this->htmlProperties, $view) implements ViewStateListener {
 			private $htmlProperties;
-			private $view;
+			private $importedView;
 			
-			public function __construct(HtmlProperties $htmlProperties, HtmlView $view) {
+			public function __construct(HtmlProperties $htmlProperties, HtmlView $importedView) {
 				$this->htmlProperties = $htmlProperties;
-				$this->view = $view;
+				$this->importedView = $importedView;
 			}
 			/**
 			 * {@inheritDoc}
 			 * @see \n2n\web\ui\view\ViewStateListener::onViewContentsBuffering()
 			 */
 			public function onViewContentsBuffering(\n2n\web\ui\view\View $view) {
-				$this->htmlProperties->merge($this->view->getHtmlProperties());
 			}
 		
 			/**
@@ -139,6 +137,7 @@ class HtmlView extends View {
 			 * @see \n2n\web\ui\view\ViewStateListener::viewContentsInitialized()
 			 */
 			public function viewContentsInitialized(\n2n\web\ui\view\View $view) {
+				$this->htmlProperties->merge($this->importedView->getHtmlProperties());
 			}
 		
 			/**
