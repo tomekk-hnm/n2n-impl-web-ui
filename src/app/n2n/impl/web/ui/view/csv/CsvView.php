@@ -25,6 +25,7 @@ use n2n\core\N2N;
 use n2n\io\ob\OutputBuffer;
 use n2n\impl\web\ui\view\csv\CsvBuilder;
 use n2n\web\ui\view\View;
+use n2n\web\ui\BuildContext;
 
 class CsvView extends View {
 	private $csvBuilder;
@@ -33,7 +34,7 @@ class CsvView extends View {
 		return 'text/csv; charset=' . N2N::CHARSET;
 	}
 	
-	protected function compile(OutputBuffer $contentBuffer) {
+	protected function compile(OutputBuffer $contentBuffer, BuildContext $buildContext) {
 		$this->csvBuilder = new CsvBuilder($this);
 		
 		$httpContext = $this->getHttpContext();
