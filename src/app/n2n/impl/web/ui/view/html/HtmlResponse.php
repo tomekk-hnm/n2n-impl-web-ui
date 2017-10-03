@@ -23,6 +23,7 @@ namespace n2n\impl\web\ui\view\html;
 
 use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
+use n2n\web\ui\SimpleBuildContext;
 
 class HtmlResponse extends BufferedResponseObject {
 	private $uiComponent;
@@ -36,7 +37,7 @@ class HtmlResponse extends BufferedResponseObject {
 	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
-		return HtmlUtils::contentsToHtml($this->uiComponent);
+		return HtmlUtils::contentsToHtml($this->uiComponent, new SimpleBuildContext());
 	}
 
 	/**
