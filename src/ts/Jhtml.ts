@@ -1,11 +1,6 @@
-import { Browser }  from "./jhtml/Browser" 
-
-class Jhtml {
-	holeradio() {
-		alert("Jhtml holeradio");
+namespace Jhtml {
+	
+	export function holeradio() {
+		new Monitor();
 	}
 }
-
-
-declare let JHtml: JHtml;
-export default JHtml;

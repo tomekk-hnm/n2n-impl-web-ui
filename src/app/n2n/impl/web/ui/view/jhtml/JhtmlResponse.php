@@ -19,7 +19,7 @@
  * Bert Hofmänner.......: Idea, Frontend UI, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\impl\web\ui\view\html;
+namespace n2n\impl\web\ui\view\jhtml;
 
 use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
