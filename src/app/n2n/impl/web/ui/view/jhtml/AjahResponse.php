@@ -19,16 +19,15 @@
  * Bert Hofmänner.......: Idea, Frontend UI, Community Leader, Marketing
  * Thomas Günther.......: Developer, Hangar
  */
-namespace n2n\impl\web\ui\view\html;
+namespace n2n\impl\web\ui\view\jhtml;
 
 use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
 use n2n\web\ui\SimpleBuildContext;
-/**
- * 
- * @deprecated use {@see \n2n\impl\web\ui\view\jhtml\AjahResponse}
- */
+use n2n\impl\web\ui\view\html\HtmlView;
+use n2n\impl\web\ui\view\html\HtmlBuilderMeta;
+
 class AjahResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';
 	const BODY_START_KEY = 'bodyStart';
@@ -56,17 +55,17 @@ class AjahResponse extends BufferedResponseObject {
 			$this->htmlView->initialize();
 		}
 		
-		$data = array(self::HEAD_KEY => array(), self::BODY_START => array(),
-				self::BODY_END => array(), self::ADDITIONAL_KEY => $this->additionalAttrs,
+		$data = array(self::HEAD_KEY => array(), self::BODY_START_KEY => array(),
+				self::BODY_END_KEY => array(), self::ADDITIONAL_KEY => $this->additionalAttrs,
 				self::CONTENT_KEY => $this->htmlView->build(new SimpleBuildContext()));
 		
 		foreach ($this->htmlView->getHtmlProperties()->fetchUiComponentHtmlSnipplets(HtmlBuilderMeta::getKeys()) 
 				as $name => $htmlSnipplets) {
 			switch ($name) {
 				case HtmlBuilderMeta::TARGET_BODY_START:
-					$data[self::BODY_START] = array_merge($data[self::BODY_START], $htmlSnipplets);
+					$data[self::BODY_START_KEY] = array_merge($data[self::BODY_START_KEY], $htmlSnipplets);
 				case HtmlBuilderMeta::TARGET_BODY_END:
-					$data[self::BODY_END] = array_merge($data[self::BODY_END], $htmlSnipplets);
+					$data[self::BODY_END_KEY] = array_merge($data[self::BODY_END_KEY], $htmlSnipplets);
 				default:
 					$data[self::HEAD_KEY] = array_merge($data[self::HEAD_KEY], $htmlSnipplets);
 			}

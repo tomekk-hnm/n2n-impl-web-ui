@@ -1,17 +1,18 @@
 {
 	"compilerOptions": {
-	  "outFile": "../public/assets/n2n-impl-web-ui/js/jhtml.js",
-	  "module": "system",
-	  "sourceMap": true,
-	  "declaration": true,
-	  "emitDecoratorMetadata": true,
-	  "experimentalDecorators": true,
-	  "target": "es5",
-	  "removeComments": true,
-	  "lib": [
-	    "es2017",
-	    "dom"
-	  ]
+		"outFile": "../public/assets/n2n-impl-web-ui/js/jhtml.js",
+		"module": "system",
+		"sourceMap": true,
+		"declaration": true,
+		"emitDecoratorMetadata": true,
+		"experimentalDecorators": true,
+		"target": "es5",
+		"removeComments": true,
+		"lib": [
+	    	"es2017",
+	    	"dom"
+	  	]
 	},
-	"exclude": ["node_modules"]
+	"exclude": ["node_modules"],
+	"compileOnSave": true
 }

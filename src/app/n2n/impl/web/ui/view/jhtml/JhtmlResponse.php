@@ -25,16 +25,20 @@ use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
 use n2n\web\ui\SimpleBuildContext;
+use n2n\impl\web\ui\view\html\HtmlView;
+use n2n\impl\web\ui\view\html\HtmlBuilderMeta;
 
 class JhtmlResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';
-	const BODY_START = 'bodyStart';
-	const BODY_END = 'bodyEnd';
+	const BODY_START_KEY = 'bodyStart';
+	const BODY_END_KEY = 'bodyEnd';
 	const ADDITIONAL_KEY = 'additional';
 	const CONTENT_KEY = 'content';
 	
 	private $htmlView;
 	private $additionalAttrs;
+	
+	private $ajahResponse = null;
 	
 	public function __construct(HtmlView $htmlView, array $additionalAttrs = array())  {
 		$this->htmlView = $htmlView;
@@ -49,33 +53,25 @@ class JhtmlResponse extends BufferedResponseObject {
 	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
-		if (!$this->htmlView->isInitialized()) {
-			$this->htmlView->initialize();
-		}
-		
-		$data = array(self::HEAD_KEY => array(), self::BODY_START => array(),
-				self::BODY_END => array(), self::ADDITIONAL_KEY => $this->additionalAttrs,
-				self::CONTENT_KEY => $this->htmlView->build(new SimpleBuildContext()));
-		
-		foreach ($this->htmlView->getHtmlProperties()->fetchUiComponentHtmlSnipplets(HtmlBuilderMeta::getKeys()) 
-				as $name => $htmlSnipplets) {
-			switch ($name) {
-				case HtmlBuilderMeta::TARGET_BODY_START:
-					$data[self::BODY_START] = array_merge($data[self::BODY_START], $htmlSnipplets);
-				case HtmlBuilderMeta::TARGET_BODY_END:
-					$data[self::BODY_END] = array_merge($data[self::BODY_END], $htmlSnipplets);
-				default:
-					$data[self::HEAD_KEY] = array_merge($data[self::HEAD_KEY], $htmlSnipplets);
-			}
-		}
-		
-		return StringUtils::jsonEncode($data);
+	    if ($this->ajahResponse === null) {
+	        return $this->htmlView->getBufferedContents();
+	    }
+	    
+	    return $this->ajahResponse->getBufferedContents();
 	}
 	/* (non-PHPdoc)
 	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
-		$response->setHeader('Content-Type: application/json');
+	    if ('application/json' == $response->getRequest()->getAcceptRange()
+	               ->bestMatch(['text/html', 'application/json'])) {
+	        $this->ajahResponse = new AjahResponse($this->htmlView);
+	        $this->ajahResponse->prepareForResponse($response);
+	        return;
+	    }
+	    
+	    $this->ajahResponse = null;
+	    $this->htmlView->prepareForResponse($response);
 	}
 	/* (non-PHPdoc)
 	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
