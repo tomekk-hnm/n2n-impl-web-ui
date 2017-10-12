@@ -1,5 +1,7 @@
 namespace Jhtml {
 	export class Browser {
+		public history: History;
+		
         constructor(private window: Window) {
 	        window.addEventListener("popstate", (evt) => this.onPopstate(evt));     
 		}

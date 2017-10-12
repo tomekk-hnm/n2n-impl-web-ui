@@ -11,39 +11,35 @@ namespace Jhtml {
 			xhttp.setRequestHeader("Accept", "application/json");
 			xhttp.send();
 			
-			
 			return new Promise((resolve) =>  {
 				xhttp.onreadystatechange = () => {
 					if (xhttp.readyState != 4) return;
 					
+					let response = new Response(url, xhttp.status, xhttp.responseText);
+					
 					if (xhttp.status == 200) {
-						resolve(this.createResponse(url, xhttp.responseText));
+						this.upgradeResponse(response);
 					};
 					
-					throw new Error(url.toString() + "; Status: " + xhttp.status); 
-					
+					resolve(response);
 				};
+				
 				xhttp.onerror = () => {
-					console.log(xhttp.readyState + " " + xhttp.status);
 					throw new Error("Could not request " + url.toString());
 				}				
 			});
 		}
 		
-		private createResponse(url: Url, responseText: string): Response {
+		private upgradeResponse(response: Response) {
 			try {
-				return new OkResponse(Model.createFromJsonObj(JSON.parse(responseText)));
+				response.ajahDirective = new AjahDirective(Model.createFromJsonObj(JSON.parse(response.text)));
 			} catch (e) {
 				if (e instanceof SyntaxError) {
-			        throw new Error(url + "; no or invalid json: " + e.message);
+			        throw new Error(response.url + "; no or invalid json: " + e.message);
 			    }
 				
 				throw e;
 			}
 		}
-		
-		
 	}
-	
-	
 }

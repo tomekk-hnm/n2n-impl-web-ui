@@ -2,17 +2,15 @@ namespace Jhtml {
     
     export class History {
         private _currentIndex: number
-        private _entries: Array<Response>;
-        private onNewEntryCallbacks: Array<() => any> = [];
+        private _entries: Array<AjahDirective>;
+        private onNewEntryCallbacks: Array<EntryCallback> = [];
         
         constructor() {
             
         }
         
-        
-        
         onNewEntry(callback: EntryCallback) {
-            this.onNewEntry(callback);
+            this.onNewEntryCallbacks.push(callback);
         }
         
         offNewEntry(callback: EntryCallback) {
@@ -26,6 +24,6 @@ namespace Jhtml {
     }
     
     export interface EntryCallback {
-        (index: number, context: Response)
+        (index: number, context: AjahDirective)
     }
 }

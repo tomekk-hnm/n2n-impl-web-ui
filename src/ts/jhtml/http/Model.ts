@@ -1,14 +1,14 @@
 namespace Jhtml {
     
     export class Model {
-    	protected headComplete: boolean = false;
-    	protected headElements: Array<Element> = [];
-    	protected bodyStartElements: Array<Element> = [];
-    	protected bodyEndElements: Array<Element> = [];
+    	public headComplete: boolean = false;
+	    public headElements: Array<Element> = [];
+	    public bodyStartElements: Array<Element> = [];
+	    public bodyEndElements: Array<Element> = [];
     	
-    	protected compElements: { [name: string]: Element } = {} 
+    	public comps: { [name: string]: Comp } = {} 
     	
-    	public static createFromJsonObj(jsonObj: any): Model {
+    	public static createFromJsonObj(jsonObj: any, response): Model {
     		let model = new Model();
     		
     		Model.compileContent(model, jsonObj);
@@ -31,8 +31,13 @@ namespace Jhtml {
 		    let compNodeList = template.querySelectorAll(".jhtml-comp");
 		    for (let i = 0; i < compNodeList.length; i++) {
 		    	let elem: Element = compNodeList.item(i)
+		    	let name: string = elem.getAttribute("data-jhtml-name");
 		    	
-		    	model.compElements[elem.getAttribute("data-jhtml-name") || ""] = elem;
+		    	if (model.comps[name || ""]) {
+		    		throw new SyntaxError("Duplicated comp name: " + name);
+		    	} 
+		    	
+		    	model.comps[name || ""] = new Comp(name, elem, model);
 		    }
 		    
 		    let headElem = template.querySelector("head");
@@ -59,6 +64,11 @@ namespace Jhtml {
     		let templateElem = document.createElement("template");
     		templateElem.innerHTML = elemHtml;
     		return templateElem.firstElementChild;
+    	}
+    }
+    
+    export class Comp {
+    	constructor(public name: string, public element: Element, public model: Model) {
     	}
     }
 }
