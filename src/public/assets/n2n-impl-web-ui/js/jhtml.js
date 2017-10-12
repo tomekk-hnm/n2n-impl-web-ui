@@ -58,35 +58,41 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
-    var Comp = (function () {
-        function Comp(name) {
-            this.name = name;
-        }
-        return Comp;
-    }());
-    Jhtml.Comp = Comp;
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
     var Requester = (function () {
         function Requester() {
         }
         Requester.prototype.exec = function (url) {
+            var _this = this;
             var xhttp = new XMLHttpRequest();
             xhttp.open("GET", url.toString(), true);
             xhttp.setRequestHeader("Accept", "application/json");
             xhttp.send();
-            xhttp.onreadystatechange = function () {
-                if (xhttp.readyState == 4 && xhttp.status == 200) {
-                    alert(xhttp.responseText);
-                    var myArr = JSON.parse(xhttp.responseText);
-                    alert(myArr);
-                }
-                ;
-            };
             return new Promise(function (resolve) {
-                resolve(new Jhtml.Response(url));
+                xhttp.onreadystatechange = function () {
+                    if (xhttp.readyState != 4)
+                        return;
+                    if (xhttp.status == 200) {
+                        resolve(_this.createResponse(url, xhttp.responseText));
+                    }
+                    ;
+                    throw new Error(url.toString() + "; Status: " + xhttp.status);
+                };
+                xhttp.onerror = function () {
+                    console.log(xhttp.readyState + " " + xhttp.status);
+                    throw new Error("Could not request " + url.toString());
+                };
             });
+        };
+        Requester.prototype.createResponse = function (url, responseText) {
+            try {
+                return new OkResponse(Jhtml.Model.createFromJsonObj(JSON.parse(responseText)));
+            }
+            catch (e) {
+                if (e instanceof SyntaxError) {
+                    throw new Error(url + "; no or invalid json: " + e.message);
+                }
+                throw e;
+            }
         };
         return Requester;
     }());
@@ -94,20 +100,38 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
+    interface;
     var Response = (function () {
-        function Response(_url) {
-            this._url = _url;
+        function Response() {
         }
-        Object.defineProperty(Response.prototype, "url", {
-            get: function () {
-                return this._url;
-            },
-            enumerable: true,
-            configurable: true
-        });
         return Response;
     }());
-    Jhtml.Response = Response;
+    var OkResponse = (function () {
+        function OkResponse() {
+        }
+        OkResponse.prototype.getUrl = function () {
+            return this.url;
+        };
+        return OkResponse;
+    }());
+    var ErrResponse = (function () {
+        function ErrResponse(status, responseText) {
+            this.status = status;
+            this.responseText = responseText;
+        }
+        return ErrResponse;
+    }());
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var ResponseFactory = (function () {
+        function ResponseFactory() {
+        }
+        ResponseFactory.createResponse = function (url, jsonObj) {
+        };
+        return ResponseFactory;
+    }());
+    Jhtml.ResponseFactory = ResponseFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -149,5 +173,61 @@ var Jhtml;
         return Url;
     }());
     Jhtml.Url = Url;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Model = (function () {
+        function Model() {
+            this.headComplete = false;
+            this.headElements = [];
+            this.bodyStartElements = [];
+            this.bodyEndElements = [];
+            this.compElements = {};
+        }
+        Model.createFromJsonObj = function (jsonObj) {
+            var model = new Model();
+            Model.compileContent(model, jsonObj);
+            Model.compileElements(model.headElements, "head", jsonObj);
+            Model.compileElements(model.bodyStartElements, "bodyStart", jsonObj);
+            Model.compileElements(model.bodyEndElements, "bodyEnd", jsonObj);
+            return model;
+        };
+        Model.compileContent = function (model, jsonObj) {
+            if (typeof jsonObj.content != "string") {
+                throw new SyntaxError("Missing or invalid property 'content'.");
+            }
+            var template = document.createElement('template');
+            template.innerHTML = jsonObj.content;
+            var compNodeList = template.querySelectorAll(".jhtml-comp");
+            for (var i = 0; i < compNodeList.length; i++) {
+                var elem = compNodeList.item(i);
+                model.compElements[elem.getAttribute("data-jhtml-name") || ""] = elem;
+            }
+            var headElem = template.querySelector("head");
+            if (!headElem) {
+                model.headComplete = true;
+                var elemList = headElem.children;
+                for (var i in elemList) {
+                    model.headElements.push(elemList[i]);
+                }
+            }
+        };
+        Model.compileElements = function (elements, name, jsonObj) {
+            if (!(jsonObj[name] instanceof Array)) {
+                throw new SyntaxError("Missing or invalid property '" + name + "'.");
+            }
+            for (var _i = 0, _a = jsonObj.head; _i < _a.length; _i++) {
+                var elemHtml = _a[_i];
+                elements.push(Model.createElement(elemHtml));
+            }
+        };
+        Model.createElement = function (elemHtml) {
+            var templateElem = document.createElement("template");
+            templateElem.innerHTML = elemHtml;
+            return templateElem.firstElementChild;
+        };
+        return Model;
+    }());
+    Jhtml.Model = Model;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

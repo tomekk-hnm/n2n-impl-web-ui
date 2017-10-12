@@ -27,22 +27,17 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
-    class Comp {
-        name: string;
-        constructor(name: string);
-    }
-}
-declare namespace Jhtml {
     class Requester {
         constructor();
         exec(url: Url): Promise<Response>;
+        private createResponse(url, responseText);
     }
 }
 declare namespace Jhtml {
-    class Response {
-        private _url;
-        constructor(_url: Jhtml.Url);
-        readonly url: Jhtml.Url;
+}
+declare namespace Jhtml {
+    class ResponseFactory {
+        static createResponse(url: Url, jsonObj: any): Response;
     }
 }
 declare namespace Jhtml {
@@ -54,5 +49,20 @@ declare namespace Jhtml {
         extR(pathExt: string): Url;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;
+    }
+}
+declare namespace Jhtml {
+    class Model {
+        protected headComplete: boolean;
+        protected headElements: Array<Element>;
+        protected bodyStartElements: Array<Element>;
+        protected bodyEndElements: Array<Element>;
+        protected compElements: {
+            [name: string]: Element;
+        };
+        static createFromJsonObj(jsonObj: any): Model;
+        private static compileContent(model, jsonObj);
+        private static compileElements(elements, name, jsonObj);
+        private static createElement(elemHtml);
     }
 }
