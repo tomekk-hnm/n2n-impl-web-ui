@@ -48,20 +48,22 @@ namespace Jhtml {
 			this.readyCallbacks.off(readyCallback);
 		}
 		
+		private static KEY: string = "data-jhtml-context";
+		
 		static test(document: Document): Context|null {
-			let content: any = document.body['data-jhtml-content'].jhtmlContent;
-			if (content instanceof Context) {
-				return content;
+			let context: any = Util.getElemData(document.body, Context.KEY);
+			if (context instanceof Context) {
+				return context;
 			}
 			return null;
 		}
 		
 		static from(document: Document): Context {
-			let content = Context.test(document)
-			if (content) return content;
+			let context = Context.test(document)
+			if (context) return context;
 			
-			document.body['data-jhtml-content'] = content = new Context(document);
-			return content;
+			Util.bindElemData(document.body, Context.KEY, context = new Context(document));
+			return context;
 		}
 	}
 	

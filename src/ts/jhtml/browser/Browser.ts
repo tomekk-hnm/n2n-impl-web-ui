@@ -1,39 +1,51 @@
 namespace Jhtml {
 	export class Browser {
-		public history: History;
-		
-        constructor(private window: Window) {
-	        window.addEventListener("popstate", (evt) => this.onPopstate(evt));     
+        constructor(private window: Window, private history: History) {
+	        this.window.addEventListener("popstate", (evt) => this.onPopstate(evt));
+	        
+	        history.onPush((entry: History.Entry) => {
+	        	this.onPush(entry);
+	        });
+	        
+	        history.onChanged(() => {
+	        	this.onChanged();
+	        });
 		}
         
         private onPopstate(evt) {
-//            if (!this.window.history.state) {
-//                layer.go(0, this.window.location.href);
-//                return;
-//            }
-//            
-//            if (history.state.type != "rocketContext" || history.state.level != 0) {
-//                return;
-//            }
-//            
-//            if (!layer.go(history.state.historyIndex, history.state.url)) {
-////            history.back();
-//            }
+        	let url: Url = Url.create(this.window.location.href);
+        	let index: number = 0;
+        
+            if (this.window.history.state && this.window.history.state.historyIndex) {
+            	 index = this.window.history.state.historyIndex;
+            }
+            
+            try {
+        		this.history.go(index, url);
+        	} catch (e) {
+        		this.window.location.href = url.toString();
+        	}
         }
         
-        private afsd() {
-//            var stateObj = { 
-//                "type": "rocketContext",
-//                "level": layer.level,
-//                "url": url,
-//                "historyIndex": historyIndex
-//            };
-//            history.pushState(stateObj, "seite 2", url.toString());
+        private onChanged() {
+        	let entry: History.Entry = this.history.currentEntry;
+        	if (entry.browserHistoryIndex !== undefined) {
+        		this.window.history.go(entry.browserHistoryIndex);
+        		return;
+        	}
+        	
+        	this.window.location.href = entry.page.url.toString();
         }
         
-	}
-	
-	class StateObj {
-	    
+        private onPush(entry: History.Entry) {
+        	entry.browserHistoryIndex = this.window.history.length;
+        	
+        	let urlStr = entry.page.url.toString();
+        	let stateObj = {
+        		"url": urlStr,
+				"historyIndex": entry.index
+        	};
+            this.window.history.pushState(stateObj, "Page", urlStr);
+        }
 	}
 }

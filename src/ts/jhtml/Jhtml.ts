@@ -14,8 +14,7 @@ namespace Jhtml {
 		
 		if (!containerElem) return null;
 		
-		browser = new Browser(window);
-		browser.history = Monitor.from(containerElem).history;
+		browser = new Browser(window, Monitor.from(containerElem).history);
 		
 		return browser;
 	}
