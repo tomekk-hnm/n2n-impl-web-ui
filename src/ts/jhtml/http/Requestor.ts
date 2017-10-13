@@ -1,5 +1,5 @@
 namespace Jhtml {
-	export class Requester {
+	export class Requestor {
 		
 		constructor() {
 			

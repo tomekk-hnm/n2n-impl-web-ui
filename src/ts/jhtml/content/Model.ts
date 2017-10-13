@@ -8,7 +8,7 @@ namespace Jhtml {
     	
     	public comps: { [name: string]: Comp } = {} 
     	
-    	public static createFromJsonObj(jsonObj: any, response): Model {
+    	public static createFromJsonObj(jsonObj: any): Model {
     		let model = new Model();
     		
     		Model.compileContent(model, jsonObj);
