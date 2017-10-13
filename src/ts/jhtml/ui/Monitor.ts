@@ -1,9 +1,13 @@
 namespace Jhtml {
 	
 	export class Monitor {
+		public context: Context;
+		public history: History;
 		public requestor: Requestor;
 		
-		constructor(private container: Element, public history: History) {
+		constructor(private container: Element) {
+			this.context = Context.from(container.ownerDocument);
+			this.history = new History();
 			this.requestor = new Requestor();
 		}
 		
@@ -34,8 +38,10 @@ namespace Jhtml {
 			return page.promise;
 		}
 		
-		scan() {
-			
+		insert(promise: Promise<Response>) {
+			promise.then((response: Response) => {
+				alert();
+			});
 		}
 		
 		private static readonly KEY: string = "jhtml-monitor";
@@ -62,14 +68,14 @@ namespace Jhtml {
 			return null;
 		}
 		
-		static create(container: Element, history: History): Monitor {
-			if (Monitor.test(container)) {
-				throw new Error("Monitor for this element already defined.");
-			}
+		static from(container: Element): Monitor {
+			let monitor = Monitor.test(container);
+			
+			if (monitor) return monitor;
 			
 			container.classList.add(Monitor.CSS_CLASS);
 			
-			let monitor = new Monitor(container, history);
+			monitor = new Monitor(container);
 			Util.bindElemData(container, Monitor.KEY, monitor);
 			
 			return monitor;

@@ -1,13 +1,19 @@
 namespace Jhtml {
 	
 	export class Context {
-		private updater: Updater;
+		private manager: ContentManager;
+		private containerElem: Element;
 		private compHandlers: { [compName: string]: CompHandler } = {};
-		private readyCallbacks: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>(); 
+		private readyCallbacks: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
+		
 		public monitor: Monitor = null;
 		
-		constructor(private document: Document) {
-			this.updater = new Updater(document);
+		constructor(document: Document) {
+			this.manager = new ContentManager(document);
+		}
+		
+		get contentManager(): ContentManager {
+			return this.contentManager;
 		}
 		
 		handle(model: Model) {
@@ -33,13 +39,9 @@ namespace Jhtml {
 		onReady(readyCallback: ReadyCallback) {
 			this.readyCallbacks.on(readyCallback);
 			
-			if (this.document.readyState === "complete") {
-				readyCallback(this.document.body.childNodes);
-			} else {
-				this.document.addEventListener( "DOMContentLoaded", () => {
-					readyCallback(this.document.body.childNodes);
-				}, false );
-			}
+			this.manager.onDocumentReady(() => {
+				readyCallback(this.manager.document.body.childNodes);
+			});
 		}
 		
 		offReady(readyCallback: ReadyCallback) {

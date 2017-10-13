@@ -1,7 +1,31 @@
 namespace Jhtml {
 	
-	export class Updater {
-		constructor(private document: Document) {
+	export class ContentManager {
+		private CONTAINER_CSS_CLASS: string = "jhtml-container"
+			
+		private _containerElem: Element;
+	
+		constructor(public _document: Document) {
+		}
+		
+		get document(): Document {
+			return this._document;
+		}
+		
+		get containerElem(): Element {
+			if (!this._containerElem) {
+				this._containerElem = this._document.querySelector("." + this.CONTAINER_CSS_CLASS);
+			}
+			
+			return this._containerElem || null;
+		}
+		
+		onDocumentReady(callback: () => any) {
+			if (this._document.readyState === "complete") {
+				callback();
+			} else {
+				this._document.addEventListener("DOMContentLoaded", callback, false);
+			}
 		}
 		
 		apply(model: Model) {
@@ -34,8 +58,8 @@ namespace Jhtml {
 			for (let elem of newElems) {
 				switch (elem.tagName) {
 				case "SCRIPT":
-					if (!this.find(this.document, elem, ["src", "type"], true, false)) {
-						this.document.body.appendChild(elem);
+					if (!this.find(this._document, elem, ["src", "type"], true, false)) {
+						this._document.body.appendChild(elem);
 					}
 					break;
 				case "TITLE":
@@ -52,7 +76,7 @@ namespace Jhtml {
 				default:
 					{
 						let oldElem: Element = null;
-						if (oldElem = this.findExact(this.document, elem)) {
+						if (oldElem = this.findExact(this._document, elem)) {
 							oldElem.parentElement.replaceChild(elem, oldElem);
 						}
 						container.appendChild(elem);
