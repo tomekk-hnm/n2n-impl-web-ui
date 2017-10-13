@@ -4,6 +4,7 @@ namespace Jhtml {
 		private updater: Updater;
 		private compHandlers: { [compName: string]: CompHandler } = {};
 		private readyCallbacks: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>(); 
+		public monitor: Monitor = null;
 		
 		constructor(private document: Document) {
 			this.updater = new Updater(document);

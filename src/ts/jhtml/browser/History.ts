@@ -6,9 +6,6 @@ namespace Jhtml {
         private changedCbr = new Util.CallbackRegistry<() => any>();
         private newPageCbr = new Util.CallbackRegistry<PageCallback>();
         
-        constructor(public context: Context) {
-        }
-        
         get currentPage(): Page {
         	if (this._pages[this._currentIndex]) {
         		return this._pages[this._currentIndex];
@@ -54,10 +51,25 @@ namespace Jhtml {
         	}
         	
         	this._currentIndex = index;
+        	this.changedCbr.trigger();
         }
         
-        push(url: Url) {
+        push(page: Page) {
+        	let sPage = this.getPageByUrl(page.url);
+        	if (sPage && sPage !== page) {
+        		throw new Error("Page with same url already registered.");
+        	}
         	
+        	let nextI = this._currentIndex + 1;
+        	for (let i = nextI; i < this._pages.length; i++) {
+        		this._pages[i].dispose();
+        	}
+        	this._pages.splice(nextI);
+        	
+        	this._currentIndex = this._pages.length;
+        	this._pages.push(page);
+        	
+        	this.changedCbr.trigger();
         }
     }
     

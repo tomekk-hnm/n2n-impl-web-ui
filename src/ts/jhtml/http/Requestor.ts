@@ -26,7 +26,7 @@ namespace Jhtml {
 				
 				xhttp.onerror = () => {
 					throw new Error("Could not request " + url.toString());
-				}				
+				};			
 			});
 		}
 		
