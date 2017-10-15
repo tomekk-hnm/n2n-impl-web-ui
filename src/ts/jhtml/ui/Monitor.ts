@@ -3,15 +3,13 @@ namespace Jhtml {
 	export class Monitor {
 		public context: Context;
 		public history: History;
-		public requestor: Requestor;
 		
 		constructor(private container: Element) {
 			this.context = Context.from(container.ownerDocument);
 			this.history = new History();
-			this.requestor = new Requestor();
 		}
 		
-		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Response> {
+		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Directive> {
 			let url = Url.create(urlExpr);
 			let config = FullRequestConfig.from(requestConfig);
 			
@@ -19,28 +17,30 @@ namespace Jhtml {
 			
 			if (!config.forceReload && page) {
 				if (!page.disposed) {
-					page.promise = this.requestor.exec(url);
+					page.promise = this.context.requestor.lookupDirective(url);
 				}
 				
 				if (config.pushToHistory && page !== this.history.currentPage) {
 					this.history.push(page);
 				}
 				
+				this.dingsel(page.promise);
 				return page.promise;
 			}
 			
-			page = new Page(url, this.requestor.exec(url));
+			page = new Page(url, this.context.requestor.lookupDirective(url));
 			
 			if (config.pushToHistory) {
 				this.history.push(page);
 			}
 			
+			this.dingsel(page.promise);
 			return page.promise;
 		}
 		
-		insert(promise: Promise<Response>) {
-			promise.then((response: Response) => {
-				alert();
+		private dingsel(promise: Promise<Directive>) {
+			promise.then((directive: Directive) => {
+				directive.exec(this.context, this.history);
 			});
 		}
 		

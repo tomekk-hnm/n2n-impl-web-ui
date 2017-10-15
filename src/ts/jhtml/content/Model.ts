@@ -6,6 +6,7 @@ namespace Jhtml {
 	    public bodyStartElements: Array<Element> = [];
 	    public bodyEndElements: Array<Element> = [];
     	
+    	public containerElem: Element;
     	public comps: { [name: string]: Comp } = {} 
     	
     	public static createFromJsonObj(jsonObj: any): Model {
@@ -20,15 +21,19 @@ namespace Jhtml {
     		return model;
     	}
     	
-    	private static compileContent(model: Model, jsonObj: any) {
-    		if (typeof jsonObj.content != "string") {
-				throw new SyntaxError("Missing or invalid property 'content'.");
-			}
-    		
+    	public static createFromHtml(htmlStr: string): Model {
+    		let model = new Model();
+    		Model.compileContent(model, htmlStr);
+    		return model;
+    	}
+    	
+    	private static compileContent(model: Model, htmlStr: string) {
     		var template = document.createElement('template');
-		    template.innerHTML = jsonObj.content;
+		    template.innerHTML = htmlStr;
 		    
-		    let compNodeList = template.querySelectorAll(".jhtml-comp");
+		    model.containerElem = template.querySelector(".jhtml-container");
+		    
+		    let compNodeList = template.querySelectorAll(".jhtml-container .jhtml-comp");
 		    for (let i = 0; i < compNodeList.length; i++) {
 		    	let elem: Element = compNodeList.item(i)
 		    	let name: string = elem.getAttribute("data-jhtml-name");
@@ -48,6 +53,14 @@ namespace Jhtml {
 		    		model.headElements.push(elemList[i]);
 		    	}
 		    }
+    	} 
+    	
+    	private static compileJsonContent(model: Model, jsonObj: any) {
+    		if (typeof jsonObj.content != "string") {
+				throw new SyntaxError("Missing or invalid property 'content'.");
+			}
+    		
+    		Model.compileContent(model, jsonObj.content);
     	}
     	
     	private static compileElements(elements: Array<Element>, name: string, jsonObj: any) {

@@ -1,16 +1,20 @@
 namespace Jhtml {
 	export class Browser {
-        constructor(private window: Window, private history: History) {
+        constructor(private window: Window, private _history: History) {
 	        this.window.addEventListener("popstate", (evt) => this.onPopstate(evt));
 	        
-	        history.onPush((entry: History.Entry) => {
+	        _history.onPush((entry: History.Entry) => {
 	        	this.onPush(entry);
 	        });
 	        
-	        history.onChanged(() => {
+	        _history.onChanged(() => {
 	        	this.onChanged();
 	        });
 		}
+        
+        get history(): History {
+        	return this._history;
+        }
         
         private onPopstate(evt) {
         	let url: Url = Url.create(this.window.location.href);
@@ -21,14 +25,14 @@ namespace Jhtml {
             }
             
             try {
-        		this.history.go(index, url);
+        		this._history.go(index, url);
         	} catch (e) {
         		this.window.location.href = url.toString();
         	}
         }
         
         private onChanged() {
-        	let entry: History.Entry = this.history.currentEntry;
+        	let entry: History.Entry = this._history.currentEntry;
         	if (entry.browserHistoryIndex !== undefined) {
         		this.window.history.go(entry.browserHistoryIndex);
         		return;

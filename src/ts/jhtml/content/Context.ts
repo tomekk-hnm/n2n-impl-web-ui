@@ -2,18 +2,24 @@ namespace Jhtml {
 	
 	export class Context {
 		private manager: ContentManager;
+		private _requestor: Requestor;
+	
 		private containerElem: Element;
 		private compHandlers: { [compName: string]: CompHandler } = {};
 		private readyCallbacks: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
 		
-		public monitor: Monitor = null;
 		
 		constructor(document: Document) {
 			this.manager = new ContentManager(document);
+			this._requestor = new Requestor();
 		}
 		
 		get contentManager(): ContentManager {
-			return this.contentManager;
+			return this.manager;
+		}
+		
+		get requestor(): Requestor {
+			return this._requestor;
 		}
 		
 		handle(model: Model) {
