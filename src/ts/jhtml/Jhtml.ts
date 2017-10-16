@@ -5,6 +5,7 @@ namespace Jhtml {
 	}
 	
 	let browser: Browser = null;
+	let monitor: Monitor = null;
 	
 	export function getOrCreateBrowser(): Browser {
 		if (browser) return browser;
@@ -14,9 +15,15 @@ namespace Jhtml {
 		
 		if (!containerElem) return null;
 		
-		browser = new Browser(window, Monitor.from(containerElem).history);
+		monitor = Monitor.from(containerElem);
+		browser = new Browser(window, monitor.history);
 		
 		return browser;
+	}
+	
+	export function getOrCreateMonitor(): Monitor {
+		getOrCreateBrowser();
+		return monitor;
 	}
 	
 	export function getOrCreateContext(document?: Document): Context {

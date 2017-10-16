@@ -34,6 +34,13 @@ namespace Jhtml {
 			}
 		}
 		
+		replace(text: string, mimeType: string, replace: boolean) {
+			let document = this.manager.document;
+			document.open(mimeType, replace? "replace" : null);
+			document.write(text);
+			document.close();
+		}
+		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
 			this.compHandlers[compName] = compHandler;
 		}

@@ -28,6 +28,10 @@ namespace Jhtml {
 			}
 		}
 		
+		replaceDocument(url: Urltext: string) {
+			this._document.open(url, name, features, replace)
+		}
+		
 		apply(model: Model) {
 			if (model.headComplete) {
 				this.clearHead();
