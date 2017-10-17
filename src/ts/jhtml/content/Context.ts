@@ -1,7 +1,7 @@
 namespace Jhtml {
 	
 	export class Context {
-		private manager: ContentManager;
+		private manager: DocumentManager;
 		private _requestor: Requestor;
 	
 		private containerElem: Element;
@@ -10,11 +10,11 @@ namespace Jhtml {
 		
 		
 		constructor(document: Document) {
-			this.manager = new ContentManager(document);
+			this.manager = new DocumentManager(document);
 			this._requestor = new Requestor();
 		}
 		
-		get contentManager(): ContentManager {
+		get contentManager(): DocumentManager {
 			return this.manager;
 		}
 		

@@ -9,6 +9,9 @@ namespace Jhtml {
     	public containerElem: Element;
     	public comps: { [name: string]: Comp } = {} 
     	
+    	public static readonly CONTAINER_ATTR: string = "data-jhtml-container";
+    	public static readonly COMP_ATTR: string = "data-jhtml-comp";
+    	
     	public static createFromJsonObj(jsonObj: any): Model {
     		let model = new Model();
     		
@@ -19,6 +22,10 @@ namespace Jhtml {
     		Model.compileElements(model.bodyEndElements, "bodyEnd", jsonObj);
 			
     		return model;
+    	}
+    	    	
+    	public static createFromDocument(document: Document): Model {
+    		return Model.createFromHtml(document.documentElement.innerHTML);
     	}
     	
     	public static createFromHtml(htmlStr: string): Model {
@@ -31,18 +38,36 @@ namespace Jhtml {
     		var template = document.createElement('template');
 		    template.innerHTML = htmlStr;
 		    
-		    model.containerElem = template.querySelector(".jhtml-container");
-		    
-		    let compNodeList = template.querySelectorAll(".jhtml-container .jhtml-comp");
+		    for (let i in template.children) {
+		    	let elem = template.children[i];
+		    	let containerElem = elem.querySelector("[" + Model.CONTAINER_ATTR + "]");
+		    	
+		    	if (containerElem) {
+		    		if (model.containerElem) {
+		    			throw new SyntaxError("Multiple container elments detected.");
+		    		}	
+		    		
+		    		model.containerElem = containerElem;
+		    		continue;
+		    	}
+		    	
+		    	if (model.containerElem) {
+		    		model.bodyStartElements.push(elem);
+		    	} else {
+		    		model.bodyEndElements.push(elem);
+		    	}
+		    }
+		    		    
+		    let compNodeList = template.querySelectorAll("[" + Model.CONTAINER_ATTR + "] [" + Model.COMP_ATTR + "]");
 		    for (let i = 0; i < compNodeList.length; i++) {
 		    	let elem: Element = compNodeList.item(i)
-		    	let name: string = elem.getAttribute("data-jhtml-name");
+		    	let name: string = elem.getAttribute(Model.COMP_ATTR);
 		    	
-		    	if (model.comps[name || ""]) {
+		    	if (model.comps[name]) {
 		    		throw new SyntaxError("Duplicated comp name: " + name);
-		    	} 
+		    	}
 		    	
-		    	model.comps[name || ""] = new Comp(name, elem, model);
+		    	model.comps[name] = new Comp(name, elem, model);
 		    }
 		    
 		    let headElem = template.querySelector("head");

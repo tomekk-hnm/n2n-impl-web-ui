@@ -1,7 +1,7 @@
 namespace Jhtml {
 	
-	export class ContentManager {
-		private CONTAINER_CSS_CLASS: string = "jhtml-container"
+	export class DocumentManager {
+		private CONTAINER_ATTR: string = "data-jhtml-container"
 			
 		private _containerElem: Element;
 	
@@ -14,7 +14,7 @@ namespace Jhtml {
 		
 		get containerElem(): Element {
 			if (!this._containerElem) {
-				this._containerElem = this._document.querySelector("." + this.CONTAINER_CSS_CLASS);
+				this._containerElem = this._document.querySelector("[" + this.CONTAINER_ATTR + "]");
 			}
 			
 			return this._containerElem || null;
@@ -28,9 +28,9 @@ namespace Jhtml {
 			}
 		}
 		
-		replaceDocument(url: Urltext: string) {
-			this._document.open(url, name, features, replace)
-		}
+//		replaceDocument(url: Url, text: string) {
+//			this._document.open(url, name, features, replace)
+//		}
 		
 		apply(model: Model) {
 			if (model.headComplete) {
