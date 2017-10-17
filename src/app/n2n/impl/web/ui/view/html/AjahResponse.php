@@ -31,8 +31,8 @@ use n2n\web\ui\SimpleBuildContext;
  */
 class AjahResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';
-	const BODY_START_KEY = 'bodyStart';
-	const BODY_END_KEY = 'bodyEnd';
+	const BODY_START = 'bodyStart';
+	const BODY_END = 'bodyEnd';
 	const ADDITIONAL_KEY = 'additional';
 	const CONTENT_KEY = 'content';
 	
