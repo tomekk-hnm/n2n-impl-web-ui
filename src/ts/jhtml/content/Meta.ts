@@ -1,14 +1,17 @@
 namespace Jhtml {
+	
+	
+	
     export class Meta {
     	public headElem: Element;
     	public bodyElem: Element;
 		public containerElem: Element;
     
-    	public headElements: Array<Element> = [];
-	    public bodyStartElements: Array<Element> = [];
-	    public bodyEndElements: Array<Element> = [];
-    
     	constructor(public rootElem: Element) {
+    	}
+    	
+    	getHeadElements(): Array<Element> {
+    		
     	}
     
 //    	private cloneElements(from: Array<Element>, to: Array<Element>) {
@@ -17,42 +20,91 @@ namespace Jhtml {
 //    		}
 //    	}
     	
-		private import(newMeta: Meta) {
-			let mergedElems: Array<Element> = [];
+    	private mergedHeadElems: Array<Element>;
+    	private mergedBodyElems: Array<Element>;
+    	private mergedContainerElem: Element;
+    	private newMeta: Meta;
+    	
+		public replaceWith(newMeta: Meta) {
+			this.mergedHeadElems = [];
+			this.mergedBodyElems = [];
+			this.newMeta = newMeta;
 		
-			for (let newElem of newMeta.headElements) {
-				this.mergeElem(newElem, Meta.Target.HEAD);
+			for (let newElem of newMeta.getHeadElements()) {
+				this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
+			}
+			
+			for (let newElem of newMeta.getBodyElements()) {
+				this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
+			}
+
+			this.clean(this.headElem);
+			this.clean(this.bodyElem);
+			
+			for (let elem of this.mergedHeadElems) {
+				this.headElem.appendChild(elem);
+			}
+			
+			for (let elem of this.mergedBodyElems) {
+				this.headElem.appendChild(elem);
+			}
+			
+			this.mergedHeadElems = null;
+			this.mergedBodyElems = null;
+			this.newMeta = null;
+		}			
+		
+		private clean(metaElem: Element) {
+			let list = metaElem.children;
+			for (let i in list) {
+				let elem = list[i];
+				
+				if (elem.tagName == "SCRIPT" || -1 < this.mergedHeadElems.indexOf(elem) 
+						|| -1 < this.mergedBodyElems.indexOf(elem)) {
+					continue;
+				}
+				
+				let scriptElemList = elem.querySelectorAll("script");
+				for (let i in scriptElemList) {
+					metaElem.insertBefore(scriptElemList[i], elem);
+				}
+				metaElem.removeChild(elem);
 			}
 		}
-			
-		private mergeElem(newElem: Element, target: Meta.Target) {
-			switch (newElem.tagName) {
-				case "SCRIPT":
-					for (let curElem of this.find(newElem, ["src", "type"], true, false)) {
-						return curElem;
-					}
-					return <Element> newElem.cloneNode();
-				case "STYLE":
-				case "LINK":
-					for (let curElem of this.findExact(newElem)) {
-						return curElem;
-					}
-					return <Element> newElem.cloneNode();
-				default:
-					for (let curElem of this.findExact(newElem, target)) {
-						return curElem;
-					}
-				
+		
+		private mergeElem(newElem: Element, target: Meta.Target): Element {
+			if (newElem === this.newMeta.containerElem) {
+				return this.mergedContainerElem = <Element> newElem.cloneNode(false);
 			}
-    		
+			
+			if (!newElem.contains(this.newMeta.containerElem)) {
+				switch (newElem.tagName) {
+					case "SCRIPT":
+						for (let curElem of this.find(newElem, ["src", "type"], true, false)) {
+							return curElem;
+						}
+						return <Element> newElem.cloneNode();
+					case "STYLE":
+					case "LINK":
+						for (let curElem of this.findExact(newElem)) {
+							return curElem;
+						}
+						return <Element> newElem.cloneNode();
+					default:
+						for (let curElem of this.findExact(newElem, target)) {
+							return curElem;
+						}
+					
+				}
+			}
+			
     		let mergedElem = newElem.cloneNode(false);
-    
     		for (let i in newElem.children) {
     			mergedElem.appendChild(this.mergeElem(newElem.children[i], target));
     		}
 		}
     	
-		findExact(matchingElem: Element, 
+		private findExact(matchingElem: Element, 
 				target: Meta.Target = Meta.Target.HEAD|Meta.Target.BODY): Array<Element> {
 			let attrNames: Array<string> = [];
 			let attrs = matchingElem.attributes;
@@ -63,51 +115,41 @@ namespace Jhtml {
 			return this.find(matchingElem, attrNames, true, true, target);
 		}
 		
-		public find(matchingElem: Element, matchingAttrNames: Array<string>, checkInner: boolean, 
+		private find(matchingElem: Element, matchingAttrNames: Array<string>, checkInner: boolean, 
 				checkAttrNum: boolean, target: Meta.Target = Meta.Target.HEAD|Meta.Target.BODY): Array<Element> {
-			let foundElems: Array<Element> = [];
+			let foundElem = null;
 			
-			if (target & Meta.Target.HEAD) {
-				for (let elem of this.filter(this.headElements, matchingElem, matchingAttrNames, checkInner, checkAttrNum)) {
-					foundElems.push(elem);
-				}
+			if ((target & Meta.Target.HEAD) 
+					&& (foundElem = this.filter(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+				return foundElem;
 			}
 			
-			if (target & Meta.Target.BODY) {
-				for (let elem of this.filter(this.bodyStartElements, matchingElem, matchingAttrNames, checkInner, checkAttrNum)) {
-					foundElems.push(elem);
-				}
-				
-				for (let elem of this.filter(this.bodyEndElements, matchingElem, matchingAttrNames, checkInner, checkAttrNum)) {
-					foundElems.push(elem);
-				}
+			if ((target & Meta.Target.BODY) 
+					&& (foundElem = this.filter(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+				return foundElem;
 			}
 			
-			return foundElems;
+			return null;
 		}
     	
-    	private filter(elements: Array<Element>, matchingElem: Element, matchingAttrNames: Array<string>,
-    				checkInner: boolean, chekAttrNum: boolean): Array<Element> {
-    		
-    		let tagElems: Array<Element> = [];
-    		for (let element of elements) {
-	    		if (element.tagName == matchingElem.tagName) {
-	    			tagElems.push(element);
-	    			
-	    			let list = element.querySelectorAll(matchingElem.tagName);
-					for (let i in list) {
-						tagElems.push(list.item(parseInt(i)));
-					}
-	    		}
+    	private filter(nodeSelector: NodeSelector, matchingElem: Element, matchingAttrNames: Array<string>,
+    			checkInner: boolean, chekAttrNum: boolean): Element {
+    		let tagElemList = nodeSelector.querySelectorAll(matchingElem.tagName);
+    		for (let i in tagElemList) {
+    			let tagElem = tagElemList.item(parseInt(i));
+    			
+    			if (tagElem === this.containerElem  || tagElem.contains(this.containerElem)
+    					|| this.containerElem.contains(tagElem) || -1 < this.mergedHeadElems.indexOf(tagElem) 
+    					|| -1 < this.mergedBodyElems.indexOf(tagElem)) {
+    				continue;
+    			}
+    			
+    			if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
+					return tagElem;
+				}
     		}
     			
-    		let filteredElems: Array<Element> = [];
-	    	for (let tagElem of tagElems) {
-				if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
-					filteredElems.push(tagElem);
-				}
-			}
-			return filteredElems;
+    		return null;
 		}
 		
 		private compare(elem1: Element, elem2: Element, attrNames: Array<string>, checkInner: boolean, 
