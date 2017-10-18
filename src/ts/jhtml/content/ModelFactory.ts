@@ -4,34 +4,36 @@ namespace Jhtml {
     	public static readonly CONTAINER_ATTR: string = "data-jhtml-container";
     	public static readonly COMP_ATTR: string = "data-jhtml-comp";
     	
-    	public static createFromJsonObj(jsonObj: any): Model {
-    		let model = new Model();
-    		
-    		ModelFactory.compileContent(model, jsonObj);
-
-    		ModelFactory.compileElements(model.headElements, "head", jsonObj);
-    		ModelFactory.compileElements(model.bodyStartElements, "bodyStart", jsonObj);
-    		ModelFactory.compileElements(model.bodyEndElements, "bodyEnd", jsonObj);
-			
-    		return model;
-    	}
+//    	public static createFromJsonObj(jsonObj: any): Model {
+//    		let model = new Model();
+//    		
+//    		ModelFactory.compileContent(model, jsonObj);
+//
+//    		ModelFactory.compileElements(model.headElements, "head", jsonObj);
+//    		ModelFactory.compileElements(model.bodyStartElements, "bodyStart", jsonObj);
+//    		ModelFactory.compileElements(model.bodyEndElements, "bodyEnd", jsonObj);
+//			
+//    		return model;
+//    	}
     	    	
     	public static createFromDocument(document: Document): Model {
-    		return ModelFactory.createFromHtml(document.documentElement.innerHTML);
+    		let model = new Model();
+    		ModelFactory.compileContent(model, document.documentElement);
+    		return model;
     	}
     	
     	public static createFromHtml(htmlStr: string): Model {
     		let model = new Model();
-    		ModelFactory.compileContent(model, htmlStr);
+    		let templateElem = document.createElement('template');
+		    templateElem.innerHTML = htmlStr;
+		    ModelFactory.compileContent(model, templateElem);
     		return model;
     	}
     	
-    	private static compileContent(model: Model, htmlStr: string) {
-    		var templateElem = document.createElement('template');
-		    templateElem.innerHTML = htmlStr;
-		    
-		    let headElem = templateElem.querySelector("head");
-		    let bodyElem = templateElem.querySelector("body");
+    	private static compileContent(model: Model, rootElem: Element) {
+    		model.meta = new Meta(rootElem);
+    	    let headElem = rootElem.querySelector("head");
+		    let bodyElem = rootElem.querySelector("body");
 		    
     		if (!bodyElem) {
     			throw new SyntaxError("body element missing.");
@@ -40,7 +42,7 @@ namespace Jhtml {
     		if (headElem) {
 			    let elemList = headElem.children;
 		    	for (let i in elemList) {
-		    		model.headElements.push(elemList[i]);
+		    		model.meta.headElements.push(elemList[i]);
 		    	}
     		}
 		    
@@ -68,13 +70,13 @@ namespace Jhtml {
 		    	}
 		    	
 		    	if (model.container) {
-		    		model.bodyStartElements.push(elem);
+		    		model.meta.bodyStartElements.push(elem);
 		    	} else {
-		    		model.bodyEndElements.push(elem);
+		    		model.meta.bodyEndElements.push(elem);
 		    	}
 		    }
 		    		    
-		    let compNodeList = templateElem.querySelectorAll("[" + ModelFactory.CONTAINER_ATTR + "] [" + ModelFactory.COMP_ATTR + "]");
+		    let compNodeList = rootElem.querySelectorAll("[" + ModelFactory.CONTAINER_ATTR + "] [" + ModelFactory.COMP_ATTR + "]");
 		    for (let i = 0; i < compNodeList.length; i++) {
 		    	let elem: Element = compNodeList.item(i)
 		    	let name: string = elem.getAttribute(ModelFactory.COMP_ATTR);

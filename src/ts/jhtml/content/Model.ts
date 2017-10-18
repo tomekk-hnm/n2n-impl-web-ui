@@ -1,9 +1,7 @@
 namespace Jhtml {
     
     export class Model {
-	    public headElements: Array<Element> = [];
-	    public bodyStartElements: Array<Element> = [];
-	    public bodyEndElements: Array<Element> = [];
+	    public meta: Meta;
     	
     	public containerRootElem: Element;
     	public container: Container;
