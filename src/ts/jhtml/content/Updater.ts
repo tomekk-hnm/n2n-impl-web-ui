@@ -3,7 +3,7 @@ namespace Jhtml {
 	export class DocumentManager {
 		private CONTAINER_ATTR: string = "data-jhtml-container"
 			
-		private _containerElem: Element;
+		private _currentModel: Model;
 	
 		constructor(public _document: Document) {
 		}
@@ -12,12 +12,12 @@ namespace Jhtml {
 			return this._document;
 		}
 		
-		get containerElem(): Element {
-			if (!this._containerElem) {
-				this._containerElem = this._document.querySelector("[" + this.CONTAINER_ATTR + "]");
+		get currentModel(): Model {
+			if (!this._currentModel) {
+				this._currentModel = ModelFactory.createFromDocument(this._document);;
 			}
 			
-			return this._containerElem || null;
+			return this._currentModel || null;
 		}
 		
 		onDocumentReady(callback: () => any) {
@@ -28,14 +28,15 @@ namespace Jhtml {
 			}
 		}
 		
+		
+		
 //		replaceDocument(url: Url, text: string) {
 //			this._document.open(url, name, features, replace)
 //		}
 		
 		apply(model: Model) {
-			if (model.headComplete) {
-				this.clearHead();
-			}
+			model.clone();
+			
 
 			this.dingsel(document.head, model.headElements);
 			this.dingsel(document.body, model.bodyStartElements);
