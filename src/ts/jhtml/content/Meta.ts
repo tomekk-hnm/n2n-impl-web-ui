@@ -1,24 +1,22 @@
 namespace Jhtml {
 	
-	
-	
     export class Meta {
-    	public headElem: Element;
-    	public bodyElem: Element;
-		public containerElem: Element;
     
-    	constructor(public rootElem: Element) {
+    	constructor(private rootElem: Element, private headElem: Element, private bodyElem: Element,
+    			private containerElem: Element) {
     	}
     	
-    	getHeadElements(): Array<Element> {
-    		
+    	get headElements(): Array<Element> {
+    		return Object.values(this.headElem.children);
     	}
-    
-//    	private cloneElements(from: Array<Element>, to: Array<Element>) {
-//    		for (let element of from) {
-//    			to.push(<Element> element.cloneNode());
-//    		}
-//    	}
+    	
+    	get bodyElements(): Array<Element> {
+    		return Object.values(this.bodyElem.children);
+    	}
+    	
+    	get containerElement(): Element {
+    		return this.containerElem;
+    	}
     	
     	private mergedHeadElems: Array<Element>;
     	private mergedBodyElems: Array<Element>;
@@ -30,11 +28,11 @@ namespace Jhtml {
 			this.mergedBodyElems = [];
 			this.newMeta = newMeta;
 		
-			for (let newElem of newMeta.getHeadElements()) {
+			for (let newElem of newMeta.headElements) {
 				this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
 			}
 			
-			for (let newElem of newMeta.getBodyElements()) {
+			for (let newElem of newMeta.bodyElements) {
 				this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
 			}
 

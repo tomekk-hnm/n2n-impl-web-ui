@@ -1,19 +1,23 @@
 namespace Jhtml {
     
     export class Model {
-    	
-	    public meta: Meta;
-    	
-    	public containerRootElem: Element;
+    	constructor(public meta: Meta) {
+    	}
+	    
     	public container: Container;
     	public comps: { [name: string]: Comp } = {} 
     }
     
     export abstract class Content {
+    	private detachedElem: Element;
     	private cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
     	
-    	constructor(private name: string, private detachedElement: Element,
-    			private attachedElement: Element = null) {
+    	constructor(private _name: string, private _attachedElem: Element) {
+    		this.detachedElem = _attachedElem.ownerDocument.createElement("template");
+    	}
+    	
+    	get name(): string {
+    		return this._name;
     	}
     	
     	on(eventType: Content.EventType, callback: () => any) {
@@ -24,34 +28,38 @@ namespace Jhtml {
     		this.cbr.offType(eventType, callback);
     	}
     	
+    	get attachedElement(): Element {
+    		return this._attachedElem;
+    	}
+    	
     	attachTo(element: Element) {
-    		if (this.attachedElement) {
+    		if (this._attachedElem) {
     			throw new Error("Element already attached.");
     		}
     		
-    		this.attachedElement = element;
+    		this._attachedElem = element;
     		
-    		let list = this.detachedElement.children;
+    		let list = this.detachedElem.children;
     		for (let i in list) {
     			element.appendChild(list[i]);
     		}
     		
-    		this.cbr.triggerType("attached");
+    		this.cbr.fireType("attached");
     	} 
     	
     	get attached(): boolean {
-    		return this.attachedElement ? true : false;
+    		return this._attachedElem ? true : false;
     	}
     	
     	detach() {
-    		if (!this.attachedElement) return;
+    		if (!this._attachedElem) return;
     		
-    		let list = this.attachedElement.children;
+    		let list = this._attachedElem.children;
     		for (let i in list) {
-    			this.detachedElement.appendChild(list[i]);
+    			this.detachedElem.appendChild(list[i]);
     		}
     		
-    		this.cbr.triggerType("detached");
+    		this.cbr.fireType("detached");
     	}
     	
     	dispose() {
@@ -59,20 +67,26 @@ namespace Jhtml {
     			this.detach();
     		}
     		
-    		this.cbr.triggerType("dispose");
+    		this.cbr.fireType("dispose");
     		
     		this.cbr = null;
-    		this.detachedElement.remove();
-    		this.detachedElement = null;
+    		this.detachedElem.remove();
+    		this.detachedElem = null;
     		
     	}
     }
     
     export namespace Content {
-    	export type EventType = "attached" | "detach" | "inserted" | "dispose";
+    	export type EventType = "attached" | "detach" | "dispose";
     }
-    
+
     export class Container extends Content {
+    	public compElements: { [name: string]: Element } = {};
+    	
+    	matches(container: Container): boolean {
+    		return this.name == container.name 
+    				&& JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
+    	}
     }
     
     export class Comp extends Content {

@@ -62,7 +62,7 @@ namespace Jhtml {
         	if (this._currentIndex == index) return;
         	
         	this._currentIndex = index;
-        	this.changedCbr.trigger();
+        	this.changedCbr.fire();
         }
         
         push(page: Page) {
@@ -81,8 +81,8 @@ namespace Jhtml {
         	let entry = new History.Entry(this._currentIndex, page);
         	this._entries.push(entry);
         	
-        	this.pushCbr.trigger(entry);
-        	this.changedCbr.trigger();
+        	this.pushCbr.fire(entry);
+        	this.changedCbr.fire();
         	
         }
     }

@@ -1,44 +1,86 @@
 namespace Jhtml {
 	
 	export class Context {
-		private manager: DocumentManager;
 		private _requestor: Requestor;
+		private _boundModel: Model;
 	
-		private containerElem: Element;
 		private compHandlers: { [compName: string]: CompHandler } = {};
-		private readyCallbacks: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
+		private readyCbr: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
 		
-		
-		constructor(document: Document) {
-			this.manager = new DocumentManager(document);
-			this._requestor = new Requestor();
-		}
-		
-		get contentManager(): DocumentManager {
-			return this.manager;
+		constructor(private _document: Document) {
+			this._requestor = new Requestor(this);
+			
+			this.document.addEventListener("DOMContentLoaded", () => {
+				this.readyCbr.fire(this.document.documentElement, {});
+			}, false);
 		}
 		
 		get requestor(): Requestor {
 			return this._requestor;
 		}
 		
-		handle(model: Model) {
+		get document(): Document {
+			return this._document;
+		}
+		
+		isJhtml(): boolean {
+			return this.getBoundModel() ? true : false;
+		}
+		
+		private getBoundModel(): Model {
+			if (!this._boundModel) {
+				try {
+					this._boundModel = ModelFactory.createFromDocument(this._document);
+				} catch (e) { }
+			}
+			
+			return this._boundModel || null;
+		}
+		
+		import(model: Model) {
+			let boundModel: Model = this.getBoundModel();
+			if (!boundModel) {
+				throw new Error("No jhtml context");
+			}
+			
+			boundModel.meta.replaceWith(model.meta);
+			
+			for (let name in boundModel.comps) {
+				boundModel.comps[name].detach();
+			}
+			
+			if (!boundModel.container.matches(model.container)) {
+				boundModel.container.detach();
+				model.container.attachTo(boundModel.meta.containerElement);
+				boundModel.container = model.container;
+			}
+			
+			for (let name in model.comps) {
+				model.comps[name].attachTo(boundModel.container.compElements[name]);
+			}
+		}
+		
+		registerNewModel(model: Model) {
+			let container = model.container;
+			let containerReadyCallback = () => {
+				container.off("attached", containerReadyCallback)
+				this.readyCbr.fire(container.attachedElement, { container: container });
+			};
+			container.on("attached", containerReadyCallback);
+			
 			for (let comp of Object.values(model.comps)) {
-				if (this.compHandlers[comp.name]
-						&& this.compHandlers[comp.name].handleComp(comp)) {
-					continue;
-				}
-				
-				// handle comp
-				this.readyCallbacks.trigger(comp.element.childNodes, comp);
+				let compReadyCallback = () => {
+					comp.off("attached", containerReadyCallback);
+					this.readyCbr.fire(comp.attachedElement, { comp: Comp });
+				};
+				comp.on("attached", containerReadyCallback);
 			}
 		}
 		
 		replace(text: string, mimeType: string, replace: boolean) {
-			let document = this.manager.document;
-			document.open(mimeType, replace? "replace" : null);
-			document.write(text);
-			document.close();
+			this.document.open(mimeType, replace? "replace" : null);
+			this.document.write(text);
+			this.document.close();
 		}
 		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
@@ -50,15 +92,15 @@ namespace Jhtml {
 		}
 		
 		onReady(readyCallback: ReadyCallback) {
-			this.readyCallbacks.on(readyCallback);
+			this.readyCbr.on(readyCallback);
 			
-			this.manager.onDocumentReady(() => {
-				readyCallback(this.manager.document.body.childNodes);
-			});
+			if (this._document.readyState === "complete") {
+				readyCallback(this.document.documentElement, {});	
+			}
 		}
 		
 		offReady(readyCallback: ReadyCallback) {
-			this.readyCallbacks.off(readyCallback);
+			this.readyCbr.off(readyCallback);
 		}
 		
 		private static KEY: string = "data-jhtml-context";
@@ -85,6 +127,11 @@ namespace Jhtml {
 	}
 	
 	export interface ReadyCallback {
-		(Element, Comp?): any;
+		(element: Element, event: ReadyEvent ): any;
+	}
+	
+	export interface ReadyEvent {
+		container?: Container;
+		comp?: Comp;
 	}
 }

@@ -28,11 +28,11 @@ namespace Jhtml.Util {
 			this.callbacks[type].splice(i, 1);
 		}
 		
-		trigger(...args: Array<any>) {
-			this.triggerType("", args);
+		fire(...args: Array<any>) {
+			this.fireType("", args);
 		}
 		
-		triggerType(type: string, ...args: Array<any>) {
+		fireType(type: string, ...args: Array<any>) {
 			if (!this.callbacks[type]) 	return;
 			
 			for (let callback of this.callbacks[type]) {

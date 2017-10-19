@@ -1,7 +1,7 @@
 namespace Jhtml {
 	export class Requestor {
 		
-		constructor() {
+		constructor(private context: Context) {
 			
 		}
 		
@@ -47,7 +47,9 @@ namespace Jhtml {
 		
 		private createModelFromJson(url: Url, jsonText: string): Model {
 			try {
-				return Model.createFromJsonObj(JSON.parse(jsonText));
+				let model = ModelFactory.createFromJsonObj(JSON.parse(jsonText));
+				this.context.registerNewModel(model);
+				return model;
 			} catch (e) {
 				if (e instanceof SyntaxError) {
 			        throw new Error(url + "; no or invalid json: " + e.message);
@@ -58,7 +60,9 @@ namespace Jhtml {
 		}
 		
 		private createModelFromHtml(html: string): Model {
-			return Model.createFromHtml(html);
+			let model = ModelFactory.createFromHtml(html);
+			this.context.registerNewModel(model);
+			return model;
 		}
 	}
 	
