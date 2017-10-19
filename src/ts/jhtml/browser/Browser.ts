@@ -1,7 +1,7 @@
 namespace Jhtml {
 	export class Browser {
         constructor(private window: Window, private _history: History) {
-	        this.window.addEventListener("popstate", (evt) => this.onPopstate(evt));
+	        _history.push(new Page(Url.create(window.location.href), null));
 	        
 	        _history.onPush((entry: History.Entry) => {
 	        	this.onPush(entry);
@@ -10,6 +10,8 @@ namespace Jhtml {
 	        _history.onChanged(() => {
 	        	this.onChanged();
 	        });
+	        
+        	this.window.addEventListener("popstate", (evt) => this.onPopstate(evt));
 		}
         
         get history(): History {

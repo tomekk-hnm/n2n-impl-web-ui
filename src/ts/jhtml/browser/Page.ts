@@ -2,10 +2,12 @@ namespace Jhtml {
     export class Page {
     	private _loaded: boolean = false;
     	
-    	constructor(private _url: Url, public promise: Promise<Directive>) {
-    		promise.then(() => {
-    			this._loaded = true;
-    		})
+    	constructor(private _url: Url, public promise: Promise<Directive>|null) {
+    		if (promise) {
+	    		promise.then(() => {
+	    			this._loaded = true;
+	    		});
+    		}
     	}
     	
     	get loaded(): boolean {
