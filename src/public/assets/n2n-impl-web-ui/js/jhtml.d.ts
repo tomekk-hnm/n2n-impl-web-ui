@@ -48,9 +48,9 @@ declare namespace Jhtml {
 declare namespace Jhtml {
     class Page {
         private _url;
-        promise: Promise<Directive>;
+        promise: Promise<Directive> | null;
         private _loaded;
-        constructor(_url: Url, promise: Promise<Directive>);
+        constructor(_url: Url, promise: Promise<Directive> | null);
         readonly loaded: boolean;
         readonly url: Url;
         dispose(): void;
@@ -81,7 +81,8 @@ declare namespace Jhtml {
         static from(document: Document): Context;
     }
     interface CompHandler {
-        handleComp(comp: Comp): boolean;
+        attachComp(comp: Comp): boolean;
+        detachComp(comp: Comp): boolean;
     }
     interface ReadyCallback {
         (element: Element, event: ReadyEvent): any;
@@ -186,6 +187,10 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
+    class ParseError extends Error {
+    }
+}
+declare namespace Jhtml {
     class DocumentManager {
     }
 }
@@ -248,8 +253,9 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     class Link {
-        private element;
-        constructor(element: HTMLAnchorElement);
+        private elem;
+        private requestConfig;
+        constructor(elem: HTMLAnchorElement);
         private handle();
         private static readonly KEY;
         static from(element: HTMLAnchorElement): Link;
@@ -257,7 +263,9 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml.Ui {
     class Scanner {
-        static scan(container: Element): void;
+        static readonly A_ATTR: string;
+        private static readonly A_SELECTOR;
+        static scan(rootElem: Element): void;
     }
 }
 declare namespace Jhtml.Util {
@@ -283,9 +291,5 @@ declare namespace Jhtml.Util {
         constructor(element: Element);
         private buildName(key);
         readBoolean(key: string, fallback: boolean): boolean;
-    }
-}
-declare namespace Jhtml {
-    class ParseError extends Error {
     }
 }

@@ -47,13 +47,14 @@ var Jhtml;
             var _this = this;
             this.window = window;
             this._history = _history;
-            this.window.addEventListener("popstate", function (evt) { return _this.onPopstate(evt); });
+            _history.push(new Jhtml.Page(Jhtml.Url.create(window.location.href), null));
             _history.onPush(function (entry) {
                 _this.onPush(entry);
             });
             _history.onChanged(function () {
                 _this.onChanged();
             });
+            this.window.addEventListener("popstate", function (evt) { return _this.onPopstate(evt); });
         }
         Object.defineProperty(Browser.prototype, "history", {
             get: function () {
@@ -69,14 +70,14 @@ var Jhtml;
                 index = this.window.history.state.historyIndex;
             }
             try {
-                this._history.go(index, url);
+                this.history.go(index, url);
             }
             catch (e) {
                 this.window.location.href = url.toString();
             }
         };
         Browser.prototype.onChanged = function () {
-            var entry = this._history.currentEntry;
+            var entry = this.history.currentEntry;
             if (entry.browserHistoryIndex !== undefined) {
                 this.window.history.go(entry.browserHistoryIndex);
                 return;
@@ -211,9 +212,11 @@ var Jhtml;
             this._url = _url;
             this.promise = promise;
             this._loaded = false;
-            promise.then(function () {
-                _this._loaded = true;
-            });
+            if (promise) {
+                promise.then(function () {
+                    _this._loaded = true;
+                });
+            }
         }
         Object.defineProperty(Page.prototype, "loaded", {
             get: function () {
@@ -276,7 +279,8 @@ var Jhtml;
         Context.prototype.getBoundModel = function () {
             if (!this._boundModel) {
                 try {
-                    this._boundModel = Jhtml.ModelFactory.createFromDocument(this._document);
+                    this._boundModel = Jhtml.ModelFactory.createFromDocument(this.document);
+                    Jhtml.Ui.Scanner.scan(this.document.documentElement);
                 }
                 catch (e) {
                     if (e instanceof Jhtml.ParseError)
@@ -302,10 +306,7 @@ var Jhtml;
             }
             for (var name_2 in newModel.comps) {
                 var comp = boundModel.comps[name_2] = newModel.comps[name_2];
-                if (this.compHandlers[name_2]) {
-                    this.compHandlers[name_2].handleComp(comp);
-                }
-                else {
+                if (!this.compHandlers[name_2] || !this.compHandlers[name_2].attachComp(comp)) {
                     comp.attachTo(boundModel.container.compElements[name_2]);
                 }
             }
@@ -316,12 +317,14 @@ var Jhtml;
             var containerReadyCallback = function () {
                 container.off("attached", containerReadyCallback);
                 _this.readyCbr.fire(container.attachedElement, { container: container });
+                Jhtml.Ui.Scanner.scan(container.attachedElement);
             };
             container.on("attached", containerReadyCallback);
             var _loop_1 = function (comp) {
                 var compReadyCallback = function () {
                     comp.off("attached", containerReadyCallback);
                     _this.readyCbr.fire(comp.attachedElement, { comp: Jhtml.Comp });
+                    Jhtml.Ui.Scanner.scan(comp.attachedElement);
                 };
                 comp.on("attached", containerReadyCallback);
             };
@@ -364,9 +367,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
             return context;
         };
-        Context.KEY = "data-jhtml-context";
         return Context;
     }());
+    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -696,12 +699,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.firstElementChild;
         };
-        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-        ModelFactory.COMP_ATTR = "data-jhtml-comp";
-        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
         return ModelFactory;
     }());
+    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+    ModelFactory.COMP_ATTR = "data-jhtml-comp";
+    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -744,8 +747,7 @@ var Jhtml;
             if (selfIncluded && element.matches("." + Monitor.CSS_CLASS)) {
                 return Monitor.test(element);
             }
-            var elem = element.closest("." + Monitor.CSS_CLASS);
-            if (elem) {
+            if (element = element.closest("." + Monitor.CSS_CLASS)) {
                 return Monitor.test(element);
             }
             return null;
@@ -766,11 +768,22 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
-        Monitor.KEY = "jhtml-monitor";
-        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
+    Monitor.KEY = "jhtml-monitor";
+    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var ParseError = (function (_super) {
+        __extends(ParseError, _super);
+        function ParseError() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return ParseError;
+    }(Error));
+    Jhtml.ParseError = ParseError;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -946,16 +959,18 @@ var Jhtml;
 var Jhtml;
 (function (Jhtml) {
     var Link = (function () {
-        function Link(element) {
+        function Link(elem) {
             var _this = this;
-            this.element = element;
-            element.addEventListener("click", function () {
+            this.elem = elem;
+            this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
+            elem.addEventListener("click", function (evt) {
+                evt.preventDefault();
                 _this.handle();
                 return false;
             });
         }
         Link.prototype.handle = function () {
-            Jhtml.Monitor.of(this.element).exec(this.element.href, Jhtml.FullRequestConfig.fromElement(this.element));
+            Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
         };
         Link.from = function (element) {
             var link = Jhtml.Util.getElemData(element, Link.KEY);
@@ -966,9 +981,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
-        Link.KEY = "jhtml-link";
         return Link;
     }());
+    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -978,14 +993,16 @@ var Jhtml;
         var Scanner = (function () {
             function Scanner() {
             }
-            Scanner.scan = function (container) {
-                for (var _i = 0, _a = Jhtml.Util.find(container, "a.jhtml"); _i < _a.length; _i++) {
+            Scanner.scan = function (rootElem) {
+                for (var _i = 0, _a = Jhtml.Util.find(rootElem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
                     var elem = _a[_i];
                     Jhtml.Link.from(elem);
                 }
             };
             return Scanner;
         }());
+        Scanner.A_ATTR = "data-jhtml";
+        Scanner.A_SELECTOR = "[" + Scanner.A_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
@@ -1024,7 +1041,7 @@ var Jhtml;
                 for (var _i = 0; _i < arguments.length; _i++) {
                     args[_i] = arguments[_i];
                 }
-                this.fireType("", args);
+                this.fireType.apply(this, [""].concat(args));
             };
             CallbackRegistry.prototype.fireType = function (type) {
                 var args = [];
@@ -1087,8 +1104,8 @@ var Jhtml;
             };
             ElemConfigReader.prototype.readBoolean = function (key, fallback) {
                 var value = this.element.getAttribute("data-" + this.buildName(key));
-                if (value === undefined) {
-                    return;
+                if (value === null) {
+                    return fallback;
                 }
                 switch (value) {
                     case "true":
@@ -1106,16 +1123,5 @@ var Jhtml;
         }());
         Util.ElemConfigReader = ElemConfigReader;
     })(Util = Jhtml.Util || (Jhtml.Util = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var ParseError = (function (_super) {
-        __extends(ParseError, _super);
-        function ParseError() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        return ParseError;
-    }(Error));
-    Jhtml.ParseError = ParseError;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

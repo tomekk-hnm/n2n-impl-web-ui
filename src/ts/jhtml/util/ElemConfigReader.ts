@@ -12,8 +12,8 @@ namespace Jhtml.Util {
 		readBoolean(key: string, fallback: boolean): boolean {
 			let value = this.element.getAttribute("data-" + this.buildName(key));
 			
-			if (value === undefined) {
-				return 
+			if (value === null) {
+				return fallback;
 			}
 			
 			switch (value) {

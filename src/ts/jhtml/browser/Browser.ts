@@ -27,14 +27,14 @@ namespace Jhtml {
             }
             
             try {
-        		this._history.go(index, url);
+        		this.history.go(index, url);
         	} catch (e) {
         		this.window.location.href = url.toString();
         	}
         }
         
         private onChanged() {
-        	let entry: History.Entry = this._history.currentEntry;
+        	let entry: History.Entry = this.history.currentEntry;
         	if (entry.browserHistoryIndex !== undefined) {
         		this.window.history.go(entry.browserHistoryIndex);
         		return;

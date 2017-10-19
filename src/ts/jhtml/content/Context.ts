@@ -30,7 +30,8 @@ namespace Jhtml {
 		private getBoundModel(): Model {
 			if (!this._boundModel) {
 				try {
-					this._boundModel = ModelFactory.createFromDocument(this._document);
+					this._boundModel = ModelFactory.createFromDocument(this.document);
+					Ui.Scanner.scan(this.document.documentElement);
 				} catch (e) { 
 					if (e instanceof ParseError) return;
 					
@@ -62,9 +63,7 @@ namespace Jhtml {
 			for (let name in newModel.comps) {
 				let comp = boundModel.comps[name] = newModel.comps[name];
 				
-				if (this.compHandlers[name]) {
-					this.compHandlers[name].handleComp(comp);
-				} else {
+				if (!this.compHandlers[name] || !this.compHandlers[name].attachComp(comp)) {
 					comp.attachTo(boundModel.container.compElements[name]);
 				}
 			}
@@ -75,6 +74,7 @@ namespace Jhtml {
 			let containerReadyCallback = () => {
 				container.off("attached", containerReadyCallback)
 				this.readyCbr.fire(container.attachedElement, { container: container });
+				Ui.Scanner.scan(container.attachedElement);
 			};
 			container.on("attached", containerReadyCallback);
 			
@@ -82,6 +82,7 @@ namespace Jhtml {
 				let compReadyCallback = () => {
 					comp.off("attached", containerReadyCallback);
 					this.readyCbr.fire(comp.attachedElement, { comp: Comp });
+					Ui.Scanner.scan(comp.attachedElement);
 				};
 				comp.on("attached", containerReadyCallback);
 			}
@@ -133,7 +134,9 @@ namespace Jhtml {
 	}
 	
 	export interface CompHandler {
-		handleComp(comp: Comp): boolean;
+		attachComp(comp: Comp): boolean;
+		
+		detachComp(comp: Comp): boolean;
 	}
 	
 	export interface ReadyCallback {

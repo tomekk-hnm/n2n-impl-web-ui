@@ -80,10 +80,9 @@ namespace Jhtml {
         	this._currentIndex = this._entries.length;
         	let entry = new History.Entry(this._currentIndex, page);
         	this._entries.push(entry);
-        	
+
         	this.pushCbr.fire(entry);
         	this.changedCbr.fire();
-        	
         }
     }
     

@@ -29,7 +29,7 @@ namespace Jhtml.Util {
 		}
 		
 		fire(...args: Array<any>) {
-			this.fireType("", args);
+			this.fireType("", ...args);
 		}
 		
 		fireType(type: string, ...args: Array<any>) {

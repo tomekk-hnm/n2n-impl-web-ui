@@ -14,7 +14,7 @@ namespace Jhtml {
 			let config = FullRequestConfig.from(requestConfig);
 			
 			let page = this.history.getPageByUrl(url);
-			
+
 			if (!config.forceReload && page) {
 				if (!page.disposed) {
 					page.promise = this.context.requestor.lookupDirective(url);
@@ -51,9 +51,8 @@ namespace Jhtml {
 			if (selfIncluded && element.matches("." + Monitor.CSS_CLASS)) {
 				return Monitor.test(element);
 			}
-			
-			let elem: Element = element.closest("." + Monitor.CSS_CLASS);
-			if (elem) {
+
+			if (element = element.closest("." + Monitor.CSS_CLASS)) {
 				return Monitor.test(element);
 			}
 			

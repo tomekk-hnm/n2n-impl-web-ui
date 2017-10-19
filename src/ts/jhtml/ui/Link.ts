@@ -1,15 +1,21 @@
 namespace Jhtml {
 	export class Link {
-		constructor(private element: HTMLAnchorElement) {
-			element.addEventListener("click", () => {
+		private requestConfig: RequestConfig;
+		
+		constructor(private elem: HTMLAnchorElement) {
+			this.requestConfig = FullRequestConfig.fromElement(this.elem);
+			
+			elem.addEventListener("click", (evt) => {
+				evt.preventDefault();
+				
 				this.handle();
+
 				return false;
 			});
 		}
 		
 		private handle() {
-			Monitor.of(this.element).exec(this.element.href, 
-					FullRequestConfig.fromElement(this.element));
+			Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
 		}
 		
 		private static readonly KEY: string = "jhtml-link";
