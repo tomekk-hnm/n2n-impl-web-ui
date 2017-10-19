@@ -11,12 +11,12 @@ namespace Jhtml {
 		if (browser) return browser;
 		
 		let context: Context = getOrCreateContext();
-		
+	
 		if (!context.isJhtml()) return null;
 		
 		monitor = Monitor.from(context.document.documentElement);
 		browser = new Browser(window, monitor.history);
-		
+
 		return browser;
 	}
 	

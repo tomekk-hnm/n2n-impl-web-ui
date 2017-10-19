@@ -1,104 +1,238 @@
 declare namespace Jhtml {
-    function holeradio(): void;
-    function ready(callback: ReadyCallback): void;
-    interface ReadyCallback {
-        (Element: any): any;
-    }
-}
-declare namespace Jhtml {
-    class Monitor {
-    }
+    function ready(callback: ReadyCallback, document?: Document): void;
+    function getOrCreateBrowser(): Browser;
+    function getOrCreateMonitor(): Monitor;
+    function getOrCreateContext(document?: Document): Context;
 }
 declare namespace Jhtml {
     class Browser {
         private window;
-        history: History;
-        constructor(window: Window);
+        private _history;
+        constructor(window: Window, _history: History);
+        readonly history: History;
         private onPopstate(evt);
-        private afsd();
+        private onChanged();
+        private onPush(entry);
     }
 }
 declare namespace Jhtml {
     class History {
         private _currentIndex;
         private _entries;
-        private onNewEntryCallbacks;
-        constructor();
-        onNewEntry(callback: EntryCallback): void;
-        offNewEntry(callback: EntryCallback): void;
+        private changedCbr;
+        private pushCbr;
+        readonly currentEntry: History.Entry;
+        readonly currentPage: Page;
+        getPageByUrl(url: Url): Page;
+        onChanged(callback: () => any): void;
+        offChanged(callback: () => any): void;
+        onPush(callback: EntryCallback): void;
+        offPush(callback: EntryCallback): void;
+        go(index: number, checkUrl?: Url): void;
+        push(page: Page): void;
     }
     interface EntryCallback {
-        (index: number, context: AjahDirective): any;
+        (entry: History.Entry): any;
+    }
+    namespace History {
+        class Entry {
+            private _index;
+            private _page;
+            browserHistoryIndex: number;
+            constructor(_index: number, _page: Page);
+            readonly index: number;
+            readonly page: Page;
+        }
     }
 }
 declare namespace Jhtml {
-    class Content {
-        private document;
-        private updater;
+    class Page {
+        private _url;
+        promise: Promise<Directive>;
+        private _loaded;
+        constructor(_url: Url, promise: Promise<Directive>);
+        readonly loaded: boolean;
+        readonly url: Url;
+        dispose(): void;
+        readonly disposed: boolean;
+    }
+}
+declare namespace Jhtml {
+    class Context {
+        private _document;
+        private _requestor;
+        private _boundModel;
         private compHandlers;
-        constructor(document: Document);
-        handle(model: Model): void;
+        private readyCbr;
+        constructor(_document: Document);
+        readonly requestor: Requestor;
+        readonly document: Document;
+        isJhtml(): boolean;
+        private getBoundModel();
+        import(newModel: Model): void;
+        registerNewModel(model: Model): void;
+        replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
+        onReady(readyCallback: ReadyCallback): void;
+        offReady(readyCallback: ReadyCallback): void;
+        private static KEY;
+        static test(document: Document): Context | null;
+        static from(document: Document): Context;
     }
     interface CompHandler {
-        handleComp(comp: Comp, ajahDirective: AjahDirective): boolean;
+        handleComp(comp: Comp): boolean;
+    }
+    interface ReadyCallback {
+        (element: Element, event: ReadyEvent): any;
+    }
+    interface ReadyEvent {
+        container?: Container;
+        comp?: Comp;
     }
 }
 declare namespace Jhtml {
-    class Updater {
-        private document;
-        constructor(document: Document);
-        apply(model: Model): void;
-        private clearHead();
-        private dingsel(container, newElems);
-        private find(container, newElem, matchingAttrNames, checkInner, chekAttrNum);
+    class Meta {
+        private rootElem;
+        private headElem;
+        private bodyElem;
+        private containerElem;
+        constructor(rootElem: Element, headElem: Element, bodyElem: Element, containerElem: Element);
+        readonly headElements: Array<Element>;
+        readonly bodyElements: Array<Element>;
+        readonly containerElement: Element;
+        private mergedHeadElems;
+        private mergedBodyElems;
+        private mergedContainerElem;
+        private newMeta;
+        replaceWith(newMeta: Meta): void;
+        private clean(metaElem);
+        private mergeElem(newElem, target);
+        private findExact(matchingElem, target?);
+        private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
+        private filter(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
         private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
-        private findExact(container, newElem);
     }
-}
-declare namespace Jhtml {
+    namespace Meta {
+        enum Target {
+            HEAD = 0,
+            BODY = 1,
+        }
+    }
 }
 declare namespace Jhtml {
     class Model {
-        headComplete: boolean;
-        headElements: Array<Element>;
-        bodyStartElements: Array<Element>;
-        bodyEndElements: Array<Element>;
+        meta: Meta;
+        constructor(meta: Meta);
+        container: Container;
         comps: {
             [name: string]: Comp;
         };
-        static createFromJsonObj(jsonObj: any, response: any): Model;
-        private static compileContent(model, jsonObj);
-        private static compileElements(elements, name, jsonObj);
+    }
+    abstract class Content {
+        private _name;
+        private _attachedElem;
+        private detachedElem;
+        private cbr;
+        constructor(_name: string, _attachedElem: Element);
+        readonly name: string;
+        on(eventType: Content.EventType, callback: () => any): void;
+        off(eventType: Content.EventType, callback: () => any): void;
+        readonly attachedElement: Element;
+        attachTo(element: Element): void;
+        readonly attached: boolean;
+        detach(): void;
+        dispose(): void;
+    }
+    namespace Content {
+        type EventType = "attached" | "detach" | "dispose";
+    }
+    class Container extends Content {
+        compElements: {
+            [name: string]: Element;
+        };
+        matches(container: Container): boolean;
+    }
+    class Comp extends Content {
+    }
+}
+declare namespace Jhtml {
+    class ModelFactory {
+        static readonly CONTAINER_ATTR: string;
+        static readonly COMP_ATTR: string;
+        private static readonly CONTAINER_SELECTOR;
+        private static readonly COMP_SELECTOR;
+        static createFromJsonObj(jsonObj: any): Model;
+        static createFromDocument(document: Document): Model;
+        static createFromHtml(htmlStr: string): Model;
+        static createMeta(rootElem: Element): Meta;
+        private static compileContent(model, rootElem);
         private static createElement(elemHtml);
     }
-    class Comp {
-        name: string;
-        element: Element;
+}
+declare namespace Jhtml {
+    class Monitor {
+        private container;
+        context: Context;
+        history: History;
+        constructor(container: Element);
+        exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
+        private dingsel(promise);
+        private static readonly KEY;
+        private static readonly CSS_CLASS;
+        static of(element: Element, selfIncluded?: boolean): Monitor | null;
+        static test(element: Element): Monitor | null;
+        static from(container: Element): Monitor;
+    }
+}
+declare namespace Jhtml {
+    class DocumentManager {
+    }
+}
+declare namespace Jhtml {
+    interface Directive {
+        exec(context: Context, history: History): any;
+    }
+    class ModelDirective implements Directive {
         model: Model;
-        constructor(name: string, element: Element, model: Model);
+        constructor(model: Model);
+        exec(context: Context, history: History): void;
     }
-}
-declare namespace Jhtml {
-    class Requester {
-        constructor();
-        exec(url: Url): Promise<Response>;
-        private upgradeResponse(response);
-    }
-}
-declare namespace Jhtml {
-    class Response {
-        url: Url;
+    class ReplaceDirective implements Directive {
         status: number;
-        text: string;
-        ajahDirective: AjahDirective;
-        constructor(url: Url, status: number, text: string, ajahDirective?: AjahDirective);
+        responseText: string;
+        constructor(status: number, responseText: string);
+        exec(context: Context, history: History): void;
     }
-    class AjahDirective {
-        model: Model;
-        constructor(model?: Model);
-        exec(): void;
+}
+declare namespace Jhtml {
+}
+declare namespace Jhtml {
+    interface RequestConfig {
+        forceReload?: boolean;
+        pushToHistory?: boolean;
+    }
+    class FullRequestConfig implements RequestConfig {
+        forceReload: boolean;
+        pushToHistory: boolean;
+        static from(requestConfig: RequestConfig): FullRequestConfig;
+        static fromElement(element: Element): FullRequestConfig;
+    }
+}
+declare namespace Jhtml {
+    class Requestor {
+        private context;
+        constructor(context: Context);
+        lookupDirective(url: Url): Promise<Directive>;
+        lookup(url: Url): Promise<Requestor.Result>;
+        private createModelFromJson(url, jsonText);
+        private createModelFromHtml(html);
+    }
+    namespace Requestor {
+        interface Result {
+            model?: Model;
+            directive: Directive;
+        }
     }
 }
 declare namespace Jhtml {
@@ -110,5 +244,48 @@ declare namespace Jhtml {
         extR(pathExt: string): Url;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;
+    }
+}
+declare namespace Jhtml {
+    class Link {
+        private element;
+        constructor(element: HTMLAnchorElement);
+        private handle();
+        private static readonly KEY;
+        static from(element: HTMLAnchorElement): Link;
+    }
+}
+declare namespace Jhtml.Ui {
+    class Scanner {
+        static scan(container: Element): void;
+    }
+}
+declare namespace Jhtml.Util {
+    class CallbackRegistry<C> {
+        private callbacks;
+        on(callback: C): void;
+        onType(type: string, callback: C): void;
+        off(callback: C): void;
+        offType(type: string, callback: C): void;
+        fire(...args: Array<any>): void;
+        fireType(type: string, ...args: Array<any>): void;
+    }
+}
+declare namespace Jhtml.Util {
+    function closest(element: Element, selector: string, selfIncluded: boolean): Element;
+    function getElemData(elem: Element, key: string): any;
+    function bindElemData<T>(elem: Element, key: string, data: any): void;
+    function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
+}
+declare namespace Jhtml.Util {
+    class ElemConfigReader {
+        private element;
+        constructor(element: Element);
+        private buildName(key);
+        readBoolean(key: string, fallback: boolean): boolean;
+    }
+}
+declare namespace Jhtml {
+    class ParseError extends Error {
     }
 }

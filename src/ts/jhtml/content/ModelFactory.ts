@@ -23,7 +23,6 @@ namespace Jhtml {
     	    	
     	public static createFromDocument(document: Document): Model {
     		let model = new Model(ModelFactory.createMeta(document.documentElement));
-    		
     		ModelFactory.compileContent(model, document.documentElement);
     		return model;
     	}
