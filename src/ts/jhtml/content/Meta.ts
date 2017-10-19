@@ -62,9 +62,8 @@ namespace Jhtml {
 					continue;
 				}
 				
-				let scriptElemList = elem.querySelectorAll("script");
-				for (let i in scriptElemList) {
-					metaElem.insertBefore(scriptElemList[i], elem);
+				for (let scriptElem of Util.find(elem, "script")) {
+					metaElem.insertBefore(scriptElem, elem);
 				}
 				metaElem.removeChild(elem);
 			}
@@ -132,10 +131,7 @@ namespace Jhtml {
     	
     	private filter(nodeSelector: NodeSelector, matchingElem: Element, matchingAttrNames: Array<string>,
     			checkInner: boolean, chekAttrNum: boolean): Element {
-    		let tagElemList = nodeSelector.querySelectorAll(matchingElem.tagName);
-    		for (let i in tagElemList) {
-    			let tagElem = tagElemList.item(parseInt(i));
-    			
+    		for (let tagElem of Util.find(nodeSelector, matchingElem.tagName)) {
     			if (tagElem === this.containerElem  || tagElem.contains(this.containerElem)
     					|| this.containerElem.contains(tagElem) || -1 < this.mergedHeadElems.indexOf(tagElem) 
     					|| -1 < this.mergedBodyElems.indexOf(tagElem)) {

@@ -31,7 +31,11 @@ namespace Jhtml {
 			if (!this._boundModel) {
 				try {
 					this._boundModel = ModelFactory.createFromDocument(this._document);
-				} catch (e) { }
+				} catch (e) { 
+					if (e instanceof ParseError) return;
+					
+					throw e;
+				}
 			}
 			
 			return this._boundModel || null;

@@ -48,21 +48,21 @@ namespace Jhtml {
 		    let bodyElem = rootElem.querySelector("body");
 		    
 		    if (!headElem) {
-    			throw new SyntaxError("head element missing.");
+    			throw new ParseError("head element missing.");
 		    }
 		    
 		    if (!bodyElem) {
-    			throw new SyntaxError("body element missing.");
+    			throw new ParseError("body element missing.");
 		    }
 		    
-		    let containerList = bodyElem.querySelectorAll(ModelFactory.CONTAINER_SELECTOR);
+		    let containerList = Util.find(bodyElem, ModelFactory.CONTAINER_SELECTOR);
 		    
 		    if (containerList.length == 0) {
-		    	throw new SyntaxError("Jhtml container missing.");
+		    	throw new ParseError("Jhtml container missing.");
 		    }
 		    
 		    if (containerList.length > 1) {
-		    	throw new SyntaxError("Multiple jhtml container detected.");
+		    	throw new ParseError("Multiple jhtml container detected.");
 		    }
 		    
 		    return new Meta(rootElem, headElem, bodyElem, containerList[0]);
@@ -75,13 +75,11 @@ namespace Jhtml {
 		    model.container = new Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), 
 		    		containerElem);
     		
-		    let compList = containerElem.querySelectorAll(ModelFactory.COMP_SELECTOR);
-		    for (let i in compList) {
-		    	let compElem: Element = compList[i];
+		    for (let compElem of Util.find(containerElem, ModelFactory.COMP_SELECTOR)) {
 		    	let name: string = compElem.getAttribute(ModelFactory.COMP_ATTR);
 		    	
 		    	if (model.comps[name]) {
-		    		throw new SyntaxError("Duplicated comp name: " + name);
+		    		throw new ParseError("Duplicated comp name: " + name);
 		    	}
 		    	
 		    	model.container.compElements[name] = compElem;
@@ -91,7 +89,7 @@ namespace Jhtml {
 //    	
 //    	private static compileJsonContent(model: Model, jsonObj: any) {
 //    		if (typeof jsonObj.content != "string") {
-//				throw new SyntaxError("Missing or invalid property 'content'.");
+//				throw new ParseError("Missing or invalid property 'content'.");
 //			}
 //    		
 //    		ModelFactory.compileContent(model, jsonObj.content);
@@ -99,7 +97,7 @@ namespace Jhtml {
 //    	
 //    	private static compileElements(elements: Array<Element>, name: string, jsonObj: any) {
 //    		if (!(jsonObj[name] instanceof Array)) {
-//				throw new SyntaxError("Missing or invalid property '" + name + "'.");
+//				throw new ParseError("Missing or invalid property '" + name + "'.");
 //			}
 //    		
 //    		for (let elemHtml of jsonObj.head) {
