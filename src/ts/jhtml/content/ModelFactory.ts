@@ -30,23 +30,21 @@ namespace Jhtml {
     		return model;
     	}
     	
+    	
+    	
     	private static compileContent(model: Model, rootElem: Element) {
-    		model.meta = new Meta(rootElem);
     	    let headElem = rootElem.querySelector("head");
 		    let bodyElem = rootElem.querySelector("body");
 		    
-    		if (!bodyElem) {
+		    if (!bodyElem) {
     			throw new SyntaxError("body element missing.");
 		    }
-		    		    
-    		if (headElem) {
-			    let elemList = headElem.children;
-		    	for (let i in elemList) {
-		    		model.meta.headElements.push(elemList[i]);
-		    	}
-    		}
+		    
+    		model.meta = new Meta(rootElem, headElem, bodyElem);
 		    
     		let containerSelector = "[" + ModelFactory.CONTAINER_ATTR + "]";
+    		bodyElem.querySelectorAll(containerSelector)
+		    
 		    for (let i in bodyElem.children) {
 		    	let elem = bodyElem.children[i];
 		    	
