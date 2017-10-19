@@ -37,26 +37,32 @@ namespace Jhtml {
 			return this._boundModel || null;
 		}
 		
-		import(model: Model) {
+		import(newModel: Model) {
 			let boundModel: Model = this.getBoundModel();
 			if (!boundModel) {
 				throw new Error("No jhtml context");
 			}
 			
-			boundModel.meta.replaceWith(model.meta);
+			boundModel.meta.replaceWith(newModel.meta);
 			
 			for (let name in boundModel.comps) {
 				boundModel.comps[name].detach();
 			}
 			
-			if (!boundModel.container.matches(model.container)) {
+			if (!boundModel.container.matches(newModel.container)) {
 				boundModel.container.detach();
-				model.container.attachTo(boundModel.meta.containerElement);
-				boundModel.container = model.container;
+				newModel.container.attachTo(boundModel.meta.containerElement);
+				boundModel.container = newModel.container;
 			}
 			
-			for (let name in model.comps) {
-				model.comps[name].attachTo(boundModel.container.compElements[name]);
+			for (let name in newModel.comps) {
+				let comp = boundModel.comps[name] = newModel.comps[name];
+				
+				if (this.compHandlers[name]) {
+					this.compHandlers[name].handleComp(comp);
+				} else {
+					comp.attachTo(boundModel.container.compElements[name]);
+				}
 			}
 		}
 		
