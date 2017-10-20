@@ -107,17 +107,22 @@ declare namespace Jhtml {
         private mergedContainerElem;
         private newMeta;
         replaceWith(newMeta: Meta): void;
+        private untouchedElems;
+        private removableElems;
+        private mergeInto(newElems, parentElem, target);
         private clean(metaElem);
-        private mergeElem(newElem, target);
+        private mergedElem(preferedCurElems, newElem, target);
+        private attrNames(elem);
         private findExact(matchingElem, target?);
         private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
         private filter(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
+        private compareExact(elem1, elem2, checkInner);
         private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
     }
     namespace Meta {
         enum Target {
-            HEAD = 0,
-            BODY = 1,
+            HEAD = 1,
+            BODY = 2,
         }
     }
 }
@@ -129,32 +134,6 @@ declare namespace Jhtml {
         comps: {
             [name: string]: Comp;
         };
-    }
-    abstract class Content {
-        private _name;
-        private _attachedElem;
-        private detachedElem;
-        private cbr;
-        constructor(_name: string, _attachedElem: Element);
-        readonly name: string;
-        on(eventType: Content.EventType, callback: () => any): void;
-        off(eventType: Content.EventType, callback: () => any): void;
-        readonly attachedElement: Element;
-        attachTo(element: Element): void;
-        readonly attached: boolean;
-        detach(): void;
-        dispose(): void;
-    }
-    namespace Content {
-        type EventType = "attached" | "detach" | "dispose";
-    }
-    class Container extends Content {
-        compElements: {
-            [name: string]: Element;
-        };
-        matches(container: Container): boolean;
-    }
-    class Comp extends Content {
     }
 }
 declare namespace Jhtml {
@@ -292,5 +271,33 @@ declare namespace Jhtml.Util {
         constructor(element: Element);
         private buildName(key);
         readBoolean(key: string, fallback: boolean): boolean;
+    }
+}
+declare namespace Jhtml {
+    abstract class Content {
+        private _name;
+        private _attachedElem;
+        private detachedElem;
+        private cbr;
+        constructor(_name: string, _attachedElem: Element);
+        readonly name: string;
+        on(eventType: Content.EventType, callback: () => any): void;
+        off(eventType: Content.EventType, callback: () => any): void;
+        readonly attachedElement: Element;
+        attachTo(element: Element): void;
+        readonly attached: boolean;
+        detach(): void;
+        dispose(): void;
+    }
+    namespace Content {
+        type EventType = "attached" | "detach" | "dispose";
+    }
+    class Container extends Content {
+        compElements: {
+            [name: string]: Element;
+        };
+        matches(container: Container): boolean;
+    }
+    class Comp extends Content {
     }
 }
