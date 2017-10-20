@@ -35,7 +35,7 @@ namespace Jhtml {
 							resolve({ model: model, directive: new ModelDirective(model)});
 							break;
 						default:
-							resolve({ directive: new ReplaceDirective(xhttp.status, xhttp.responseText) });
+							resolve({ directive: new ReplaceDirective(xhttp.status, xhttp.responseText, xhttp.getResponseHeader("Content-Type"), url) });
 					}
 				};
 				

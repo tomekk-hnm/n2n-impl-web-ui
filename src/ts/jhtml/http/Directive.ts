@@ -15,11 +15,11 @@ namespace Jhtml {
     }
     
     export class ReplaceDirective implements Directive {
-        constructor(public status: number, public responseText: string) {
+        constructor(public status: number, public responseText: string, public mimeType: string, public url: Url) {
         }
     	
         exec(context: Context, history: History) {
-        	alert("replace");
+        	context.replace(this.responseText, this.mimeType, history.currentPage.url.equals(this.url));
         }
     }
     
