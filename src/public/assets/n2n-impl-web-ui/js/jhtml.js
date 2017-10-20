@@ -370,9 +370,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
             return context;
         };
-        Context.KEY = "data-jhtml-context";
         return Context;
     }());
+    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -406,98 +406,103 @@ var Jhtml;
             configurable: true
         });
         Meta.prototype.replaceWith = function (newMeta) {
-            this.untouchableElems = [];
-            this.mergedHeadElems = [];
-            this.mergedBodyElems = [];
-            this.mergedContainerElem = null;
+            this.processedElements = [];
+            this.removableElems = [];
             this.newMeta = newMeta;
-            for (var _i = 0, _a = newMeta.headElements; _i < _a.length; _i++) {
-                var newElem = _a[_i];
-                this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
+            this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+            this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+            for (var _i = 0, _a = this.removableElems; _i < _a.length; _i++) {
+                var removableElem = _a[_i];
+                if (this.containsProcessed(removableElem))
+                    continue;
+                removableElem.remove();
             }
-            for (var _b = 0, _c = newMeta.bodyElements; _b < _c.length; _b++) {
-                var newElem = _c[_b];
-                this.mergedBodyElems.push(this.mergeElem(newElem, Meta.Target.BODY));
-            }
-            var untouchedHeadElems = this.clean(this.headElem);
-            for (var _d = 0, _e = this.mergedHeadElems; _d < _e.length; _d++) {
-                var elem = _e[_d];
-                this.headElem.appendChild(elem);
-            }
-            this.clean(this.bodyElem);
-            for (var _f = 0, _g = this.mergedBodyElems; _f < _g.length; _f++) {
-                var elem = _g[_f];
-                this.bodyElem.appendChild(elem);
-            }
-            this.containerElem = this.mergedContainerElem;
-            this.untouchedElems = null;
-            this.mergedHeadElems = null;
-            this.mergedBodyElems = null;
-            this.mergedContainerElem = null;
+            this.processedElements = null;
+            this.removableElems = null;
             this.newMeta = null;
         };
         Meta.prototype.mergeInto = function (newElems, parentElem, target) {
+            var mergedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
             for (var i in newElems) {
-                var curElem = parentElem.children[i];
-                this.mergeElem(newElem, target);
-                this.compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
+                var newElem = newElems[i];
+                var mergedElem = this.mergeElem(curElems, newElem, target);
+                if (mergedElem === this.containerElem)
+                    continue;
+                this.mergeInto(Jhtml.Util.array(newElem.children), mergedElem, target);
+                mergedElems.push(mergedElem);
             }
-        };
-        Meta.prototype.clean = function (metaElem) {
-            var untouchedElems = [];
-            for (var _i = 0, _a = Jhtml.Util.array(metaElem.children); _i < _a.length; _i++) {
-                var elem = _a[_i];
-                if (elem.tagName == "SCRIPT" || -1 < this.mergedHeadElems.indexOf(elem)
-                    || -1 < this.mergedBodyElems.indexOf(elem)) {
-                    untouchedElems.push(elem);
+            for (var i = 0; i < curElems.length; i++) {
+                if (-1 < mergedElems.indexOf(curElems[i]))
+                    continue;
+                this.removableElems.push(curElems[i]);
+                curElems.splice(i, 1);
+            }
+            var curElem = curElems.shift();
+            for (var i = 0; i < mergedElems.length; i++) {
+                var mergedElem = mergedElems[i];
+                if (mergedElem === curElem) {
+                    curElem = curElems.shift();
                     continue;
                 }
-                for (var _b = 0, _c = Jhtml.Util.find(elem, "script"); _b < _c.length; _b++) {
-                    var scriptElem = _c[_b];
-                    metaElem.insertBefore(scriptElem, elem);
+                if (!curElem) {
+                    parentElem.appendChild(mergedElem);
+                    continue;
                 }
-                metaElem.removeChild(elem);
+                parentElem.insertBefore(mergedElem, curElem);
+                var j = void 0;
+                if (-1 < (j = curElems.indexOf(mergedElem))) {
+                    curElems.splice(j, 1);
+                }
             }
-            return untouchedElems;
         };
-        Meta.prototype.mergedElem = function (preferedCurElems, newElem, target) {
+        Meta.prototype.mergeElem = function (preferedElems, newElem, target) {
             if (newElem === this.newMeta.containerElem) {
                 if (!this.compareExact(this.containerElem, newElem, false)) {
                     var mergedElem_1 = newElem.cloneNode(false);
                     this.processedElements.push(mergedElem_1);
                     return mergedElem_1;
                 }
-                var index = preferedCurElems.indexOf(this.containerElem);
-                if (-1 < index)
-                    preferedCurElems.splice(index, 1);
                 this.processedElements.push(this.containerElem);
                 return this.containerElem;
             }
-            if (!newElem.contains(this.newMeta.containerElem)) {
-                var curElem = void 0;
-                switch (newElem.tagName) {
-                    case "SCRIPT":
-                        if (curElem = this.find(newElem, ["src", "type"], true, false)) {
-                            return curElem;
-                        }
-                        return newElem.cloneNode();
-                    case "STYLE":
-                    case "LINK":
-                        if (curElem = this.findExact(newElem)) {
-                            return curElem;
-                        }
-                        return newElem.cloneNode();
-                    default:
-                        if (curElem = this.findExact(newElem, target)) {
-                            return curElem;
-                        }
+            if (newElem.contains(this.newMeta.containerElem)) {
+                var mergedElem_2;
+                if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
+                    this.processedElements.push(mergedElem_2);
+                    return mergedElem_2;
                 }
+                return this.cloneNewElem(newElem, false);
             }
-            var mergedElem = newElem.cloneNode(false);
-            for (var _i = 0, _a = Jhtml.Util.array(newElem.children); _i < _a.length; _i++) {
-                var childElem = _a[_i];
-                mergedElem.appendChild(this.mergeElem(childElem, target));
+            var mergedElem;
+            switch (newElem.tagName) {
+                case "SCRIPT":
+                    if ((mergedElem = this.filter(preferedElems, newElem, ["src", "type"], true, false))
+                        || (mergedElem = this.find(newElem, ["src", "type"], true, false))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                case "STYLE":
+                case "LINK":
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                default:
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true, target))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, false);
             }
+        };
+        Meta.prototype.cloneNewElem = function (newElem, deep) {
+            var mergedElem = newElem.cloneNode(deep);
+            this.processedElements.push(mergedElem);
             return mergedElem;
         };
         Meta.prototype.attrNames = function (elem) {
@@ -508,29 +513,28 @@ var Jhtml;
             }
             return attrNames;
         };
-        Meta.prototype.findExact = function (matchingElem, target) {
+        Meta.prototype.findExact = function (matchingElem, checkInner, target) {
             if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
-            return this.find(matchingElem, this.attrNames(matchingElem), true, true, target);
+            return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
         };
         Meta.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
             if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
             var foundElem = null;
             if ((target & Meta.Target.HEAD)
-                && (foundElem = this.filter(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                && (foundElem = this.findIn(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
                 return foundElem;
             }
             if ((target & Meta.Target.BODY)
-                && (foundElem = this.filter(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                && (foundElem = this.findIn(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
                 return foundElem;
             }
             return null;
         };
-        Meta.prototype.filter = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
+        Meta.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
             for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
                 var tagElem = _a[_i];
                 if (tagElem === this.containerElem || tagElem.contains(this.containerElem)
-                    || this.containerElem.contains(tagElem) || -1 < this.mergedHeadElems.indexOf(tagElem)
-                    || -1 < this.mergedBodyElems.indexOf(tagElem)) {
+                    || this.containerElem.contains(tagElem) || this.containsProcessed(tagElem)) {
                     continue;
                 }
                 if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
@@ -538,6 +542,21 @@ var Jhtml;
                 }
             }
             return null;
+        };
+        Meta.prototype.filterExact = function (elems, matchingElem, checkInner) {
+            return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
+        };
+        Meta.prototype.containsProcessed = function (elem) {
+            return -1 < this.processedElements.indexOf(elem);
+        };
+        Meta.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
+            for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
+                var elem = elems_1[_i];
+                if (!this.containsProcessed(elem)
+                    && this.compare(elem, matchingElem, attrNames, checkInner, checkAttrNum)) {
+                    return elem;
+                }
+            }
         };
         Meta.prototype.compareExact = function (elem1, elem2, checkInner) {
             return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
@@ -643,12 +662,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.firstElementChild;
         };
-        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-        ModelFactory.COMP_ATTR = "data-jhtml-comp";
-        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
+    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+    ModelFactory.COMP_ATTR = "data-jhtml-comp";
+    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -712,10 +731,10 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
-        Monitor.KEY = "jhtml-monitor";
-        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
+    Monitor.KEY = "jhtml-monitor";
+    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -927,9 +946,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
-        Link.KEY = "jhtml-link";
         return Link;
     }());
+    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -945,10 +964,10 @@ var Jhtml;
                     Jhtml.Link.from(elem);
                 }
             };
-            Scanner.A_ATTR = "data-jhtml";
-            Scanner.A_SELECTOR = "[" + Scanner.A_ATTR + "]";
             return Scanner;
         }());
+        Scanner.A_ATTR = "data-jhtml";
+        Scanner.A_SELECTOR = "[" + Scanner.A_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
