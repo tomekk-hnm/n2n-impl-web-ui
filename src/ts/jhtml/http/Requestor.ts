@@ -10,7 +10,7 @@ namespace Jhtml {
 				this.lookup(url).then((result: Requestor.Result) => {
 					resolve(result.directive);
 				});
-			})
+			});
 		}
 		
 		public lookup(url: Url): Promise<Requestor.Result> {

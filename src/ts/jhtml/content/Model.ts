@@ -39,9 +39,8 @@ namespace Jhtml {
     		
     		this._attachedElem = element;
     		
-    		let list = this.detachedElem.children;
-    		for (let i in list) {
-    			element.appendChild(list[i]);
+    		for (let childElem of Util.array(this.detachedElem.children)) {
+    			element.appendChild(childElem);
     		}
     		
     		this.cbr.fireType("attached");
@@ -54,12 +53,13 @@ namespace Jhtml {
     	detach() {
     		if (!this._attachedElem) return;
     		
-    		let list = this._attachedElem.children;
-    		for (let i in list) {
-    			this.detachedElem.appendChild(list[i]);
+    		this.cbr.fireType("detach");
+    		
+    		for (let childElem of Util.array(this._attachedElem.children)) {
+    			this.detachedElem.appendChild(childElem);
     		}
     		
-    		this.cbr.fireType("detached");
+    		this._attachedElem = null;
     	}
     	
     	dispose() {

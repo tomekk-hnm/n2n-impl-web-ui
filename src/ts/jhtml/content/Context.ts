@@ -2,7 +2,7 @@ namespace Jhtml {
 	
 	export class Context {
 		private _requestor: Requestor;
-		private _boundModel: Model;
+		private boundModel: Model;
 	
 		private compHandlers: { [compName: string]: CompHandler } = {};
 		private readyCbr: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
@@ -28,9 +28,9 @@ namespace Jhtml {
 		}
 		
 		private getBoundModel(): Model {
-			if (!this._boundModel) {
+			if (!this.boundModel) {
 				try {
-					this._boundModel = ModelFactory.createFromDocument(this.document);
+					this.boundModel = ModelFactory.createFromDocument(this.document);
 					Ui.Scanner.scan(this.document.documentElement);
 				} catch (e) { 
 					if (e instanceof ParseError) return;
@@ -39,7 +39,7 @@ namespace Jhtml {
 				}
 			}
 			
-			return this._boundModel || null;
+			return this.boundModel || null;
 		}
 		
 		import(newModel: Model) {

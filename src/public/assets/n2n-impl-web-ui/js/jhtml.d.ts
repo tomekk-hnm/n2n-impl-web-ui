@@ -61,7 +61,7 @@ declare namespace Jhtml {
     class Context {
         private _document;
         private _requestor;
-        private _boundModel;
+        private boundModel;
         private compHandlers;
         private readyCbr;
         constructor(_document: Document);
@@ -284,6 +284,7 @@ declare namespace Jhtml.Util {
     function getElemData(elem: Element, key: string): any;
     function bindElemData<T>(elem: Element, key: string, data: any): void;
     function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
+    function array(nodeList: NodeList): Array<Element>;
 }
 declare namespace Jhtml.Util {
     class ElemConfigReader {

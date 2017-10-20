@@ -26,4 +26,12 @@ namespace Jhtml.Util {
 		}
 		return foundElems;
 	}
+	
+	export function array(nodeList: NodeList): Array<Element> {
+		let elems: Array<Element> = [];
+		for (let i = 0; i < nodeList.length; i++) {
+			elems.push(<Element> nodeList.item(i));
+		}
+		return elems;
+	}
 }

@@ -7,11 +7,11 @@ namespace Jhtml {
     	}
     	
     	get headElements(): Array<Element> {
-    		return Object.values(this.headElem.children);
+    		return Util.array(this.headElem.children);
     	}
     	
     	get bodyElements(): Array<Element> {
-    		return Object.values(this.bodyElem.children);
+    		return Util.array(this.bodyElem.children);
     	}
     	
     	get containerElement(): Element {
@@ -33,7 +33,7 @@ namespace Jhtml {
 			}
 			
 			for (let newElem of newMeta.bodyElements) {
-				this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
+				this.mergedBodyElems.push(this.mergeElem(newElem, Meta.Target.BODY));
 			}
 
 			this.clean(this.headElem);
@@ -53,10 +53,7 @@ namespace Jhtml {
 		}			
 		
 		private clean(metaElem: Element) {
-			let list = metaElem.children;
-			for (let i in list) {
-				let elem = list[i];
-				
+			for (let elem of Util.array(metaElem.children)) {
 				if (elem.tagName == "SCRIPT" || -1 < this.mergedHeadElems.indexOf(elem) 
 						|| -1 < this.mergedBodyElems.indexOf(elem)) {
 					continue;
@@ -75,30 +72,32 @@ namespace Jhtml {
 			}
 			
 			if (!newElem.contains(this.newMeta.containerElem)) {
+				let curElem;
+				
 				switch (newElem.tagName) {
 					case "SCRIPT":
-						for (let curElem of this.find(newElem, ["src", "type"], true, false)) {
+						if (curElem = this.find(newElem, ["src", "type"], true, false)) {
 							return curElem;
 						}
 						return <Element> newElem.cloneNode();
 					case "STYLE":
 					case "LINK":
-						for (let curElem of this.findExact(newElem)) {
+						if (curElem = this.findExact(newElem)) {
 							return curElem;
 						}
 						return <Element> newElem.cloneNode();
 					default:
-						for (let curElem of this.findExact(newElem, target)) {
+						if (curElem = this.findExact(newElem, target)) {
 							return curElem;
 						}
-					
 				}
 			}
 			
-    		let mergedElem = newElem.cloneNode(false);
-    		for (let i in newElem.children) {
-    			mergedElem.appendChild(this.mergeElem(newElem.children[i], target));
+    		let mergedElem = <Element> newElem.cloneNode(false);
+    		for (let childElem of Util.array(newElem.children)) {
+    			mergedElem.appendChild(this.mergeElem(childElem, target));
     		}
+    		return mergedElem;
 		}
     	
 		private findExact(matchingElem: Element, 

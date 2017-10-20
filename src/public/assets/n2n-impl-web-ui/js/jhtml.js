@@ -277,9 +277,9 @@ var Jhtml;
             return this.getBoundModel() ? true : false;
         };
         Context.prototype.getBoundModel = function () {
-            if (!this._boundModel) {
+            if (!this.boundModel) {
                 try {
-                    this._boundModel = Jhtml.ModelFactory.createFromDocument(this.document);
+                    this.boundModel = Jhtml.ModelFactory.createFromDocument(this.document);
                     Jhtml.Ui.Scanner.scan(this.document.documentElement);
                 }
                 catch (e) {
@@ -288,7 +288,7 @@ var Jhtml;
                     throw e;
                 }
             }
-            return this._boundModel || null;
+            return this.boundModel || null;
         };
         Context.prototype.import = function (newModel) {
             var boundModel = this.getBoundModel();
@@ -383,14 +383,14 @@ var Jhtml;
         }
         Object.defineProperty(Meta.prototype, "headElements", {
             get: function () {
-                return Object.values(this.headElem.children);
+                return Jhtml.Util.array(this.headElem.children);
             },
             enumerable: true,
             configurable: true
         });
         Object.defineProperty(Meta.prototype, "bodyElements", {
             get: function () {
-                return Object.values(this.bodyElem.children);
+                return Jhtml.Util.array(this.bodyElem.children);
             },
             enumerable: true,
             configurable: true
@@ -412,7 +412,7 @@ var Jhtml;
             }
             for (var _b = 0, _c = newMeta.bodyElements; _b < _c.length; _b++) {
                 var newElem = _c[_b];
-                this.mergedHeadElems.push(this.mergeElem(newElem, Meta.Target.HEAD));
+                this.mergedBodyElems.push(this.mergeElem(newElem, Meta.Target.BODY));
             }
             this.clean(this.headElem);
             this.clean(this.bodyElem);
@@ -429,15 +429,14 @@ var Jhtml;
             this.newMeta = null;
         };
         Meta.prototype.clean = function (metaElem) {
-            var list = metaElem.children;
-            for (var i in list) {
-                var elem = list[i];
+            for (var _i = 0, _a = Jhtml.Util.array(metaElem.children); _i < _a.length; _i++) {
+                var elem = _a[_i];
                 if (elem.tagName == "SCRIPT" || -1 < this.mergedHeadElems.indexOf(elem)
                     || -1 < this.mergedBodyElems.indexOf(elem)) {
                     continue;
                 }
-                for (var _i = 0, _a = Jhtml.Util.find(elem, "script"); _i < _a.length; _i++) {
-                    var scriptElem = _a[_i];
+                for (var _b = 0, _c = Jhtml.Util.find(elem, "script"); _b < _c.length; _b++) {
+                    var scriptElem = _c[_b];
                     metaElem.insertBefore(scriptElem, elem);
                 }
                 metaElem.removeChild(elem);
@@ -448,31 +447,31 @@ var Jhtml;
                 return this.mergedContainerElem = newElem.cloneNode(false);
             }
             if (!newElem.contains(this.newMeta.containerElem)) {
+                var curElem = void 0;
                 switch (newElem.tagName) {
                     case "SCRIPT":
-                        for (var _i = 0, _a = this.find(newElem, ["src", "type"], true, false); _i < _a.length; _i++) {
-                            var curElem = _a[_i];
+                        if (curElem = this.find(newElem, ["src", "type"], true, false)) {
                             return curElem;
                         }
                         return newElem.cloneNode();
                     case "STYLE":
                     case "LINK":
-                        for (var _b = 0, _c = this.findExact(newElem); _b < _c.length; _b++) {
-                            var curElem = _c[_b];
+                        if (curElem = this.findExact(newElem)) {
                             return curElem;
                         }
                         return newElem.cloneNode();
                     default:
-                        for (var _d = 0, _e = this.findExact(newElem, target); _d < _e.length; _d++) {
-                            var curElem = _e[_d];
+                        if (curElem = this.findExact(newElem, target)) {
                             return curElem;
                         }
                 }
             }
             var mergedElem = newElem.cloneNode(false);
-            for (var i in newElem.children) {
-                mergedElem.appendChild(this.mergeElem(newElem.children[i], target));
+            for (var _i = 0, _a = Jhtml.Util.array(newElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                mergedElem.appendChild(this.mergeElem(childElem, target));
             }
+            return mergedElem;
         };
         Meta.prototype.findExact = function (matchingElem, target) {
             if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
@@ -580,9 +579,9 @@ var Jhtml;
                 throw new Error("Element already attached.");
             }
             this._attachedElem = element;
-            var list = this.detachedElem.children;
-            for (var i in list) {
-                element.appendChild(list[i]);
+            for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                element.appendChild(childElem);
             }
             this.cbr.fireType("attached");
         };
@@ -596,11 +595,12 @@ var Jhtml;
         Content.prototype.detach = function () {
             if (!this._attachedElem)
                 return;
-            var list = this._attachedElem.children;
-            for (var i in list) {
-                this.detachedElem.appendChild(list[i]);
+            this.cbr.fireType("detach");
+            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                this.detachedElem.appendChild(childElem);
             }
-            this.cbr.fireType("detached");
+            this._attachedElem = null;
         };
         Content.prototype.dispose = function () {
             if (this.attached) {
@@ -651,15 +651,15 @@ var Jhtml;
             return model;
         };
         ModelFactory.createFromHtml = function (htmlStr) {
-            var templateElem = document.createElement("template");
+            var templateElem = document.createElement("html");
             templateElem.innerHTML = htmlStr;
             var model = new Jhtml.Model(ModelFactory.createMeta(templateElem));
+            ModelFactory.compileContent(model, templateElem);
             model.container.detach();
             for (var _i = 0, _a = Object.values(model.comps); _i < _a.length; _i++) {
                 var comp = _a[_i];
                 comp.detach();
             }
-            ModelFactory.compileContent(model, templateElem);
             return model;
         };
         ModelFactory.createMeta = function (rootElem) {
@@ -801,6 +801,7 @@ var Jhtml;
             this.model = model;
         }
         ModelDirective.prototype.exec = function (context, history) {
+            context.import(this.model);
         };
         return ModelDirective;
     }());
@@ -1089,6 +1090,14 @@ var Jhtml;
             return foundElems;
         }
         Util.find = find;
+        function array(nodeList) {
+            var elems = [];
+            for (var i = 0; i < nodeList.length; i++) {
+                elems.push(nodeList.item(i));
+            }
+            return elems;
+        }
+        Util.array = array;
     })(Util = Jhtml.Util || (Jhtml.Util = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;

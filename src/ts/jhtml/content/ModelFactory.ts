@@ -28,17 +28,18 @@ namespace Jhtml {
     	}
     	
     	public static createFromHtml(htmlStr: string): Model {
-    		let templateElem = document.createElement("template");
+    		let templateElem = document.createElement("html");
 		    templateElem.innerHTML = htmlStr;
 		    
 		    let model = new Model(ModelFactory.createMeta(templateElem));
+		    
+		    ModelFactory.compileContent(model, templateElem);
 		    
 		    model.container.detach();
 		    for (let comp of Object.values(model.comps)) {
 		    	comp.detach();
 		    }
 		    
-		    ModelFactory.compileContent(model, templateElem);
     		return model;
     	}
     	

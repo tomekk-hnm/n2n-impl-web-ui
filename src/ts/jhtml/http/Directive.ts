@@ -10,6 +10,7 @@ namespace Jhtml {
     	}
     	
     	exec(context: Context, history: History) {
+    		context.import(this.model);
     	}
     }
     
