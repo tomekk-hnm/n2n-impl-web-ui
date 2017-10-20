@@ -22,7 +22,7 @@ namespace Jhtml.Util {
 		let foundElems: Array<Element> = [];
 		let nodeList = nodeSelector.querySelectorAll(selector);
 		for (let i = 0; i < nodeList.length; i++) {
-			foundElems[i] = nodeList.item(i);
+			foundElems.push(nodeList.item(i));
 		}
 		return foundElems;
 	}

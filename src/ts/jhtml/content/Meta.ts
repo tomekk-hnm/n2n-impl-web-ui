@@ -24,8 +24,10 @@ namespace Jhtml {
     	private newMeta: Meta;
     	
 		public replaceWith(newMeta: Meta) {
+			this.untouchableElems = [];
 			this.mergedHeadElems = [];
 			this.mergedBodyElems = [];
+			this.mergedContainerElem = null;
 			this.newMeta = newMeta;
 		
 			for (let newElem of newMeta.headElements) {
@@ -36,26 +38,45 @@ namespace Jhtml {
 				this.mergedBodyElems.push(this.mergeElem(newElem, Meta.Target.BODY));
 			}
 
-			this.clean(this.headElem);
-			this.clean(this.bodyElem);
-			
+			let untouchedHeadElems = this.clean(this.headElem);
 			for (let elem of this.mergedHeadElems) {
 				this.headElem.appendChild(elem);
 			}
 			
+			this.clean(this.bodyElem);
+			
 			for (let elem of this.mergedBodyElems) {
-				this.headElem.appendChild(elem);
+				this.bodyElem.appendChild(elem);
 			}
 			
+			this.containerElem = this.mergedContainerElem;
+
+			this.untouchedElems = null;
 			this.mergedHeadElems = null;
 			this.mergedBodyElems = null;
+			this.mergedContainerElem = null;
 			this.newMeta = null;
 		}			
 		
-		private clean(metaElem: Element) {
+
+		private untouchedElems : Array<Element>;
+		private removableElems: Array<Element>;
+    	
+		private mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target) {
+			for (let i in newElems) {
+				let curElem = parentElem.children[i];
+				
+				this.mergeElem(newElem, target)
+				this.compare(elem1, elem2, attrNames, checkInner, checkAttrNum)
+			}
+		}
+		
+		private clean(metaElem: Element): Array<Element> {
+			let untouchedElems: Array<Element> = [];
 			for (let elem of Util.array(metaElem.children)) {
 				if (elem.tagName == "SCRIPT" || -1 < this.mergedHeadElems.indexOf(elem) 
 						|| -1 < this.mergedBodyElems.indexOf(elem)) {
+					untouchedElems.push(elem);
 					continue;
 				}
 				
@@ -64,11 +85,23 @@ namespace Jhtml {
 				}
 				metaElem.removeChild(elem);
 			}
+			return untouchedElems;
 		}
 		
-		private mergeElem(newElem: Element, target: Meta.Target): Element {
+		private mergedElem(preferedCurElems: Array<Element>, newElem: Element, target: Meta.Target): Element {
 			if (newElem === this.newMeta.containerElem) {
-				return this.mergedContainerElem = <Element> newElem.cloneNode(false);
+				if (!this.compareExact(this.containerElem, newElem, false)) {
+					let mergedElem =  <Element> newElem.cloneNode(false);
+					this.processedElements.push(mergedElem);
+					return mergedElem;
+				}
+				
+				let index = preferedCurElems.indexOf(this.containerElem);
+				if (-1 < index) preferedCurElems.splice(index, 1);
+					
+				this.processedElements.push(this.containerElem);
+				return this.containerElem;
+
 			}
 			
 			if (!newElem.contains(this.newMeta.containerElem)) {
@@ -99,16 +132,20 @@ namespace Jhtml {
     		}
     		return mergedElem;
 		}
+		
+		private attrNames(elem: Element): Array<string> {
+			let attrNames: Array<string> = [];
+			let attrs = elem.attributes;
+			for (let i = 0; i < attrs.length; i++) {
+				attrNames.push(attrs[i].nodeName);
+			}
+			return attrNames;
+		}
     	
 		private findExact(matchingElem: Element, 
 				target: Meta.Target = Meta.Target.HEAD|Meta.Target.BODY): Array<Element> {
-			let attrNames: Array<string> = [];
-			let attrs = matchingElem.attributes;
-			for (let i in attrs) {
-				attrNames.push(attrs[i].name);
-			}
 			
-			return this.find(matchingElem, attrNames, true, true, target);
+			return this.find(matchingElem, this.attrNames(matchingElem), true, true, target);
 		}
 		
 		private find(matchingElem: Element, matchingAttrNames: Array<string>, checkInner: boolean, 
@@ -144,6 +181,10 @@ namespace Jhtml {
     			
     		return null;
 		}
+    	
+    	private compareExact(elem1: Element, elem2: Element, checkInner: boolean) {
+    		return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
+    	}
 		
 		private compare(elem1: Element, elem2: Element, attrNames: Array<string>, checkInner: boolean, 
 				checkAttrNum: boolean): boolean {
@@ -169,8 +210,8 @@ namespace Jhtml {
     
     export namespace Meta {
     	export enum Target {
-    		HEAD,
-    		BODY
+    		HEAD = 1,
+    		BODY = 2
     	}
     }    
 }

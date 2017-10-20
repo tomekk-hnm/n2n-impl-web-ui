@@ -5,7 +5,7 @@ namespace Jhtml {
     	public static readonly COMP_ATTR: string = "data-jhtml-comp";
 
     	private static readonly CONTAINER_SELECTOR: string =  "[" + ModelFactory.CONTAINER_ATTR + "]";
-    	private static readonly COMP_SELECTOR: string =  "[" + ModelFactory.CONTAINER_ATTR + "]";
+    	private static readonly COMP_SELECTOR: string =  "[" + ModelFactory.COMP_ATTR + "]";
     	
     	
     	public static createFromJsonObj(jsonObj: any): Model {

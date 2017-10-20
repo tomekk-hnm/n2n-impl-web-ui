@@ -33,7 +33,7 @@ namespace Jhtml {
 					this.boundModel = ModelFactory.createFromDocument(this.document);
 					Ui.Scanner.scan(this.document.documentElement);
 				} catch (e) { 
-					if (e instanceof ParseError) return;
+					if (e instanceof ParseError) return null;
 					
 					throw e;
 				}
@@ -48,17 +48,22 @@ namespace Jhtml {
 				throw new Error("No jhtml context");
 			}
 			
+			for (let name in boundModel.comps) {
+				let comp = boundModel.comps[name];
+				
+				if (!this.compHandlers[name] || !this.compHandlers[name].detachComp(comp)) {
+					comp.detach();
+				}
+			}
+
+			boundModel.container.detach();
 			boundModel.meta.replaceWith(newModel.meta);
 			
-			for (let name in boundModel.comps) {
-				boundModel.comps[name].detach();
-			}
-			
 			if (!boundModel.container.matches(newModel.container)) {
-				boundModel.container.detach();
-				newModel.container.attachTo(boundModel.meta.containerElement);
 				boundModel.container = newModel.container;
-			}
+			} 
+
+			boundModel.container.attachTo(boundModel.meta.containerElement);
 			
 			for (let name in newModel.comps) {
 				let comp = boundModel.comps[name] = newModel.comps[name];

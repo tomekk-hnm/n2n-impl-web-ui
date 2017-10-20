@@ -19,6 +19,7 @@ namespace Jhtml {
         }
     	
         exec(context: Context, history: History) {
+        	alert("replace");
         }
     }
     
