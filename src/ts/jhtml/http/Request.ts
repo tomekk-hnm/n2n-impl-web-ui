@@ -37,10 +37,10 @@ namespace Jhtml {
 								model = this.createModelFromHtml(this.xhr.responseText);
 							}
 
-							resolve({ model: model, directive: new ModelDirective(model)});
+							resolve({url: this.url, model: model, directive: new ModelDirective(model)});
 							break;
 						default:
-							resolve({ directive: new ReplaceDirective(this.xhr.status, this.xhr.responseText, 
+							resolve({url: this.url, directive: new ReplaceDirective(this.xhr.status, this.xhr.responseText, 
 									this.xhr.getResponseHeader("Content-Type"), this.url) });
 					}
 				};

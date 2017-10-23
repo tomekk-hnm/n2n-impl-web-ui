@@ -73,7 +73,7 @@ namespace Jhtml {
     		let document = containerElem.ownerDocument;
 		   
 		    model.container = new Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), 
-		    		containerElem);
+		    		containerElem, model);
     		
 		    for (let compElem of Util.find(containerElem, ModelFactory.COMP_SELECTOR)) {
 		    	let name: string = compElem.getAttribute(ModelFactory.COMP_ATTR);
@@ -83,7 +83,7 @@ namespace Jhtml {
 		    	}
 		    	
 		    	model.container.compElements[name] = compElem;
-		    	model.comps[name] = new Comp(name, compElem);
+		    	model.comps[name] = new Comp(name, compElem, model);
 		    }
     	} 
 //    	

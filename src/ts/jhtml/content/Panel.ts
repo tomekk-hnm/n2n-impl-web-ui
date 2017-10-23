@@ -4,12 +4,16 @@ namespace Jhtml {
     	private detachedElem: Element;
     	private cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
     	
-    	constructor(private _name: string, private _attachedElem: Element) {
+    	constructor(private _name: string, private _attachedElem: Element, private _model: Model) {
     		this.detachedElem = _attachedElem.ownerDocument.createElement("template");
     	}
     	
     	get name(): string {
     		return this._name;
+    	}
+    	
+    	get model(): Model {
+    		return this._model;
     	}
     	
     	on(eventType: Content.EventType, callback: () => any) {

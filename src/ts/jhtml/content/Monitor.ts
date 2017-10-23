@@ -3,10 +3,19 @@ namespace Jhtml {
 	export class Monitor {
 		public context: Context;
 		public history: History;
+		private compHandlers: { [compName: string]: CompHandler } = {};
 		
 		constructor(private container: Element) {
 			this.context = Context.from(container.ownerDocument);
 			this.history = new History();
+		}
+		
+		registerCompHandler(compName: string, compHandler: CompHandler) {
+			this.compHandlers[compName] = compHandler;
+		}
+		
+		unregisterCompHandler(compName: string) {
+			delete this.compHandlers[compName];
 		}
 		
 		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Directive> {
@@ -40,7 +49,7 @@ namespace Jhtml {
 		
 		private dingsel(promise: Promise<Directive>) {
 			promise.then((directive: Directive) => {
-				directive.exec(this.context, this.history);
+				directive.exec(this.context, this.history, this.compHandlers);
 			});
 		}
 		

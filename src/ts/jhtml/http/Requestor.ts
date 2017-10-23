@@ -33,9 +33,4 @@ namespace Jhtml {
 			return new Request(this, xhr, url);
 		}
 	}
-	
-	export interface Response {
-		model?: Model;
-		directive: Directive;
-	}
 }

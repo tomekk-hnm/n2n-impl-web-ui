@@ -290,14 +290,16 @@ var Jhtml;
             }
             return this.boundModel || null;
         };
-        Context.prototype.import = function (newModel) {
+        Context.prototype.import = function (newModel, montiorCompHandlers) {
+            if (montiorCompHandlers === void 0) { montiorCompHandlers = {}; }
             var boundModel = this.getBoundModel();
             if (!boundModel) {
                 throw new Error("No jhtml context");
             }
             for (var name_1 in boundModel.comps) {
                 var comp = boundModel.comps[name_1];
-                if (!this.compHandlers[name_1] || !this.compHandlers[name_1].detachComp(comp)) {
+                if (!(montiorCompHandlers[name_1] && montiorCompHandlers[name_1].detachComp(comp))
+                    && !(this.compHandlers[name_1] && this.compHandlers[name_1].detachComp(comp))) {
                     comp.detach();
                 }
             }
@@ -309,7 +311,8 @@ var Jhtml;
             boundModel.container.attachTo(boundModel.meta.containerElement);
             for (var name_2 in newModel.comps) {
                 var comp = boundModel.comps[name_2] = newModel.comps[name_2];
-                if (!this.compHandlers[name_2] || !this.compHandlers[name_2].attachComp(comp)) {
+                if (!(montiorCompHandlers[name_2] && montiorCompHandlers[name_2].attachComp(comp))
+                    && !(this.compHandlers[name_2] && this.compHandlers[name_2].attachComp(comp))) {
                     comp.attachTo(boundModel.container.compElements[name_2]);
                 }
             }
@@ -370,9 +373,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
             return context;
         };
+        Context.KEY = "data-jhtml-context";
         return Context;
     }());
-    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -646,7 +649,7 @@ var Jhtml;
         ModelFactory.compileContent = function (model, rootElem) {
             var containerElem = model.meta.containerElement;
             var document = containerElem.ownerDocument;
-            model.container = new Jhtml.Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), containerElem);
+            model.container = new Jhtml.Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), containerElem, model);
             for (var _i = 0, _a = Jhtml.Util.find(containerElem, ModelFactory.COMP_SELECTOR); _i < _a.length; _i++) {
                 var compElem = _a[_i];
                 var name_3 = compElem.getAttribute(ModelFactory.COMP_ATTR);
@@ -654,7 +657,7 @@ var Jhtml;
                     throw new Jhtml.ParseError("Duplicated comp name: " + name_3);
                 }
                 model.container.compElements[name_3] = compElem;
-                model.comps[name_3] = new Jhtml.Comp(name_3, compElem);
+                model.comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
             }
         };
         ModelFactory.createElement = function (elemHtml) {
@@ -662,12 +665,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.firstElementChild;
         };
+        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+        ModelFactory.COMP_ATTR = "data-jhtml-comp";
+        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
-    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-    ModelFactory.COMP_ATTR = "data-jhtml-comp";
-    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -675,9 +678,16 @@ var Jhtml;
     var Monitor = (function () {
         function Monitor(container) {
             this.container = container;
+            this.compHandlers = {};
             this.context = Jhtml.Context.from(container.ownerDocument);
             this.history = new Jhtml.History();
         }
+        Monitor.prototype.registerCompHandler = function (compName, compHandler) {
+            this.compHandlers[compName] = compHandler;
+        };
+        Monitor.prototype.unregisterCompHandler = function (compName) {
+            delete this.compHandlers[compName];
+        };
         Monitor.prototype.exec = function (urlExpr, requestConfig) {
             var url = Jhtml.Url.create(urlExpr);
             var config = Jhtml.FullRequestConfig.from(requestConfig);
@@ -702,7 +712,7 @@ var Jhtml;
         Monitor.prototype.dingsel = function (promise) {
             var _this = this;
             promise.then(function (directive) {
-                directive.exec(_this.context, _this.history);
+                directive.exec(_this.context, _this.history, _this.compHandlers);
             });
         };
         Monitor.of = function (element, selfIncluded) {
@@ -731,103 +741,11 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
+        Monitor.KEY = "jhtml-monitor";
+        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
-    Monitor.KEY = "jhtml-monitor";
-    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Panel = (function () {
-        function Panel(_name, _attachedElem) {
-            this._name = _name;
-            this._attachedElem = _attachedElem;
-            this.cbr = new Jhtml.Util.CallbackRegistry();
-            this.detachedElem = _attachedElem.ownerDocument.createElement("template");
-        }
-        Object.defineProperty(Panel.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Panel.prototype.on = function (eventType, callback) {
-            this.cbr.onType(eventType, callback);
-        };
-        Panel.prototype.off = function (eventType, callback) {
-            this.cbr.offType(eventType, callback);
-        };
-        Object.defineProperty(Panel.prototype, "attachedElement", {
-            get: function () {
-                return this._attachedElem;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Panel.prototype.attachTo = function (element) {
-            if (this._attachedElem) {
-                throw new Error("Element already attached.");
-            }
-            this._attachedElem = element;
-            for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
-                var childElem = _a[_i];
-                element.appendChild(childElem);
-            }
-            this.cbr.fireType("attached");
-        };
-        Object.defineProperty(Panel.prototype, "attached", {
-            get: function () {
-                return this._attachedElem ? true : false;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Panel.prototype.detach = function () {
-            if (!this._attachedElem)
-                return;
-            this.cbr.fireType("detach");
-            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
-                var childElem = _a[_i];
-                this.detachedElem.appendChild(childElem);
-            }
-            this._attachedElem = null;
-        };
-        Panel.prototype.dispose = function () {
-            if (this.attached) {
-                this.detach();
-            }
-            this.cbr.fireType("dispose");
-            this.cbr = null;
-            this.detachedElem.remove();
-            this.detachedElem = null;
-        };
-        return Panel;
-    }());
-    Jhtml.Panel = Panel;
-    var Container = (function (_super) {
-        __extends(Container, _super);
-        function Container() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.compElements = {};
-            return _this;
-        }
-        Container.prototype.matches = function (container) {
-            return this.name == container.name
-                && JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
-        };
-        return Container;
-    }(Panel));
-    Jhtml.Container = Container;
-    var Comp = (function (_super) {
-        __extends(Comp, _super);
-        function Comp() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        return Comp;
-    }(Panel));
-    Jhtml.Comp = Comp;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -995,6 +913,365 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
+    var Link = (function () {
+        function Link(elem) {
+            var _this = this;
+            this.elem = elem;
+            this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
+            elem.addEventListener("click", function (evt) {
+                evt.preventDefault();
+                _this.handle();
+                return false;
+            });
+        }
+        Link.prototype.handle = function () {
+            Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
+        };
+        Link.from = function (element) {
+            var link = Jhtml.Util.getElemData(element, Link.KEY);
+            if (link instanceof Link) {
+                return link;
+            }
+            link = new Link(element);
+            Jhtml.Util.bindElemData(element, Link.KEY, link);
+            return link;
+        };
+        Link.KEY = "jhtml-link";
+        return Link;
+    }());
+    Jhtml.Link = Link;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Ui;
+    (function (Ui) {
+        var Scanner = (function () {
+            function Scanner() {
+            }
+            Scanner.scan = function (rootElem) {
+                for (var _i = 0, _a = Jhtml.Util.find(rootElem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
+                    var elem = _a[_i];
+                    Jhtml.Link.from(elem);
+                }
+                for (var _b = 0, _c = Jhtml.Util.find(rootElem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
+                    var elem = _c[_b];
+                    Ui.Form.from(elem);
+                }
+            };
+            Scanner.A_ATTR = "data-jhtml";
+            Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+            Scanner.FORM_ATTR = "data-jhtml";
+            Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
+            return Scanner;
+        }());
+        Ui.Scanner = Scanner;
+    })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Util;
+    (function (Util) {
+        var CallbackRegistry = (function () {
+            function CallbackRegistry() {
+                this.callbacks = {};
+            }
+            CallbackRegistry.prototype.on = function (callback) {
+                this.onType("", callback);
+            };
+            CallbackRegistry.prototype.onType = function (type, callback) {
+                if (type === void 0) { type = ""; }
+                if (!this.callbacks[type]) {
+                    this.callbacks[type] = [];
+                }
+                if (-1 == this.callbacks[type].indexOf(callback)) {
+                    this.callbacks[type].push(callback);
+                }
+            };
+            CallbackRegistry.prototype.off = function (callback) {
+                this.offType("", callback);
+            };
+            CallbackRegistry.prototype.offType = function (type, callback) {
+                if (type === void 0) { type = ""; }
+                if (!this.callbacks[type])
+                    return;
+                var i = this.callbacks[type].indexOf(callback);
+                this.callbacks[type].splice(i, 1);
+            };
+            CallbackRegistry.prototype.fire = function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                this.fireType.apply(this, [""].concat(args));
+            };
+            CallbackRegistry.prototype.fireType = function (type) {
+                var args = [];
+                for (var _i = 1; _i < arguments.length; _i++) {
+                    args[_i - 1] = arguments[_i];
+                }
+                if (!this.callbacks[type])
+                    return;
+                for (var _a = 0, _b = this.callbacks[type]; _a < _b.length; _a++) {
+                    var callback = _b[_a];
+                    callback.apply(void 0, args);
+                }
+            };
+            return CallbackRegistry;
+        }());
+        Util.CallbackRegistry = CallbackRegistry;
+    })(Util = Jhtml.Util || (Jhtml.Util = {}));
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Util;
+    (function (Util) {
+        function closest(element, selector, selfIncluded) {
+            do {
+                if (element.matches(selector)) {
+                    return element;
+                }
+            } while (element = element.parentElement);
+        }
+        Util.closest = closest;
+        function getElemData(elem, key) {
+            return elem["data-" + key];
+        }
+        Util.getElemData = getElemData;
+        function bindElemData(elem, key, data) {
+            elem["data-" + key] = data;
+        }
+        Util.bindElemData = bindElemData;
+        function find(nodeSelector, selector) {
+            var foundElems = [];
+            var nodeList = nodeSelector.querySelectorAll(selector);
+            for (var i = 0; i < nodeList.length; i++) {
+                foundElems.push(nodeList.item(i));
+            }
+            return foundElems;
+        }
+        Util.find = find;
+        function array(nodeList) {
+            var elems = [];
+            for (var i = 0; i < nodeList.length; i++) {
+                elems.push(nodeList.item(i));
+            }
+            return elems;
+        }
+        Util.array = array;
+    })(Util = Jhtml.Util || (Jhtml.Util = {}));
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Util;
+    (function (Util) {
+        var ElemConfigReader = (function () {
+            function ElemConfigReader(element) {
+                this.element = element;
+            }
+            ElemConfigReader.prototype.buildName = function (key) {
+                return "data-" + key;
+            };
+            ElemConfigReader.prototype.readBoolean = function (key, fallback) {
+                var value = this.element.getAttribute("data-" + this.buildName(key));
+                if (value === null) {
+                    return fallback;
+                }
+                switch (value) {
+                    case "true":
+                    case "TRUE:":
+                        return true;
+                    case "false":
+                    case "FALSE":
+                        return false;
+                    default:
+                        throw new Error("Attribute '" + this.buildName(key) + " of Element " + this.element.tagName
+                            + "  must contain a boolean value 'true|false'.");
+                }
+            };
+            return ElemConfigReader;
+        }());
+        Util.ElemConfigReader = ElemConfigReader;
+    })(Util = Jhtml.Util || (Jhtml.Util = {}));
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Panel = (function () {
+        function Panel(_name, _attachedElem, _model) {
+            this._name = _name;
+            this._attachedElem = _attachedElem;
+            this._model = _model;
+            this.cbr = new Jhtml.Util.CallbackRegistry();
+            this.detachedElem = _attachedElem.ownerDocument.createElement("template");
+        }
+        Object.defineProperty(Panel.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Panel.prototype, "model", {
+            get: function () {
+                return this._model;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.on = function (eventType, callback) {
+            this.cbr.onType(eventType, callback);
+        };
+        Panel.prototype.off = function (eventType, callback) {
+            this.cbr.offType(eventType, callback);
+        };
+        Object.defineProperty(Panel.prototype, "attachedElement", {
+            get: function () {
+                return this._attachedElem;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.attachTo = function (element) {
+            if (this._attachedElem) {
+                throw new Error("Element already attached.");
+            }
+            this._attachedElem = element;
+            for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                element.appendChild(childElem);
+            }
+            this.cbr.fireType("attached");
+        };
+        Object.defineProperty(Panel.prototype, "attached", {
+            get: function () {
+                return this._attachedElem ? true : false;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.detach = function () {
+            if (!this._attachedElem)
+                return;
+            this.cbr.fireType("detach");
+            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                this.detachedElem.appendChild(childElem);
+            }
+            this._attachedElem = null;
+        };
+        Panel.prototype.dispose = function () {
+            if (this.attached) {
+                this.detach();
+            }
+            this.cbr.fireType("dispose");
+            this.cbr = null;
+            this.detachedElem.remove();
+            this.detachedElem = null;
+        };
+        return Panel;
+    }());
+    Jhtml.Panel = Panel;
+    var Container = (function (_super) {
+        __extends(Container, _super);
+        function Container() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.compElements = {};
+            return _this;
+        }
+        Container.prototype.matches = function (container) {
+            return this.name == container.name
+                && JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
+        };
+        return Container;
+    }(Panel));
+    Jhtml.Container = Container;
+    var Comp = (function (_super) {
+        __extends(Comp, _super);
+        function Comp() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return Comp;
+    }(Panel));
+    Jhtml.Comp = Comp;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Request = (function () {
+        function Request(requestor, _xhr, _url) {
+            this.requestor = requestor;
+            this._xhr = _xhr;
+            this._url = _url;
+        }
+        Object.defineProperty(Request.prototype, "xhr", {
+            get: function () {
+                return this._xhr;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Request.prototype, "url", {
+            get: function () {
+                return this._url;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Request.prototype.abort = function () {
+            this.xhr.abort();
+        };
+        Request.prototype.send = function (data) {
+            this.xhr.send(data);
+            return this.buildPromise();
+        };
+        Request.prototype.buildPromise = function () {
+            var _this = this;
+            return new Promise(function (resolve) {
+                _this.xhr.onreadystatechange = function () {
+                    if (_this.xhr.readyState != 4)
+                        return;
+                    switch (_this.xhr.status) {
+                        case 200:
+                            var model = void 0;
+                            if (_this.xhr.responseType.match(/json/)) {
+                                model = _this.createModelFromJson(_this.url, _this.xhr.responseText);
+                            }
+                            else {
+                                model = _this.createModelFromHtml(_this.xhr.responseText);
+                            }
+                            resolve({ url: _this.url, model: model, directive: new Jhtml.ModelDirective(model) });
+                            break;
+                        default:
+                            resolve({ url: _this.url, directive: new Jhtml.ReplaceDirective(_this.xhr.status, _this.xhr.responseText, _this.xhr.getResponseHeader("Content-Type"), _this.url) });
+                    }
+                };
+                _this.xhr.onerror = function () {
+                    throw new Error("Could not request " + _this.url.toString());
+                };
+            });
+        };
+        Request.prototype.createModelFromJson = function (url, jsonText) {
+            try {
+                var model = Jhtml.ModelFactory.createFromJsonObj(JSON.parse(jsonText));
+                this.requestor.context.registerNewModel(model);
+                return model;
+            }
+            catch (e) {
+                if (e instanceof Jhtml.ParseError) {
+                    throw new Error(url + "; no or invalid json: " + e.message);
+                }
+                throw e;
+            }
+        };
+        Request.prototype.createModelFromHtml = function (html) {
+            var model = Jhtml.ModelFactory.createFromHtml(html);
+            this.requestor.context.registerNewModel(model);
+            return model;
+        };
+        return Request;
+    }());
+    Jhtml.Request = Request;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
     var Ui;
     (function (Ui) {
         var Form = (function () {
@@ -1140,9 +1417,9 @@ var Jhtml;
                 form.observe();
                 return form;
             };
+            Form.KEY = "jhtml-form";
             return Form;
         }());
-        Form.KEY = "jhtml-form";
         Ui.Form = Form;
         var ControlLock = (function () {
             function ControlLock(containerElem) {
@@ -1186,264 +1463,5 @@ var Jhtml;
             })(EventType = Form.EventType || (Form.EventType = {}));
         })(Form = Ui.Form || (Ui.Form = {}));
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Link = (function () {
-        function Link(elem) {
-            var _this = this;
-            this.elem = elem;
-            this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
-            elem.addEventListener("click", function (evt) {
-                evt.preventDefault();
-                _this.handle();
-                return false;
-            });
-        }
-        Link.prototype.handle = function () {
-            Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
-        };
-        Link.from = function (element) {
-            var link = Jhtml.Util.getElemData(element, Link.KEY);
-            if (link instanceof Link) {
-                return link;
-            }
-            link = new Link(element);
-            Jhtml.Util.bindElemData(element, Link.KEY, link);
-            return link;
-        };
-        return Link;
-    }());
-    Link.KEY = "jhtml-link";
-    Jhtml.Link = Link;
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Ui;
-    (function (Ui) {
-        var Scanner = (function () {
-            function Scanner() {
-            }
-            Scanner.scan = function (rootElem) {
-                for (var _i = 0, _a = Jhtml.Util.find(rootElem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
-                    var elem = _a[_i];
-                    Jhtml.Link.from(elem);
-                }
-                for (var _b = 0, _c = Jhtml.Util.find(rootElem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
-                    var elem = _c[_b];
-                    Ui.Form.from(elem);
-                }
-            };
-            return Scanner;
-        }());
-        Scanner.A_ATTR = "data-jhtml";
-        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
-        Scanner.FORM_ATTR = "data-jhtml";
-        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
-        Ui.Scanner = Scanner;
-    })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Util;
-    (function (Util) {
-        var CallbackRegistry = (function () {
-            function CallbackRegistry() {
-                this.callbacks = {};
-            }
-            CallbackRegistry.prototype.on = function (callback) {
-                this.onType("", callback);
-            };
-            CallbackRegistry.prototype.onType = function (type, callback) {
-                if (type === void 0) { type = ""; }
-                if (!this.callbacks[type]) {
-                    this.callbacks[type] = [];
-                }
-                if (-1 == this.callbacks[type].indexOf(callback)) {
-                    this.callbacks[type].push(callback);
-                }
-            };
-            CallbackRegistry.prototype.off = function (callback) {
-                this.offType("", callback);
-            };
-            CallbackRegistry.prototype.offType = function (type, callback) {
-                if (type === void 0) { type = ""; }
-                if (!this.callbacks[type])
-                    return;
-                var i = this.callbacks[type].indexOf(callback);
-                this.callbacks[type].splice(i, 1);
-            };
-            CallbackRegistry.prototype.fire = function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                this.fireType.apply(this, [""].concat(args));
-            };
-            CallbackRegistry.prototype.fireType = function (type) {
-                var args = [];
-                for (var _i = 1; _i < arguments.length; _i++) {
-                    args[_i - 1] = arguments[_i];
-                }
-                if (!this.callbacks[type])
-                    return;
-                for (var _a = 0, _b = this.callbacks[type]; _a < _b.length; _a++) {
-                    var callback = _b[_a];
-                    callback.apply(void 0, args);
-                }
-            };
-            return CallbackRegistry;
-        }());
-        Util.CallbackRegistry = CallbackRegistry;
-    })(Util = Jhtml.Util || (Jhtml.Util = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Util;
-    (function (Util) {
-        function closest(element, selector, selfIncluded) {
-            do {
-                if (element.matches(selector)) {
-                    return element;
-                }
-            } while (element = element.parentElement);
-        }
-        Util.closest = closest;
-        function getElemData(elem, key) {
-            return elem["data-" + key];
-        }
-        Util.getElemData = getElemData;
-        function bindElemData(elem, key, data) {
-            elem["data-" + key] = data;
-        }
-        Util.bindElemData = bindElemData;
-        function find(nodeSelector, selector) {
-            var foundElems = [];
-            var nodeList = nodeSelector.querySelectorAll(selector);
-            for (var i = 0; i < nodeList.length; i++) {
-                foundElems.push(nodeList.item(i));
-            }
-            return foundElems;
-        }
-        Util.find = find;
-        function array(nodeList) {
-            var elems = [];
-            for (var i = 0; i < nodeList.length; i++) {
-                elems.push(nodeList.item(i));
-            }
-            return elems;
-        }
-        Util.array = array;
-    })(Util = Jhtml.Util || (Jhtml.Util = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Util;
-    (function (Util) {
-        var ElemConfigReader = (function () {
-            function ElemConfigReader(element) {
-                this.element = element;
-            }
-            ElemConfigReader.prototype.buildName = function (key) {
-                return "data-" + key;
-            };
-            ElemConfigReader.prototype.readBoolean = function (key, fallback) {
-                var value = this.element.getAttribute("data-" + this.buildName(key));
-                if (value === null) {
-                    return fallback;
-                }
-                switch (value) {
-                    case "true":
-                    case "TRUE:":
-                        return true;
-                    case "false":
-                    case "FALSE":
-                        return false;
-                    default:
-                        throw new Error("Attribute '" + this.buildName(key) + " of Element " + this.element.tagName
-                            + "  must contain a boolean value 'true|false'.");
-                }
-            };
-            return ElemConfigReader;
-        }());
-        Util.ElemConfigReader = ElemConfigReader;
-    })(Util = Jhtml.Util || (Jhtml.Util = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Request = (function () {
-        function Request(requestor, _xhr, _url) {
-            this.requestor = requestor;
-            this._xhr = _xhr;
-            this._url = _url;
-        }
-        Object.defineProperty(Request.prototype, "xhr", {
-            get: function () {
-                return this._xhr;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Request.prototype, "url", {
-            get: function () {
-                return this._url;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Request.prototype.abort = function () {
-            this.xhr.abort();
-        };
-        Request.prototype.send = function (data) {
-            this.xhr.send(data);
-            return this.buildPromise();
-        };
-        Request.prototype.buildPromise = function () {
-            var _this = this;
-            return new Promise(function (resolve) {
-                _this.xhr.onreadystatechange = function () {
-                    if (_this.xhr.readyState != 4)
-                        return;
-                    switch (_this.xhr.status) {
-                        case 200:
-                            var model = void 0;
-                            if (_this.xhr.responseType.match(/json/)) {
-                                model = _this.createModelFromJson(_this.url, _this.xhr.responseText);
-                            }
-                            else {
-                                model = _this.createModelFromHtml(_this.xhr.responseText);
-                            }
-                            resolve({ model: model, directive: new Jhtml.ModelDirective(model) });
-                            break;
-                        default:
-                            resolve({ directive: new Jhtml.ReplaceDirective(_this.xhr.status, _this.xhr.responseText, _this.xhr.getResponseHeader("Content-Type"), _this.url) });
-                    }
-                };
-                _this.xhr.onerror = function () {
-                    throw new Error("Could not request " + _this.url.toString());
-                };
-            });
-        };
-        Request.prototype.createModelFromJson = function (url, jsonText) {
-            try {
-                var model = Jhtml.ModelFactory.createFromJsonObj(JSON.parse(jsonText));
-                this.requestor.context.registerNewModel(model);
-                return model;
-            }
-            catch (e) {
-                if (e instanceof Jhtml.ParseError) {
-                    throw new Error(url + "; no or invalid json: " + e.message);
-                }
-                throw e;
-            }
-        };
-        Request.prototype.createModelFromHtml = function (html) {
-            var model = Jhtml.ModelFactory.createFromHtml(html);
-            this.requestor.context.registerNewModel(model);
-            return model;
-        };
-        return Request;
-    }());
-    Jhtml.Request = Request;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

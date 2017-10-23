@@ -69,7 +69,9 @@ declare namespace Jhtml {
         readonly document: Document;
         isJhtml(): boolean;
         private getBoundModel();
-        import(newModel: Model): void;
+        import(newModel: Model, montiorCompHandlers?: {
+            [compName: string]: CompHandler;
+        }): void;
         registerNewModel(model: Model): void;
         replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
@@ -130,6 +132,7 @@ declare namespace Jhtml {
     class Model {
         meta: Meta;
         constructor(meta: Meta);
+        response: Response | null;
         container: Container;
         comps: {
             [name: string]: Comp;
@@ -155,7 +158,10 @@ declare namespace Jhtml {
         private container;
         context: Context;
         history: History;
+        private compHandlers;
         constructor(container: Element);
+        registerCompHandler(compName: string, compHandler: CompHandler): void;
+        unregisterCompHandler(compName: string): void;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
         private dingsel(promise);
         private static readonly KEY;
@@ -163,34 +169,6 @@ declare namespace Jhtml {
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
         static test(element: Element): Monitor | null;
         static from(container: Element): Monitor;
-    }
-}
-declare namespace Jhtml {
-    abstract class Panel {
-        private _name;
-        private _attachedElem;
-        private detachedElem;
-        private cbr;
-        constructor(_name: string, _attachedElem: Element);
-        readonly name: string;
-        on(eventType: Content.EventType, callback: () => any): void;
-        off(eventType: Content.EventType, callback: () => any): void;
-        readonly attachedElement: Element;
-        attachTo(element: Element): void;
-        readonly attached: boolean;
-        detach(): void;
-        dispose(): void;
-    }
-    namespace Content {
-        type EventType = "attached" | "detach" | "dispose";
-    }
-    class Container extends Panel {
-        compElements: {
-            [name: string]: Element;
-        };
-        matches(container: Container): boolean;
-    }
-    class Comp extends Panel {
     }
 }
 declare namespace Jhtml {
@@ -203,7 +181,7 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     interface Directive {
-        exec(context: Context, history: History): any;
+        exec(context: Context, history: History, compHanlders: any): any;
     }
     class ModelDirective implements Directive {
         model: Model;
@@ -242,10 +220,6 @@ declare namespace Jhtml {
         lookupModel(url: Url): Promise<Model>;
         exec(method: "GET" | "POST" | "PUT" | "DELETE", url: Url): Request;
     }
-    interface Response {
-        model?: Model;
-        directive: Directive;
-    }
 }
 declare namespace Jhtml {
     class Url {
@@ -257,6 +231,96 @@ declare namespace Jhtml {
         static build(urlExpression: string | Url): Url | null;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;
+    }
+}
+declare namespace Jhtml {
+    class Link {
+        private elem;
+        private requestConfig;
+        constructor(elem: HTMLAnchorElement);
+        private handle();
+        private static readonly KEY;
+        static from(element: HTMLAnchorElement): Link;
+    }
+}
+declare namespace Jhtml.Ui {
+    class Scanner {
+        static readonly A_ATTR: string;
+        private static readonly A_SELECTOR;
+        static readonly FORM_ATTR: string;
+        private static readonly FORM_SELECTOR;
+        static scan(rootElem: Element): void;
+    }
+}
+declare namespace Jhtml.Util {
+    class CallbackRegistry<C> {
+        private callbacks;
+        on(callback: C): void;
+        onType(type: string, callback: C): void;
+        off(callback: C): void;
+        offType(type: string, callback: C): void;
+        fire(...args: Array<any>): void;
+        fireType(type: string, ...args: Array<any>): void;
+    }
+}
+declare namespace Jhtml.Util {
+    function closest(element: Element, selector: string, selfIncluded: boolean): Element;
+    function getElemData(elem: Element, key: string): any;
+    function bindElemData<T>(elem: Element, key: string, data: any): void;
+    function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
+    function array(nodeList: NodeList): Array<Element>;
+}
+declare namespace Jhtml.Util {
+    class ElemConfigReader {
+        private element;
+        constructor(element: Element);
+        private buildName(key);
+        readBoolean(key: string, fallback: boolean): boolean;
+    }
+}
+declare namespace Jhtml {
+    abstract class Panel {
+        private _name;
+        private _attachedElem;
+        private _model;
+        private detachedElem;
+        private cbr;
+        constructor(_name: string, _attachedElem: Element, _model: Model);
+        readonly name: string;
+        readonly model: Model;
+        on(eventType: Content.EventType, callback: () => any): void;
+        off(eventType: Content.EventType, callback: () => any): void;
+        readonly attachedElement: Element;
+        attachTo(element: Element): void;
+        readonly attached: boolean;
+        detach(): void;
+        dispose(): void;
+    }
+    namespace Content {
+        type EventType = "attached" | "detach" | "dispose";
+    }
+    class Container extends Panel {
+        compElements: {
+            [name: string]: Element;
+        };
+        matches(container: Container): boolean;
+    }
+    class Comp extends Panel {
+    }
+}
+declare namespace Jhtml {
+    class Request {
+        private requestor;
+        private _xhr;
+        private _url;
+        constructor(requestor: Requestor, _xhr: XMLHttpRequest, _url: Url);
+        readonly xhr: XMLHttpRequest;
+        readonly url: Url;
+        abort(): void;
+        send(data?: FormData): Promise<Response>;
+        private buildPromise();
+        private createModelFromJson(url, jsonText);
+        private createModelFromHtml(html);
     }
 }
 declare namespace Jhtml.Ui {
@@ -309,62 +373,9 @@ declare namespace Jhtml.Ui {
     }
 }
 declare namespace Jhtml {
-    class Link {
-        private elem;
-        private requestConfig;
-        constructor(elem: HTMLAnchorElement);
-        private handle();
-        private static readonly KEY;
-        static from(element: HTMLAnchorElement): Link;
-    }
-}
-declare namespace Jhtml.Ui {
-    class Scanner {
-        static readonly A_ATTR: string;
-        private static readonly A_SELECTOR;
-        static readonly FORM_ATTR: string;
-        private static readonly FORM_SELECTOR;
-        static scan(rootElem: Element): void;
-    }
-}
-declare namespace Jhtml.Util {
-    class CallbackRegistry<C> {
-        private callbacks;
-        on(callback: C): void;
-        onType(type: string, callback: C): void;
-        off(callback: C): void;
-        offType(type: string, callback: C): void;
-        fire(...args: Array<any>): void;
-        fireType(type: string, ...args: Array<any>): void;
-    }
-}
-declare namespace Jhtml.Util {
-    function closest(element: Element, selector: string, selfIncluded: boolean): Element;
-    function getElemData(elem: Element, key: string): any;
-    function bindElemData<T>(elem: Element, key: string, data: any): void;
-    function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
-    function array(nodeList: NodeList): Array<Element>;
-}
-declare namespace Jhtml.Util {
-    class ElemConfigReader {
-        private element;
-        constructor(element: Element);
-        private buildName(key);
-        readBoolean(key: string, fallback: boolean): boolean;
-    }
-}
-declare namespace Jhtml {
-    class Request {
-        private requestor;
-        private _xhr;
-        private _url;
-        constructor(requestor: Requestor, _xhr: XMLHttpRequest, _url: Url);
-        readonly xhr: XMLHttpRequest;
-        readonly url: Url;
-        abort(): void;
-        send(data?: FormData): Promise<Response>;
-        private buildPromise();
-        private createModelFromJson(url, jsonText);
-        private createModelFromHtml(html);
+    interface Response {
+        url: Url;
+        model?: Model;
+        directive: Directive;
     }
 }

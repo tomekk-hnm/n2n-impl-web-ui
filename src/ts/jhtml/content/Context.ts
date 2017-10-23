@@ -42,7 +42,7 @@ namespace Jhtml {
 			return this.boundModel || null;
 		}
 		
-		import(newModel: Model) {
+		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}) {
 			let boundModel: Model = this.getBoundModel();
 			if (!boundModel) {
 				throw new Error("No jhtml context");
@@ -51,7 +51,8 @@ namespace Jhtml {
 			for (let name in boundModel.comps) {
 				let comp = boundModel.comps[name];
 				
-				if (!this.compHandlers[name] || !this.compHandlers[name].detachComp(comp)) {
+				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
+						&& !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
 					comp.detach();
 				}
 			}
@@ -68,7 +69,8 @@ namespace Jhtml {
 			for (let name in newModel.comps) {
 				let comp = boundModel.comps[name] = newModel.comps[name];
 				
-				if (!this.compHandlers[name] || !this.compHandlers[name].attachComp(comp)) {
+				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].attachComp(comp))
+						&& !(this.compHandlers[name] && this.compHandlers[name].attachComp(comp))) {
 					comp.attachTo(boundModel.container.compElements[name]);
 				}
 			}

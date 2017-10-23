@@ -2,7 +2,7 @@ namespace Jhtml {
 	
 	export interface Directive {
 		
-		exec(context: Context, history: History);
+		exec(context: Context, history: History, compHanlders);
 	}
     
     export class ModelDirective implements Directive {

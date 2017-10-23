@@ -4,6 +4,7 @@ namespace Jhtml {
     	constructor(public meta: Meta) {
     	}
 	    
+    	public response: Response|null
     	public container: Container;
     	public comps: { [name: string]: Comp } = {} 
     }
