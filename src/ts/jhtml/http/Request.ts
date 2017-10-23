@@ -58,7 +58,7 @@ namespace Jhtml {
 				this.requestor.context.registerNewModel(model);
 				return model;
 			} catch (e) {
-				if (e instanceof ParseError) {
+				if (e instanceof ParseError || e instanceof SyntaxError) {
 			        throw new Error(url + "; no or invalid json: " + e.message);
 			    }
 				
@@ -67,9 +67,13 @@ namespace Jhtml {
 		}
 		
 		private createModelFromHtml(html: string): Model {
-			let model = ModelFactory.createFromHtml(html);
-			this.requestor.context.registerNewModel(model);
-			return model;
+			try {
+				let model = ModelFactory.createFromHtml(html);
+				this.requestor.context.registerNewModel(model);
+				return model;
+			} catch (e) {
+				throw new Error(this.url + "; invalid jhtml response: " + e.message);
+			}
 		}
 	}
 }

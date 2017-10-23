@@ -175,113 +175,6 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
-    class ParseError extends Error {
-    }
-}
-declare namespace Jhtml {
-    class DocumentManager {
-    }
-}
-declare namespace Jhtml {
-    interface Directive {
-        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): any;
-    }
-    class ModelDirective implements Directive {
-        model: Model;
-        constructor(model: Model);
-        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): void;
-    }
-    class ReplaceDirective implements Directive {
-        status: number;
-        responseText: string;
-        mimeType: string;
-        url: Url;
-        constructor(status: number, responseText: string, mimeType: string, url: Url);
-        exec(context: Context, history: History): void;
-    }
-}
-declare namespace Jhtml {
-}
-declare namespace Jhtml {
-    interface RequestConfig {
-        forceReload?: boolean;
-        pushToHistory?: boolean;
-    }
-    class FullRequestConfig implements RequestConfig {
-        forceReload: boolean;
-        pushToHistory: boolean;
-        static from(requestConfig: RequestConfig): FullRequestConfig;
-        static fromElement(element: Element): FullRequestConfig;
-    }
-}
-declare namespace Jhtml {
-    class Requestor {
-        private _context;
-        constructor(_context: Context);
-        readonly context: Context;
-        lookupDirective(url: Url): Promise<Directive>;
-        lookupModel(url: Url): Promise<Model>;
-        exec(method: "GET" | "POST" | "PUT" | "DELETE", url: Url): Request;
-    }
-}
-declare namespace Jhtml {
-    class Url {
-        protected urlStr: string;
-        constructor(urlStr: string);
-        toString(): string;
-        equals(url: Url): boolean;
-        extR(pathExt: string): Url;
-        static build(urlExpression: string | Url): Url | null;
-        static create(urlExpression: string | Url): Url;
-        static absoluteStr(urlExpression: string | Url): string;
-    }
-}
-declare namespace Jhtml {
-    class Link {
-        private elem;
-        private requestConfig;
-        constructor(elem: HTMLAnchorElement);
-        private handle();
-        private static readonly KEY;
-        static from(element: HTMLAnchorElement): Link;
-    }
-}
-declare namespace Jhtml.Ui {
-    class Scanner {
-        static readonly A_ATTR: string;
-        private static readonly A_SELECTOR;
-        static readonly FORM_ATTR: string;
-        private static readonly FORM_SELECTOR;
-        static scan(rootElem: Element): void;
-    }
-}
-declare namespace Jhtml.Util {
-    class CallbackRegistry<C> {
-        private callbacks;
-        on(callback: C): void;
-        onType(type: string, callback: C): void;
-        off(callback: C): void;
-        offType(type: string, callback: C): void;
-        fire(...args: Array<any>): void;
-        fireType(type: string, ...args: Array<any>): void;
-    }
-}
-declare namespace Jhtml.Util {
-    function closest(element: Element, selector: string, selfIncluded: boolean): Element;
-    function getElemData(elem: Element, key: string): any;
-    function bindElemData<T>(elem: Element, key: string, data: any): void;
-    function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
-    function array(nodeList: NodeList): Array<Element>;
-}
-declare namespace Jhtml.Util {
-    class ElemConfigReader {
-        private element;
-        constructor(element: Element);
-        private buildName(key);
-        readBoolean(key: string, fallback: boolean): boolean;
-    }
-}
-declare namespace Jhtml {
     abstract class Panel {
         private _name;
         private _attachedElem;
@@ -312,6 +205,34 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
+    class ParseError extends Error {
+    }
+}
+declare namespace Jhtml {
+    class DocumentManager {
+    }
+}
+declare namespace Jhtml {
+    interface Directive {
+        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): any;
+    }
+    class ModelDirective implements Directive {
+        model: Model;
+        constructor(model: Model);
+        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): void;
+    }
+    class ReplaceDirective implements Directive {
+        status: number;
+        responseText: string;
+        mimeType: string;
+        url: Url;
+        constructor(status: number, responseText: string, mimeType: string, url: Url);
+        exec(context: Context, history: History): void;
+    }
+}
+declare namespace Jhtml {
+}
+declare namespace Jhtml {
     class Request {
         private requestor;
         private _xhr;
@@ -324,6 +245,47 @@ declare namespace Jhtml {
         private buildPromise();
         private createModelFromJson(url, jsonText);
         private createModelFromHtml(html);
+    }
+}
+declare namespace Jhtml {
+    interface RequestConfig {
+        forceReload?: boolean;
+        pushToHistory?: boolean;
+    }
+    class FullRequestConfig implements RequestConfig {
+        forceReload: boolean;
+        pushToHistory: boolean;
+        static from(requestConfig: RequestConfig): FullRequestConfig;
+        static fromElement(element: Element): FullRequestConfig;
+    }
+}
+declare namespace Jhtml {
+    class Requestor {
+        private _context;
+        constructor(_context: Context);
+        readonly context: Context;
+        lookupDirective(url: Url): Promise<Directive>;
+        lookupModel(url: Url): Promise<Model>;
+        exec(method: "GET" | "POST" | "PUT" | "DELETE", url: Url): Request;
+    }
+}
+declare namespace Jhtml {
+    interface Response {
+        url: Url;
+        model?: Model;
+        directive: Directive;
+    }
+}
+declare namespace Jhtml {
+    class Url {
+        protected urlStr: string;
+        constructor(urlStr: string);
+        toString(): string;
+        equals(url: Url): boolean;
+        extR(pathExt: string): Url;
+        static build(urlExpression: string | Url): Url | null;
+        static create(urlExpression: string | Url): Url;
+        static absoluteStr(urlExpression: string | Url): string;
     }
 }
 declare namespace Jhtml.Ui {
@@ -376,9 +338,47 @@ declare namespace Jhtml.Ui {
     }
 }
 declare namespace Jhtml {
-    interface Response {
-        url: Url;
-        model?: Model;
-        directive: Directive;
+    class Link {
+        private elem;
+        private requestConfig;
+        constructor(elem: HTMLAnchorElement);
+        private handle();
+        private static readonly KEY;
+        static from(element: HTMLAnchorElement): Link;
+    }
+}
+declare namespace Jhtml.Ui {
+    class Scanner {
+        static readonly A_ATTR: string;
+        private static readonly A_SELECTOR;
+        static readonly FORM_ATTR: string;
+        private static readonly FORM_SELECTOR;
+        static scan(rootElem: Element): void;
+    }
+}
+declare namespace Jhtml.Util {
+    class CallbackRegistry<C> {
+        private callbacks;
+        on(callback: C): void;
+        onType(type: string, callback: C): void;
+        off(callback: C): void;
+        offType(type: string, callback: C): void;
+        fire(...args: Array<any>): void;
+        fireType(type: string, ...args: Array<any>): void;
+    }
+}
+declare namespace Jhtml.Util {
+    function closest(element: Element, selector: string, selfIncluded: boolean): Element;
+    function getElemData(elem: Element, key: string): any;
+    function bindElemData<T>(elem: Element, key: string, data: any): void;
+    function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
+    function array(nodeList: NodeList): Array<Element>;
+}
+declare namespace Jhtml.Util {
+    class ElemConfigReader {
+        private element;
+        constructor(element: Element);
+        private buildName(key);
+        readBoolean(key: string, fallback: boolean): boolean;
     }
 }

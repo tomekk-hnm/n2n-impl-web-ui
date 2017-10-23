@@ -2,7 +2,6 @@ namespace Jhtml {
 	export class Requestor {
 		
 		constructor(private _context: Context) {
-			
 		}
 		
 		get context(): Context {
