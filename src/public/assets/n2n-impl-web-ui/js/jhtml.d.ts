@@ -166,6 +166,34 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
+    abstract class Panel {
+        private _name;
+        private _attachedElem;
+        private detachedElem;
+        private cbr;
+        constructor(_name: string, _attachedElem: Element);
+        readonly name: string;
+        on(eventType: Content.EventType, callback: () => any): void;
+        off(eventType: Content.EventType, callback: () => any): void;
+        readonly attachedElement: Element;
+        attachTo(element: Element): void;
+        readonly attached: boolean;
+        detach(): void;
+        dispose(): void;
+    }
+    namespace Content {
+        type EventType = "attached" | "detach" | "dispose";
+    }
+    class Container extends Panel {
+        compElements: {
+            [name: string]: Element;
+        };
+        matches(container: Container): boolean;
+    }
+    class Comp extends Panel {
+    }
+}
+declare namespace Jhtml {
     class ParseError extends Error {
     }
 }
@@ -185,7 +213,9 @@ declare namespace Jhtml {
     class ReplaceDirective implements Directive {
         status: number;
         responseText: string;
-        constructor(status: number, responseText: string);
+        mimeType: string;
+        url: Url;
+        constructor(status: number, responseText: string, mimeType: string, url: Url);
         exec(context: Context, history: History): void;
     }
 }
@@ -205,18 +235,16 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     class Requestor {
-        private context;
-        constructor(context: Context);
+        private _context;
+        constructor(_context: Context);
+        readonly context: Context;
         lookupDirective(url: Url): Promise<Directive>;
-        lookup(url: Url): Promise<Requestor.Result>;
-        private createModelFromJson(url, jsonText);
-        private createModelFromHtml(html);
+        lookupModel(url: Url): Promise<Model>;
+        exec(method: "GET" | "POST" | "PUT" | "DELETE", url: Url): Request;
     }
-    namespace Requestor {
-        interface Result {
-            model?: Model;
-            directive: Directive;
-        }
+    interface Response {
+        model?: Model;
+        directive: Directive;
     }
 }
 declare namespace Jhtml {
@@ -226,8 +254,58 @@ declare namespace Jhtml {
         toString(): string;
         equals(url: Url): boolean;
         extR(pathExt: string): Url;
+        static build(urlExpression: string | Url): Url | null;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;
+    }
+}
+declare namespace Jhtml.Ui {
+    class Form {
+        private _element;
+        private _observing;
+        private _config;
+        private callbackRegistery;
+        private curRequest;
+        constructor(_element: HTMLFormElement);
+        readonly element: HTMLFormElement;
+        readonly observing: boolean;
+        readonly config: Form.Config;
+        reset(): void;
+        private fire(eventType);
+        on(eventType: Form.EventType, callback: FormCallback): void;
+        off(eventType: Form.EventType, callback: FormCallback): void;
+        observe(): void;
+        private buildFormData(submitConfig?);
+        private controlLock;
+        private controlLockAutoReleaseable;
+        private block();
+        private unblock();
+        disableControls(autoReleaseable?: boolean): void;
+        enableControls(): void;
+        abortSubmit(): void;
+        submit(submitConfig?: Form.SubmitDirective): void;
+        private static readonly KEY;
+        static from(element: HTMLFormElement): Form;
+    }
+    namespace Form {
+        class Config {
+            disableControls: boolean;
+            successResponseHandler: (response: Response) => any;
+            autoSubmitAllowed: boolean;
+            actionUrl: Url | string;
+        }
+        enum EventType {
+            SUBMIT = 0,
+            SUBMITTED = 1,
+        }
+        interface SubmitDirective {
+            success?: () => any;
+            error?: () => any;
+            button?: any;
+        }
+    }
+    interface FormCallback {
+        (form: Form): any;
     }
 }
 declare namespace Jhtml {
@@ -244,6 +322,8 @@ declare namespace Jhtml.Ui {
     class Scanner {
         static readonly A_ATTR: string;
         private static readonly A_SELECTOR;
+        static readonly FORM_ATTR: string;
+        private static readonly FORM_SELECTOR;
         static scan(rootElem: Element): void;
     }
 }
@@ -274,30 +354,17 @@ declare namespace Jhtml.Util {
     }
 }
 declare namespace Jhtml {
-    abstract class Content {
-        private _name;
-        private _attachedElem;
-        private detachedElem;
-        private cbr;
-        constructor(_name: string, _attachedElem: Element);
-        readonly name: string;
-        on(eventType: Content.EventType, callback: () => any): void;
-        off(eventType: Content.EventType, callback: () => any): void;
-        readonly attachedElement: Element;
-        attachTo(element: Element): void;
-        readonly attached: boolean;
-        detach(): void;
-        dispose(): void;
-    }
-    namespace Content {
-        type EventType = "attached" | "detach" | "dispose";
-    }
-    class Container extends Content {
-        compElements: {
-            [name: string]: Element;
-        };
-        matches(container: Container): boolean;
-    }
-    class Comp extends Content {
+    class Request {
+        private requestor;
+        private _xhr;
+        private _url;
+        constructor(requestor: Requestor, _xhr: XMLHttpRequest, _url: Url);
+        readonly xhr: XMLHttpRequest;
+        readonly url: Url;
+        abort(): void;
+        send(data?: FormData): Promise<Response>;
+        private buildPromise();
+        private createModelFromJson(url, jsonText);
+        private createModelFromHtml(html);
     }
 }

@@ -739,6 +739,98 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
+    var Panel = (function () {
+        function Panel(_name, _attachedElem) {
+            this._name = _name;
+            this._attachedElem = _attachedElem;
+            this.cbr = new Jhtml.Util.CallbackRegistry();
+            this.detachedElem = _attachedElem.ownerDocument.createElement("template");
+        }
+        Object.defineProperty(Panel.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.on = function (eventType, callback) {
+            this.cbr.onType(eventType, callback);
+        };
+        Panel.prototype.off = function (eventType, callback) {
+            this.cbr.offType(eventType, callback);
+        };
+        Object.defineProperty(Panel.prototype, "attachedElement", {
+            get: function () {
+                return this._attachedElem;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.attachTo = function (element) {
+            if (this._attachedElem) {
+                throw new Error("Element already attached.");
+            }
+            this._attachedElem = element;
+            for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                element.appendChild(childElem);
+            }
+            this.cbr.fireType("attached");
+        };
+        Object.defineProperty(Panel.prototype, "attached", {
+            get: function () {
+                return this._attachedElem ? true : false;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.detach = function () {
+            if (!this._attachedElem)
+                return;
+            this.cbr.fireType("detach");
+            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
+                var childElem = _a[_i];
+                this.detachedElem.appendChild(childElem);
+            }
+            this._attachedElem = null;
+        };
+        Panel.prototype.dispose = function () {
+            if (this.attached) {
+                this.detach();
+            }
+            this.cbr.fireType("dispose");
+            this.cbr = null;
+            this.detachedElem.remove();
+            this.detachedElem = null;
+        };
+        return Panel;
+    }());
+    Jhtml.Panel = Panel;
+    var Container = (function (_super) {
+        __extends(Container, _super);
+        function Container() {
+            var _this = _super !== null && _super.apply(this, arguments) || this;
+            _this.compElements = {};
+            return _this;
+        }
+        Container.prototype.matches = function (container) {
+            return this.name == container.name
+                && JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
+        };
+        return Container;
+    }(Panel));
+    Jhtml.Container = Container;
+    var Comp = (function (_super) {
+        __extends(Comp, _super);
+        function Comp() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return Comp;
+    }(Panel));
+    Jhtml.Comp = Comp;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
     var ParseError = (function (_super) {
         __extends(ParseError, _super);
         function ParseError() {
@@ -770,12 +862,14 @@ var Jhtml;
     }());
     Jhtml.ModelDirective = ModelDirective;
     var ReplaceDirective = (function () {
-        function ReplaceDirective(status, responseText) {
+        function ReplaceDirective(status, responseText, mimeType, url) {
             this.status = status;
             this.responseText = responseText;
+            this.mimeType = mimeType;
+            this.url = url;
         }
         ReplaceDirective.prototype.exec = function (context, history) {
-            alert("replace");
+            context.replace(this.responseText, this.mimeType, history.currentPage.url.equals(this.url));
         };
         return ReplaceDirective;
     }());
@@ -817,64 +911,37 @@ var Jhtml;
 var Jhtml;
 (function (Jhtml) {
     var Requestor = (function () {
-        function Requestor(context) {
-            this.context = context;
+        function Requestor(_context) {
+            this._context = _context;
         }
+        Object.defineProperty(Requestor.prototype, "context", {
+            get: function () {
+                return this._context;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Requestor.prototype.lookupDirective = function (url) {
             var _this = this;
             return new Promise(function (resolve) {
-                _this.lookup(url).then(function (result) {
+                _this.exec("GET", url).send().then(function (result) {
                     resolve(result.directive);
                 });
             });
         };
-        Requestor.prototype.lookup = function (url) {
+        Requestor.prototype.lookupModel = function (url) {
             var _this = this;
-            var xhttp = new XMLHttpRequest();
-            xhttp.open("GET", url.toString(), true);
-            xhttp.setRequestHeader("Accept", "application/json,text/html");
-            xhttp.send();
             return new Promise(function (resolve) {
-                xhttp.onreadystatechange = function () {
-                    if (xhttp.readyState != 4)
-                        return;
-                    switch (xhttp.status) {
-                        case 200:
-                            var model = void 0;
-                            if (xhttp.responseType.match(/json/)) {
-                                model = _this.createModelFromJson(url, xhttp.responseText);
-                            }
-                            else {
-                                model = _this.createModelFromHtml(xhttp.responseText);
-                            }
-                            resolve({ model: model, directive: new Jhtml.ModelDirective(model) });
-                            break;
-                        default:
-                            resolve({ directive: new Jhtml.ReplaceDirective(xhttp.status, xhttp.responseText) });
-                    }
-                };
-                xhttp.onerror = function () {
-                    throw new Error("Could not request " + url.toString());
-                };
+                _this.exec("GET", url).send().then(function (result) {
+                    resolve(result.model);
+                });
             });
         };
-        Requestor.prototype.createModelFromJson = function (url, jsonText) {
-            try {
-                var model = Jhtml.ModelFactory.createFromJsonObj(JSON.parse(jsonText));
-                this.context.registerNewModel(model);
-                return model;
-            }
-            catch (e) {
-                if (e instanceof Jhtml.ParseError) {
-                    throw new Error(url + "; no or invalid json: " + e.message);
-                }
-                throw e;
-            }
-        };
-        Requestor.prototype.createModelFromHtml = function (html) {
-            var model = Jhtml.ModelFactory.createFromHtml(html);
-            this.context.registerNewModel(model);
-            return model;
+        Requestor.prototype.exec = function (method, url) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url.toString(), true);
+            xhr.setRequestHeader("Accept", "application/json,text/html");
+            return new Jhtml.Request(this, xhr, url);
         };
         return Requestor;
     }());
@@ -898,6 +965,11 @@ var Jhtml;
             }
             return new Url(this.urlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt));
         };
+        Url.build = function (urlExpression) {
+            if (urlExpression === null || urlExpression === undefined)
+                return null;
+            return Url.create(urlExpression);
+        };
         Url.create = function (urlExpression) {
             if (urlExpression instanceof Url) {
                 return urlExpression;
@@ -920,6 +992,200 @@ var Jhtml;
         return Url;
     }());
     Jhtml.Url = Url;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Ui;
+    (function (Ui) {
+        var Form = (function () {
+            function Form(_element) {
+                this._element = _element;
+                this._observing = false;
+                this._config = new Form.Config();
+                this.callbackRegistery = new Jhtml.Util.CallbackRegistry();
+                this.curRequest = null;
+                this.controlLockAutoReleaseable = true;
+            }
+            Object.defineProperty(Form.prototype, "element", {
+                get: function () {
+                    return this._element;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Form.prototype, "observing", {
+                get: function () {
+                    return this._observing;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Object.defineProperty(Form.prototype, "config", {
+                get: function () {
+                    return this._config;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Form.prototype.reset = function () {
+                this.element.reset();
+            };
+            Form.prototype.fire = function (eventType) {
+                this.callbackRegistery.fireType(eventType.toString(), this);
+            };
+            Form.prototype.on = function (eventType, callback) {
+                this.callbackRegistery.onType(eventType.toString(), callback);
+            };
+            Form.prototype.off = function (eventType, callback) {
+                this.callbackRegistery.offType(eventType.toString(), callback);
+            };
+            Form.prototype.observe = function () {
+                var _this = this;
+                if (this._observing)
+                    return;
+                this._observing = true;
+                this.element.addEventListener("submit", function () {
+                    if (_this.config.autoSubmitAllowed)
+                        return false;
+                    _this.submit();
+                    return false;
+                }, true);
+                Jhtml.Util.find(this.element, "input[type=submit], button[type=submit]").forEach(function (elem) {
+                    elem.addEventListener("click", function () {
+                        if (!_this.config.autoSubmitAllowed)
+                            return false;
+                        _this.submit({ button: elem });
+                        return false;
+                    }, true);
+                });
+            };
+            Form.prototype.buildFormData = function (submitConfig) {
+                var formData = new FormData(this.element);
+                if (submitConfig && submitConfig.button) {
+                    formData.append(submitConfig.button.name, submitConfig.button.value);
+                }
+                return formData;
+            };
+            Form.prototype.block = function () {
+                if (!this.controlLock && this.config.disableControls) {
+                    this.disableControls();
+                }
+            };
+            Form.prototype.unblock = function () {
+                if (this.controlLock && this.controlLockAutoReleaseable) {
+                    this.controlLock.release();
+                }
+            };
+            Form.prototype.disableControls = function (autoReleaseable) {
+                if (autoReleaseable === void 0) { autoReleaseable = true; }
+                this.controlLockAutoReleaseable = autoReleaseable;
+                if (this.controlLock)
+                    return;
+                this.controlLock = new ControlLock(this.element);
+            };
+            Form.prototype.enableControls = function () {
+                if (this.controlLock) {
+                    this.controlLock.release();
+                    this.controlLock = null;
+                    this.controlLockAutoReleaseable = true;
+                }
+            };
+            Form.prototype.abortSubmit = function () {
+                if (this.curRequest) {
+                    var curXhr = this.curRequest;
+                    this.curRequest = null;
+                    curXhr.abort();
+                    this.unblock();
+                }
+            };
+            Form.prototype.submit = function (submitConfig) {
+                var _this = this;
+                this.abortSubmit();
+                this.fire(Form.EventType.SUBMIT);
+                var url = Jhtml.Url.build(this.config.actionUrl || this.element.getAttribute("action"));
+                var formData = this.buildFormData(submitConfig);
+                var request = this.curRequest = Jhtml.getOrCreateContext(this.element.ownerDocument).requestor
+                    .exec("POST", url);
+                request.send(formData).then(function (response) {
+                    if (_this.curRequest !== request)
+                        return;
+                    var monitor;
+                    if ((!_this.config.successResponseHandler || !_this.config.successResponseHandler(response))
+                        && (monitor = Jhtml.Monitor.of(_this.element))) {
+                        response.directive.exec(monitor.context, monitor.history);
+                    }
+                    if (submitConfig && submitConfig.success) {
+                        submitConfig.success();
+                    }
+                    _this.unblock();
+                    _this.fire(Form.EventType.SUBMITTED);
+                }).catch(function (e) {
+                    if (_this.curRequest !== request)
+                        return;
+                    if (submitConfig && submitConfig.error) {
+                        submitConfig.error();
+                    }
+                    _this.unblock();
+                    _this.fire(Form.EventType.SUBMITTED);
+                });
+                this.block();
+            };
+            Form.from = function (element) {
+                var form = Jhtml.Util.getElemData(element, Form.KEY);
+                if (form instanceof Form) {
+                    return form;
+                }
+                form = new Form(element);
+                Jhtml.Util.bindElemData(element, Form.KEY, form);
+                form.observe();
+                return form;
+            };
+            return Form;
+        }());
+        Form.KEY = "jhtml-form";
+        Ui.Form = Form;
+        var ControlLock = (function () {
+            function ControlLock(containerElem) {
+                this.containerElem = containerElem;
+                this.lock();
+            }
+            ControlLock.prototype.lock = function () {
+                if (this.controls)
+                    return;
+                this.controls = Jhtml.Util.find(this.containerElem, "input:not([disabled]), textarea:not([disabled]), button:not([disabled]), select:not([disabled])");
+                for (var _i = 0, _a = this.controls; _i < _a.length; _i++) {
+                    var control = _a[_i];
+                    control.setAttribute("disabled", "disabled");
+                }
+            };
+            ControlLock.prototype.release = function () {
+                if (!this.controls)
+                    return;
+                for (var _i = 0, _a = this.controls; _i < _a.length; _i++) {
+                    var control = _a[_i];
+                    control.removeAttribute("disabled");
+                }
+                this.controls = null;
+            };
+            return ControlLock;
+        }());
+        (function (Form) {
+            var Config = (function () {
+                function Config() {
+                    this.disableControls = true;
+                    this.autoSubmitAllowed = true;
+                    this.actionUrl = null;
+                }
+                return Config;
+            }());
+            Form.Config = Config;
+            var EventType;
+            (function (EventType) {
+                EventType[EventType["SUBMIT"] = 0] = "SUBMIT";
+                EventType[EventType["SUBMITTED"] = 1] = "SUBMITTED";
+            })(EventType = Form.EventType || (Form.EventType = {}));
+        })(Form = Ui.Form || (Ui.Form = {}));
+    })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -963,11 +1229,17 @@ var Jhtml;
                     var elem = _a[_i];
                     Jhtml.Link.from(elem);
                 }
+                for (var _b = 0, _c = Jhtml.Util.find(rootElem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
+                    var elem = _c[_b];
+                    Ui.Form.from(elem);
+                }
             };
             return Scanner;
         }());
         Scanner.A_ATTR = "data-jhtml";
-        Scanner.A_SELECTOR = "[" + Scanner.A_ATTR + "]";
+        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+        Scanner.FORM_ATTR = "data-jhtml";
+        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
@@ -1099,94 +1371,79 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
-    var Content = (function () {
-        function Content(_name, _attachedElem) {
-            this._name = _name;
-            this._attachedElem = _attachedElem;
-            this.cbr = new Jhtml.Util.CallbackRegistry();
-            this.detachedElem = _attachedElem.ownerDocument.createElement("template");
+    var Request = (function () {
+        function Request(requestor, _xhr, _url) {
+            this.requestor = requestor;
+            this._xhr = _xhr;
+            this._url = _url;
         }
-        Object.defineProperty(Content.prototype, "name", {
+        Object.defineProperty(Request.prototype, "xhr", {
             get: function () {
-                return this._name;
+                return this._xhr;
             },
             enumerable: true,
             configurable: true
         });
-        Content.prototype.on = function (eventType, callback) {
-            this.cbr.onType(eventType, callback);
-        };
-        Content.prototype.off = function (eventType, callback) {
-            this.cbr.offType(eventType, callback);
-        };
-        Object.defineProperty(Content.prototype, "attachedElement", {
+        Object.defineProperty(Request.prototype, "url", {
             get: function () {
-                return this._attachedElem;
+                return this._url;
             },
             enumerable: true,
             configurable: true
         });
-        Content.prototype.attachTo = function (element) {
-            if (this._attachedElem) {
-                throw new Error("Element already attached.");
-            }
-            this._attachedElem = element;
-            for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
-                var childElem = _a[_i];
-                element.appendChild(childElem);
-            }
-            this.cbr.fireType("attached");
+        Request.prototype.abort = function () {
+            this.xhr.abort();
         };
-        Object.defineProperty(Content.prototype, "attached", {
-            get: function () {
-                return this._attachedElem ? true : false;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Content.prototype.detach = function () {
-            if (!this._attachedElem)
-                return;
-            this.cbr.fireType("detach");
-            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
-                var childElem = _a[_i];
-                this.detachedElem.appendChild(childElem);
-            }
-            this._attachedElem = null;
+        Request.prototype.send = function (data) {
+            this.xhr.send(data);
+            return this.buildPromise();
         };
-        Content.prototype.dispose = function () {
-            if (this.attached) {
-                this.detach();
-            }
-            this.cbr.fireType("dispose");
-            this.cbr = null;
-            this.detachedElem.remove();
-            this.detachedElem = null;
+        Request.prototype.buildPromise = function () {
+            var _this = this;
+            return new Promise(function (resolve) {
+                _this.xhr.onreadystatechange = function () {
+                    if (_this.xhr.readyState != 4)
+                        return;
+                    switch (_this.xhr.status) {
+                        case 200:
+                            var model = void 0;
+                            if (_this.xhr.responseType.match(/json/)) {
+                                model = _this.createModelFromJson(_this.url, _this.xhr.responseText);
+                            }
+                            else {
+                                model = _this.createModelFromHtml(_this.xhr.responseText);
+                            }
+                            resolve({ model: model, directive: new Jhtml.ModelDirective(model) });
+                            break;
+                        default:
+                            resolve({ directive: new Jhtml.ReplaceDirective(_this.xhr.status, _this.xhr.responseText, _this.xhr.getResponseHeader("Content-Type"), _this.url) });
+                    }
+                };
+                _this.xhr.onerror = function () {
+                    throw new Error("Could not request " + _this.url.toString());
+                };
+            });
         };
-        return Content;
+        Request.prototype.createModelFromJson = function (url, jsonText) {
+            try {
+                var model = Jhtml.ModelFactory.createFromJsonObj(JSON.parse(jsonText));
+                this.requestor.context.registerNewModel(model);
+                return model;
+            }
+            catch (e) {
+                if (e instanceof Jhtml.ParseError) {
+                    throw new Error(url + "; no or invalid json: " + e.message);
+                }
+                throw e;
+            }
+        };
+        Request.prototype.createModelFromHtml = function (html) {
+            var model = Jhtml.ModelFactory.createFromHtml(html);
+            this.requestor.context.registerNewModel(model);
+            return model;
+        };
+        return Request;
     }());
-    Jhtml.Content = Content;
-    var Container = (function (_super) {
-        __extends(Container, _super);
-        function Container() {
-            var _this = _super !== null && _super.apply(this, arguments) || this;
-            _this.compElements = {};
-            return _this;
-        }
-        Container.prototype.matches = function (container) {
-            return this.name == container.name
-                && JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
-        };
-        return Container;
-    }(Content));
-    Jhtml.Container = Container;
-    var Comp = (function (_super) {
-        __extends(Comp, _super);
-        function Comp() {
-            return _super !== null && _super.apply(this, arguments) || this;
-        }
-        return Comp;
-    }(Content));
-    Jhtml.Comp = Comp;
+    Jhtml.Request = Request;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

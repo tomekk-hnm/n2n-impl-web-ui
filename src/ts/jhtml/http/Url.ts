@@ -22,6 +22,12 @@ namespace Jhtml {
             return new Url(this.urlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt));
         }
         
+        public static build(urlExpression: string|Url): Url|null {
+        	if (urlExpression === null || urlExpression === undefined) return null;
+        	
+        	return Url.create(urlExpression);
+        }
+        
         public static create(urlExpression: string|Url): Url {
             if (urlExpression instanceof Url) {
                 return urlExpression;

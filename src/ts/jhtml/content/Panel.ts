@@ -1,6 +1,6 @@
 namespace Jhtml {
 
-    export abstract class Content {
+    export abstract class Panel {
     	private detachedElem: Element;
     	private cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
     	
@@ -70,7 +70,7 @@ namespace Jhtml {
     	export type EventType = "attached" | "detach" | "dispose";
     }
 
-    export class Container extends Content {
+    export class Container extends Panel {
     	public compElements: { [name: string]: Element } = {};
     	
     	matches(container: Container): boolean {
@@ -79,6 +79,6 @@ namespace Jhtml {
     	}
     }
     
-    export class Comp extends Content {
+    export class Comp extends Panel {
     }
 }

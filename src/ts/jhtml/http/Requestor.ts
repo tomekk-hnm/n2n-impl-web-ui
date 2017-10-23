@@ -1,75 +1,41 @@
 namespace Jhtml {
 	export class Requestor {
 		
-		constructor(private context: Context) {
+		constructor(private _context: Context) {
 			
+		}
+		
+		get context(): Context {
+			return this._context;
 		}
 		
 		public lookupDirective(url: Url): Promise<Directive> {
 			return new Promise<Directive>(resolve => {
-				this.lookup(url).then((result: Requestor.Result) => {
+				this.exec("GET", url).send().then((result: Response) => {
 					resolve(result.directive);
 				});
 			});
 		}
 		
-		public lookup(url: Url): Promise<Requestor.Result> {
-			let xhttp = new XMLHttpRequest();
-			xhttp.open("GET", url.toString(), true);
-			xhttp.setRequestHeader("Accept", "application/json,text/html");
-			xhttp.send();
-			
-			return new Promise((resolve) =>  {
-				xhttp.onreadystatechange = () => {
-					if (xhttp.readyState != 4) return;
-					
-					switch (xhttp.status) {
-						case 200:
-							let model: Model;
-							if (xhttp.responseType.match(/json/)) {
-								model = this.createModelFromJson(url, xhttp.responseText);
-							} else {
-								model = this.createModelFromHtml(xhttp.responseText);
-							}
-
-							resolve({ model: model, directive: new ModelDirective(model)});
-							break;
-						default:
-							resolve({ directive: new ReplaceDirective(xhttp.status, xhttp.responseText, xhttp.getResponseHeader("Content-Type"), url) });
-					}
-				};
-				
-				xhttp.onerror = () => {
-					throw new Error("Could not request " + url.toString());
-				};
+		public lookupModel(url: Url): Promise<Model> {
+			return new Promise<Model>(resolve => {
+				this.exec("GET", url).send().then((result: Response) => {
+					resolve(result.model);
+				});
 			});
 		}
-		
-		private createModelFromJson(url: Url, jsonText: string): Model {
-			try {
-				let model = ModelFactory.createFromJsonObj(JSON.parse(jsonText));
-				this.context.registerNewModel(model);
-				return model;
-			} catch (e) {
-				if (e instanceof ParseError) {
-			        throw new Error(url + "; no or invalid json: " + e.message);
-			    }
 				
-				throw e;
-			}
-		}
-		
-		private createModelFromHtml(html: string): Model {
-			let model = ModelFactory.createFromHtml(html);
-			this.context.registerNewModel(model);
-			return model;
+		public exec(method: "GET"|"POST"|"PUT"|"DELETE", url: Url): Request {
+			let xhr = new XMLHttpRequest();
+			xhr.open(method, url.toString(), true);
+			xhr.setRequestHeader("Accept", "application/json,text/html");
+			
+			return new Request(this, xhr, url);
 		}
 	}
 	
-	export namespace Requestor {
-		export interface Result {
-			model?: Model;
-			directive: Directive;
-		}
+	export interface Response {
+		model?: Model;
+		directive: Directive;
 	}
 }
