@@ -86,6 +86,9 @@ declare namespace Jhtml {
         attachComp(comp: Comp): boolean;
         detachComp(comp: Comp): boolean;
     }
+    interface CompHandlerReg {
+        [compName: string]: CompHandler;
+    }
     interface ReadyCallback {
         (element: Element, event: ReadyEvent): any;
     }
@@ -181,12 +184,12 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     interface Directive {
-        exec(context: Context, history: History, compHanlders: any): any;
+        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): any;
     }
     class ModelDirective implements Directive {
         model: Model;
         constructor(model: Model);
-        exec(context: Context, history: History): void;
+        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): void;
     }
     class ReplaceDirective implements Directive {
         status: number;

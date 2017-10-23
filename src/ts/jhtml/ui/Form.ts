@@ -126,7 +126,8 @@ namespace Jhtml.Ui {
 				let monitor;
 				if ((!this.config.successResponseHandler || !this.config.successResponseHandler(response))
 						&& (monitor = Monitor.of(this.element))) {
-					response.directive.exec(monitor.context, monitor.history);
+//					response.directive.exec(monitor.context, monitor.history);
+					alert("dingsel");
 				}
 				
 				if (submitConfig && submitConfig.success) {

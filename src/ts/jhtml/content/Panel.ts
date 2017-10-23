@@ -37,6 +37,7 @@ namespace Jhtml {
     		for (let childElem of Util.array(this.detachedElem.children)) {
     			element.appendChild(childElem);
     		}
+    		
     		this.cbr.fireType("attached");
     	} 
     	
@@ -79,7 +80,7 @@ namespace Jhtml {
     	
     	matches(container: Container): boolean {
     		return this.name == container.name 
-    				&& JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
+    				&& JSON.stringify(Object.keys(this.compElements)) == JSON.stringify(Object.keys(container.compElements));
     	}
     }
     

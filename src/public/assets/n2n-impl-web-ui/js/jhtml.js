@@ -328,11 +328,11 @@ var Jhtml;
             container.on("attached", containerReadyCallback);
             var _loop_1 = function (comp) {
                 var compReadyCallback = function () {
-                    comp.off("attached", containerReadyCallback);
+                    comp.off("attached", compReadyCallback);
                     _this.readyCbr.fire(comp.attachedElement, { comp: Jhtml.Comp });
                     Jhtml.Ui.Scanner.scan(comp.attachedElement);
                 };
-                comp.on("attached", containerReadyCallback);
+                comp.on("attached", compReadyCallback);
             };
             for (var _i = 0, _a = Object.values(model.comps); _i < _a.length; _i++) {
                 var comp = _a[_i];
@@ -773,8 +773,8 @@ var Jhtml;
         function ModelDirective(model) {
             this.model = model;
         }
-        ModelDirective.prototype.exec = function (context, history) {
-            context.import(this.model);
+        ModelDirective.prototype.exec = function (context, history, compHandlerReg) {
+            context.import(this.model, compHandlerReg);
         };
         return ModelDirective;
     }());
@@ -1179,7 +1179,7 @@ var Jhtml;
         }
         Container.prototype.matches = function (container) {
             return this.name == container.name
-                && JSON.stringify(Object.keys(this.compElements)) != JSON.stringify(Object.keys(container.compElements));
+                && JSON.stringify(Object.keys(this.compElements)) == JSON.stringify(Object.keys(container.compElements));
         };
         return Container;
     }(Panel));
@@ -1237,7 +1237,9 @@ var Jhtml;
                             else {
                                 model = _this.createModelFromHtml(_this.xhr.responseText);
                             }
-                            resolve({ url: _this.url, model: model, directive: new Jhtml.ModelDirective(model) });
+                            var response = { url: _this.url, model: model, directive: new Jhtml.ModelDirective(model) };
+                            model.response = response;
+                            resolve(response);
                             break;
                         default:
                             resolve({ url: _this.url, directive: new Jhtml.ReplaceDirective(_this.xhr.status, _this.xhr.responseText, _this.xhr.getResponseHeader("Content-Type"), _this.url) });
@@ -1389,7 +1391,7 @@ var Jhtml;
                     var monitor;
                     if ((!_this.config.successResponseHandler || !_this.config.successResponseHandler(response))
                         && (monitor = Jhtml.Monitor.of(_this.element))) {
-                        response.directive.exec(monitor.context, monitor.history);
+                        alert("dingsel");
                     }
                     if (submitConfig && submitConfig.success) {
                         submitConfig.success();

@@ -36,8 +36,9 @@ namespace Jhtml {
 							} else {
 								model = this.createModelFromHtml(this.xhr.responseText);
 							}
-
-							resolve({url: this.url, model: model, directive: new ModelDirective(model)});
+							let response = {url: this.url, model: model, directive: new ModelDirective(model)};
+							model.response = response; 
+							resolve(response);
 							break;
 						default:
 							resolve({url: this.url, directive: new ReplaceDirective(this.xhr.status, this.xhr.responseText, 

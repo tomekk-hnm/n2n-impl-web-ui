@@ -3,7 +3,7 @@ namespace Jhtml {
 	export class Monitor {
 		public context: Context;
 		public history: History;
-		private compHandlers: { [compName: string]: CompHandler } = {};
+		private compHandlers: CompHandlerReg = {};
 		
 		constructor(private container: Element) {
 			this.context = Context.from(container.ownerDocument);

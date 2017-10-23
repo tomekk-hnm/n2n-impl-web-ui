@@ -87,11 +87,11 @@ namespace Jhtml {
 			
 			for (let comp of Object.values(model.comps)) {
 				let compReadyCallback = () => {
-					comp.off("attached", containerReadyCallback);
+					comp.off("attached", compReadyCallback);
 					this.readyCbr.fire(comp.attachedElement, { comp: Comp });
 					Ui.Scanner.scan(comp.attachedElement);
 				};
-				comp.on("attached", containerReadyCallback);
+				comp.on("attached", compReadyCallback);
 			}
 		}
 		
@@ -144,6 +144,10 @@ namespace Jhtml {
 		attachComp(comp: Comp): boolean;
 		
 		detachComp(comp: Comp): boolean;
+	}
+	
+	export interface CompHandlerReg {
+		[compName: string]: CompHandler
 	}
 	
 	export interface ReadyCallback {

@@ -2,15 +2,15 @@ namespace Jhtml {
 	
 	export interface Directive {
 		
-		exec(context: Context, history: History, compHanlders);
+		exec(context: Context, history: History, compHandlerReg: CompHandlerReg);
 	}
     
     export class ModelDirective implements Directive {
     	constructor(public model: Model) {
     	}
     	
-    	exec(context: Context, history: History) {
-    		context.import(this.model);
+    	exec(context: Context, history: History, compHandlerReg: CompHandlerReg) {
+    		context.import(this.model, compHandlerReg);
     	}
     }
     
