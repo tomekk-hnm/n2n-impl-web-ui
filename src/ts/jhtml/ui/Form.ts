@@ -112,22 +112,21 @@ namespace Jhtml.Ui {
 		public submit(submitConfig?: Form.SubmitDirective) {
 			this.abortSubmit();
 			
-			this.fire(Form.EventType.SUBMIT);
+			this.fire("submit");
 			
 			var url = Url.build(this.config.actionUrl || this.element.getAttribute("action"));
 			var formData = this.buildFormData(submitConfig);
 
+			let monitor = Monitor.of(this.element);
 			let request = this.curRequest = Jhtml.getOrCreateContext(this.element.ownerDocument).requestor
 					.exec("POST", url);
-			
+		
 			request.send(formData).then((response: Response) => {
 				if (this.curRequest !== request) return;
 				
-				let monitor;
 				if ((!this.config.successResponseHandler || !this.config.successResponseHandler(response))
-						&& (monitor = Monitor.of(this.element))) {
-//					response.directive.exec(monitor.context, monitor.history);
-					alert("dingsel");
+						&& monitor) {
+					monitor.handleDirective(response.directive);
 				}
 				
 				if (submitConfig && submitConfig.success) {
@@ -135,7 +134,7 @@ namespace Jhtml.Ui {
 				}
 				
 				this.unblock();
-				this.fire(Form.EventType.SUBMITTED);
+				this.fire("submitted");
 			}).catch((e) => {
 				if (this.curRequest !== request) return;
 				
@@ -144,7 +143,7 @@ namespace Jhtml.Ui {
 				}
 				
 				this.unblock();
-				this.fire(Form.EventType.SUBMITTED);
+				this.fire("submitted");
 			});
 			
 			this.block();
@@ -200,10 +199,7 @@ namespace Jhtml.Ui {
 			public actionUrl: Url|string = null;
 		}
 		
-		export enum EventType {
-			SUBMIT/* = "submit"*/,
-			SUBMITTED/* = "submitted"*/
-		}
+		export type EventType = "submit" | "submitted";
 		
 		export interface SubmitDirective {
 			success?: () => any,

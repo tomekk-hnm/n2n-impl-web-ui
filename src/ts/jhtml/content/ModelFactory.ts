@@ -47,12 +47,12 @@ namespace Jhtml {
     	    let headElem = rootElem.querySelector("head");
 		    let bodyElem = rootElem.querySelector("body");
 		    
-		    if (!headElem) {
-    			throw new ParseError("head element missing.");
+		    if (!bodyElem) {
+		    	throw new ParseError("body element missing.");
 		    }
 		    
-		    if (!bodyElem) {
-    			throw new ParseError("body element missing.");
+		    if (!headElem) {
+    			throw new ParseError("head element missing.");
 		    }
 		    
 		    let containerList = Util.find(bodyElem, ModelFactory.CONTAINER_SELECTOR);

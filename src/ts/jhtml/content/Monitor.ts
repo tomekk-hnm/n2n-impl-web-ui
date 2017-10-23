@@ -33,7 +33,6 @@ namespace Jhtml {
 					this.history.push(page);
 				}
 				
-				this.dingsel(page.promise);
 				return page.promise;
 			}
 			
@@ -43,14 +42,19 @@ namespace Jhtml {
 				this.history.push(page);
 			}
 			
-			this.dingsel(page.promise);
+			page.promise.then((directive: Directive) => {
+				this.handleDirective(directive);	
+			});
+			
 			return page.promise;
 		}
 		
-		private dingsel(promise: Promise<Directive>) {
-			promise.then((directive: Directive) => {
-				directive.exec(this.context, this.history, this.compHandlers);
-			});
+		public handleDirective(directive: Directive) {
+			directive.exec(this.context, this.history, this.compHandlers);
+		}
+		
+		public lookup(method: Requestor.Method, url: Url): Request {
+			return this.context.requestor.exec(method, url);
 		}
 		
 		private static readonly KEY: string = "jhtml-monitor";

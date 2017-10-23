@@ -631,11 +631,11 @@ var Jhtml;
         ModelFactory.createMeta = function (rootElem) {
             var headElem = rootElem.querySelector("head");
             var bodyElem = rootElem.querySelector("body");
-            if (!headElem) {
-                throw new Jhtml.ParseError("head element missing.");
-            }
             if (!bodyElem) {
                 throw new Jhtml.ParseError("body element missing.");
+            }
+            if (!headElem) {
+                throw new Jhtml.ParseError("head element missing.");
             }
             var containerList = Jhtml.Util.find(bodyElem, ModelFactory.CONTAINER_SELECTOR);
             if (containerList.length == 0) {
@@ -689,6 +689,7 @@ var Jhtml;
             delete this.compHandlers[compName];
         };
         Monitor.prototype.exec = function (urlExpr, requestConfig) {
+            var _this = this;
             var url = Jhtml.Url.create(urlExpr);
             var config = Jhtml.FullRequestConfig.from(requestConfig);
             var page = this.history.getPageByUrl(url);
@@ -699,21 +700,22 @@ var Jhtml;
                 if (config.pushToHistory && page !== this.history.currentPage) {
                     this.history.push(page);
                 }
-                this.dingsel(page.promise);
                 return page.promise;
             }
             page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
             if (config.pushToHistory) {
                 this.history.push(page);
             }
-            this.dingsel(page.promise);
+            page.promise.then(function (directive) {
+                _this.handleDirective(directive);
+            });
             return page.promise;
         };
-        Monitor.prototype.dingsel = function (promise) {
-            var _this = this;
-            promise.then(function (directive) {
-                directive.exec(_this.context, _this.history, _this.compHandlers);
-            });
+        Monitor.prototype.handleDirective = function (directive) {
+            directive.exec(this.context, this.history, this.compHandlers);
+        };
+        Monitor.prototype.lookup = function (method, url) {
+            return this.context.requestor.exec(method, url);
         };
         Monitor.of = function (element, selfIncluded) {
             if (selfIncluded === void 0) { selfIncluded = true; }
@@ -846,6 +848,14 @@ var Jhtml;
         return Comp;
     }(Panel));
     Jhtml.Comp = Comp;
+    var Snippet = (function (_super) {
+        __extends(Snippet, _super);
+        function Snippet() {
+            return _super !== null && _super.apply(this, arguments) || this;
+        }
+        return Snippet;
+    }(Panel));
+    Jhtml.Snippet = Snippet;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -1203,24 +1213,24 @@ var Jhtml;
             Form.prototype.submit = function (submitConfig) {
                 var _this = this;
                 this.abortSubmit();
-                this.fire(Form.EventType.SUBMIT);
+                this.fire("submit");
                 var url = Jhtml.Url.build(this.config.actionUrl || this.element.getAttribute("action"));
                 var formData = this.buildFormData(submitConfig);
+                var monitor = Jhtml.Monitor.of(this.element);
                 var request = this.curRequest = Jhtml.getOrCreateContext(this.element.ownerDocument).requestor
                     .exec("POST", url);
                 request.send(formData).then(function (response) {
                     if (_this.curRequest !== request)
                         return;
-                    var monitor;
                     if ((!_this.config.successResponseHandler || !_this.config.successResponseHandler(response))
-                        && (monitor = Jhtml.Monitor.of(_this.element))) {
-                        alert("dingsel");
+                        && monitor) {
+                        monitor.handleDirective(response.directive);
                     }
                     if (submitConfig && submitConfig.success) {
                         submitConfig.success();
                     }
                     _this.unblock();
-                    _this.fire(Form.EventType.SUBMITTED);
+                    _this.fire("submitted");
                 }).catch(function (e) {
                     if (_this.curRequest !== request)
                         return;
@@ -1228,7 +1238,7 @@ var Jhtml;
                         submitConfig.error();
                     }
                     _this.unblock();
-                    _this.fire(Form.EventType.SUBMITTED);
+                    _this.fire("submitted");
                 });
                 this.block();
             };
@@ -1281,11 +1291,6 @@ var Jhtml;
                 return Config;
             }());
             Form.Config = Config;
-            var EventType;
-            (function (EventType) {
-                EventType[EventType["SUBMIT"] = 0] = "SUBMIT";
-                EventType[EventType["SUBMITTED"] = 1] = "SUBMITTED";
-            })(EventType = Form.EventType || (Form.EventType = {}));
         })(Form = Ui.Form || (Ui.Form = {}));
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));

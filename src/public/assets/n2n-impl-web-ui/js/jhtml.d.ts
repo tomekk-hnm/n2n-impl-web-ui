@@ -140,6 +140,7 @@ declare namespace Jhtml {
         comps: {
             [name: string]: Comp;
         };
+        snippet: Snippet;
     }
 }
 declare namespace Jhtml {
@@ -166,7 +167,8 @@ declare namespace Jhtml {
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
-        private dingsel(promise);
+        handleDirective(directive: Directive): void;
+        lookup(method: Requestor.Method, url: Url): Request;
         private static readonly KEY;
         private static readonly CSS_CLASS;
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
@@ -202,6 +204,8 @@ declare namespace Jhtml {
         matches(container: Container): boolean;
     }
     class Comp extends Panel {
+    }
+    class Snippet extends Panel {
     }
 }
 declare namespace Jhtml {
@@ -266,7 +270,10 @@ declare namespace Jhtml {
         readonly context: Context;
         lookupDirective(url: Url): Promise<Directive>;
         lookupModel(url: Url): Promise<Model>;
-        exec(method: "GET" | "POST" | "PUT" | "DELETE", url: Url): Request;
+        exec(method: Requestor.Method, url: Url): Request;
+    }
+    namespace Requestor {
+        type Method = "GET" | "POST" | "PUT" | "DELETE";
     }
 }
 declare namespace Jhtml {
@@ -323,10 +330,7 @@ declare namespace Jhtml.Ui {
             autoSubmitAllowed: boolean;
             actionUrl: Url | string;
         }
-        enum EventType {
-            SUBMIT = 0,
-            SUBMITTED = 1,
-        }
+        type EventType = "submit" | "submitted";
         interface SubmitDirective {
             success?: () => any;
             error?: () => any;

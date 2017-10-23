@@ -6,6 +6,8 @@ namespace Jhtml {
 	    
     	public response: Response|null
     	public container: Container;
-    	public comps: { [name: string]: Comp } = {} 
+    	public comps: { [name: string]: Comp } = {};
+    	public snippet: Snippet;
+    	
     }
 }

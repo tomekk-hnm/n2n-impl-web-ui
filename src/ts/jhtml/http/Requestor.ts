@@ -24,7 +24,7 @@ namespace Jhtml {
 			});
 		}
 				
-		public exec(method: "GET"|"POST"|"PUT"|"DELETE", url: Url): Request {
+		public exec(method: Requestor.Method, url: Url): Request {
 			let xhr = new XMLHttpRequest();
 			xhr.open(method, url.toString(), true);
 			xhr.setRequestHeader("Accept", "application/json,text/html");
@@ -32,4 +32,8 @@ namespace Jhtml {
 			return new Request(this, xhr, url);
 		}
 	}
+	
+	export namespace Requestor {
+		export type Method = "GET" | "POST" | "PUT" | "DELETE";
+	} 
 }

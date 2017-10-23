@@ -86,4 +86,8 @@ namespace Jhtml {
     
     export class Comp extends Panel {
     }
+    
+    export class Snippet extends Panel {
+    	
+    }
 }
