@@ -31,7 +31,7 @@ namespace Jhtml {
 					switch (this.xhr.status) {
 						case 200:
 							let model: Model;
-							if (this.xhr.responseType.match(/json/)) {
+							if (this.xhr.getResponseHeader("Content-Type").match(/json/)) {
 								model = this.createModelFromJson(this.url, this.xhr.responseText);
 							} else {
 								model = this.createModelFromHtml(this.xhr.responseText);

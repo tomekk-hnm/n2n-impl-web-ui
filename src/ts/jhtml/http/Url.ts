@@ -14,7 +14,7 @@ namespace Jhtml {
             return this.urlStr == url.urlStr;
         }
         
-        public extR(pathExt?: string, queryExt?: { [key: string]: string }): Url {
+        public extR(pathExt: string = null, queryExt: { [key: string]: any } = null): Url {
         	let newUrlStr = this.urlStr;
         	
             if (pathExt !== null || pathExt !== undefined) {
@@ -22,9 +22,10 @@ namespace Jhtml {
             }
             
             if (queryExt !== null || queryExt !== undefined) {
-            	let queryExtStr = Object.keys(queryExt)
-            			.map(k => encodeURIComponent(k) + '=' + encodeURIComponent(queryExt[k]))
-            			.join('&');
+            	let parts = [];
+            	this.compileQueryParts(parts, queryExt, null);
+            	let queryExtStr = parts.join("&");
+            	
             	if (newUrlStr.match(/?/)) {
             		newUrlStr += "&" + queryExtStr;
             	} else {
@@ -33,6 +34,24 @@ namespace Jhtml {
             }
             
             return new Url(newUrlStr);
+        }
+        
+        private compileQueryParts(parts: Array<string>, queryExt: { [key: string]: any }, prefix: string|null) {
+        	for (let key in queryExt) {
+        		let name = null;
+        		if (prefix) {
+        			name = prefix + "[" + key + "]"; 
+        		} else {
+        			name = key
+        		}
+        		
+        		let value = queryExt[key];
+        		if (value instanceof Array || value instanceof Object) {
+        			this.compileQueryParts(parts, value, name)
+        		} else {
+        			parts.push(encodeURIComponent(name) + "=" + encodeURIComponent(value));
+        		}
+        	}
         }
         
         public static build(urlExpression: string|Url): Url|null {

@@ -104,20 +104,24 @@ namespace Jhtml {
 				comp.on("attached", compReadyCallback);
 			}
 			
-			let snippet = model.container;
-			let snippetReadyCallback = () => {
-				container.off("attached", snippetReadyCallback)
-				this.importMeta(model.meta);
-				this.readyCbr.fire(snippet.elements, { container: container });
-				Ui.Scanner.scanArray(snippet.elements);
-			};
-			container.on("attached", snippetReadyCallback);
+			let snippet = model.snippet;
+			if (snippet) {
+				let snippetReadyCallback = () => {
+					snippet.off("attached", snippetReadyCallback)
+					this.importMeta(model.meta);
+					this.readyCbr.fire(snippet.elements, { snippet: snippet });
+					Ui.Scanner.scanArray(snippet.elements);
+				};
+				snippet.on("attached", snippetReadyCallback);
+			}
 		}
 		
 		replace(text: string, mimeType: string, replace: boolean) {
-			this.document.open(mimeType, replace? "replace" : null);
-			this.document.write(text);
-			this.document.close();
+			throw new Error("replace?");
+			
+//			this.document.open(mimeType, replace? "replace" : null);
+//			this.document.write(text);
+//			this.document.close();
 		}
 		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
@@ -176,5 +180,6 @@ namespace Jhtml {
 	export interface ReadyEvent {
 		container?: Container;
 		comp?: Comp;
+		snippet?: Snippet;
 	}
 }

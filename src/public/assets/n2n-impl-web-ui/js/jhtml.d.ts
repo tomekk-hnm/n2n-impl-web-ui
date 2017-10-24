@@ -96,6 +96,7 @@ declare namespace Jhtml {
     interface ReadyEvent {
         container?: Container;
         comp?: Comp;
+        snippet?: Snippet;
     }
 }
 declare namespace Jhtml {
@@ -319,8 +320,9 @@ declare namespace Jhtml {
         toString(): string;
         equals(url: Url): boolean;
         extR(pathExt?: string, queryExt?: {
-            [key: string]: string;
+            [key: string]: any;
         }): Url;
+        private compileQueryParts(parts, queryExt, prefix);
         static build(urlExpression: string | Url): Url | null;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;

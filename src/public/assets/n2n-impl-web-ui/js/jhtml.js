@@ -344,19 +344,19 @@ var Jhtml;
                 var comp = _a[_i];
                 _loop_1(comp);
             }
-            var snippet = model.container;
-            var snippetReadyCallback = function () {
-                container.off("attached", snippetReadyCallback);
-                _this.importMeta(model.meta);
-                _this.readyCbr.fire(snippet.elements, { container: container });
-                Jhtml.Ui.Scanner.scanArray(snippet.elements);
-            };
-            container.on("attached", snippetReadyCallback);
+            var snippet = model.snippet;
+            if (snippet) {
+                var snippetReadyCallback_1 = function () {
+                    snippet.off("attached", snippetReadyCallback_1);
+                    _this.importMeta(model.meta);
+                    _this.readyCbr.fire(snippet.elements, { snippet: snippet });
+                    Jhtml.Ui.Scanner.scanArray(snippet.elements);
+                };
+                snippet.on("attached", snippetReadyCallback_1);
+            }
         };
         Context.prototype.replace = function (text, mimeType, replace) {
-            this.document.open(mimeType, replace ? "replace" : null);
-            this.document.write(text);
-            this.document.close();
+            throw new Error("replace?");
         };
         Context.prototype.registerCompHandler = function (compName, compHandler) {
             this.compHandlers[compName] = compHandler;
@@ -387,9 +387,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
             return context;
         };
+        Context.KEY = "data-jhtml-context";
         return Context;
     }());
-    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -687,7 +687,7 @@ var Jhtml;
             var templateElem = document.createElement("html");
             templateElem.innerHTML = htmlStr;
             var model = new Jhtml.Model(ModelFactory.buildMeta(templateElem, true));
-            model.container = ModelFactory.compileContainer(templateElem, model);
+            model.container = ModelFactory.compileContainer(model.meta.containerElement, model);
             model.comps = ModelFactory.compileComps(model.container, templateElem, model);
             model.container.detach();
             for (var _i = 0, _a = Object.values(model.comps); _i < _a.length; _i++) {
@@ -713,14 +713,17 @@ var Jhtml;
         ModelFactory.buildMeta = function (rootElem, full) {
             var meta = new Jhtml.Meta();
             var elem;
-            if (elem = ModelFactory.extractHeadElem(rootElem, full)) {
-                meta.headElements = Jhtml.Util.array(elem.children);
+            if ((elem = ModelFactory.extractContainerElem(rootElem, full))) {
+                meta.containerElement = elem;
             }
-            if (elem = ModelFactory.extractBodyElem(rootElem, full || meta.headElements !== null)) {
+            else {
+                return meta;
+            }
+            if (elem = ModelFactory.extractBodyElem(rootElem, true)) {
                 meta.bodyElements = Jhtml.Util.array(elem.children);
             }
-            if (meta.bodyElements && (elem = ModelFactory.extractContainerElem(rootElem, true))) {
-                meta.containerElement = elem;
+            if (elem = ModelFactory.extractHeadElem(rootElem, false)) {
+                meta.headElements = Jhtml.Util.array(elem.children);
             }
             return meta;
         };
@@ -768,12 +771,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.firstElementChild;
         };
+        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+        ModelFactory.COMP_ATTR = "data-jhtml-comp";
+        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
-    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-    ModelFactory.COMP_ATTR = "data-jhtml-comp";
-    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -856,10 +859,10 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
+        Monitor.KEY = "jhtml-monitor";
+        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
-    Monitor.KEY = "jhtml-monitor";
-    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1065,7 +1068,7 @@ var Jhtml;
                     switch (_this.xhr.status) {
                         case 200:
                             var model = void 0;
-                            if (_this.xhr.responseType.match(/json/)) {
+                            if (_this.xhr.getResponseHeader("Content-Type").match(/json/)) {
                                 model = _this.createModelFromJson(_this.url, _this.xhr.responseText);
                             }
                             else {
@@ -1196,14 +1199,16 @@ var Jhtml;
             return this.urlStr == url.urlStr;
         };
         Url.prototype.extR = function (pathExt, queryExt) {
+            if (pathExt === void 0) { pathExt = null; }
+            if (queryExt === void 0) { queryExt = null; }
             var newUrlStr = this.urlStr;
             if (pathExt !== null || pathExt !== undefined) {
                 newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
             }
             if (queryExt !== null || queryExt !== undefined) {
-                var queryExtStr = Object.keys(queryExt)
-                    .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(queryExt[k]); })
-                    .join('&');
+                var parts = [];
+                this.compileQueryParts(parts, queryExt, null);
+                var queryExtStr = parts.join("&");
                 if (newUrlStr.match(/?/)) {
                     newUrlStr += "&" + queryExtStr;
                 }
@@ -1212,6 +1217,24 @@ var Jhtml;
                 }
             }
             return new Url(newUrlStr);
+        };
+        Url.prototype.compileQueryParts = function (parts, queryExt, prefix) {
+            for (var key in queryExt) {
+                var name_4 = null;
+                if (prefix) {
+                    name_4 = prefix + "[" + key + "]";
+                }
+                else {
+                    name_4 = key;
+                }
+                var value = queryExt[key];
+                if (value instanceof Array || value instanceof Object) {
+                    this.compileQueryParts(parts, value, name_4);
+                }
+                else {
+                    parts.push(encodeURIComponent(name_4) + "=" + encodeURIComponent(value));
+                }
+            }
         };
         Url.build = function (urlExpression) {
             if (urlExpression === null || urlExpression === undefined)
@@ -1299,7 +1322,8 @@ var Jhtml;
                     return false;
                 }, true);
                 Jhtml.Util.find(this.element, "input[type=submit], button[type=submit]").forEach(function (elem) {
-                    elem.addEventListener("click", function () {
+                    elem.addEventListener("click", function (evt) {
+                        evt.preventDefault();
                         if (!_this.config.autoSubmitAllowed)
                             return false;
                         _this.submit({ button: elem });
@@ -1310,7 +1334,7 @@ var Jhtml;
             Form.prototype.buildFormData = function (submitConfig) {
                 var formData = new FormData(this.element);
                 if (submitConfig && submitConfig.button) {
-                    formData.append(submitConfig.button.name, submitConfig.button.value);
+                    formData.append(submitConfig.button.getAttribute("name"), submitConfig.button.getAttribute("value"));
                 }
                 return formData;
             };
@@ -1388,9 +1412,9 @@ var Jhtml;
                 form.observe();
                 return form;
             };
+            Form.KEY = "jhtml-form";
             return Form;
         }());
-        Form.KEY = "jhtml-form";
         Ui.Form = Form;
         var ControlLock = (function () {
             function ControlLock(containerElem) {
@@ -1455,9 +1479,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
+        Link.KEY = "jhtml-link";
         return Link;
     }());
-    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1483,12 +1507,12 @@ var Jhtml;
                     Scanner.scan(elem);
                 }
             };
+            Scanner.A_ATTR = "data-jhtml";
+            Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+            Scanner.FORM_ATTR = "data-jhtml";
+            Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
             return Scanner;
         }());
-        Scanner.A_ATTR = "data-jhtml";
-        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
-        Scanner.FORM_ATTR = "data-jhtml";
-        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));

@@ -51,7 +51,7 @@ namespace Jhtml {
 		    templateElem.innerHTML = htmlStr;
 		    
 		    let model = new Model(ModelFactory.buildMeta(templateElem, true));
-		    model.container = ModelFactory.compileContainer(templateElem, model);
+		    model.container = ModelFactory.compileContainer(model.meta.containerElement, model);
 		    model.comps = ModelFactory.compileComps(model.container, templateElem, model);
 		    
 		    model.container.detach();
@@ -87,14 +87,19 @@ namespace Jhtml {
 		    let meta = new Meta();
 		    
 		    let elem;
-		    if (elem = ModelFactory.extractHeadElem(rootElem, full)) {
-		    	meta.headElements = Util.array(elem.children);
+		    
+		    if ((elem = ModelFactory.extractContainerElem(rootElem, full))) {
+		    	meta.containerElement = elem;
+		    } else {
+		    	return meta;
 		    }
-		    if (elem = ModelFactory.extractBodyElem(rootElem, full || meta.headElements !== null)) {
+		    
+		    if (elem = ModelFactory.extractBodyElem(rootElem, true)) {
 		    	meta.bodyElements = Util.array(elem.children);
 		    }
-		    if (meta.bodyElements && (elem = ModelFactory.extractContainerElem(rootElem, true))) {
-		    	meta.containerElement = elem; 
+		    
+		    if (elem = ModelFactory.extractHeadElem(rootElem, false)) {
+		    	meta.headElements = Util.array(elem.children);
 		    }
 		    
 		    return meta;

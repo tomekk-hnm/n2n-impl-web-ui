@@ -50,7 +50,9 @@ namespace Jhtml.Ui {
 			
 			
 			Util.find(this.element, "input[type=submit], button[type=submit]").forEach((elem: Element) => {
-				elem.addEventListener("click", () => {
+				elem.addEventListener("click", (evt) => {
+					evt.preventDefault();
+					
 					if (!this.config.autoSubmitAllowed) return false;
 					
 					this.submit({ button: elem });
@@ -63,7 +65,7 @@ namespace Jhtml.Ui {
 			var formData = new FormData(this.element);
 			
 			if (submitConfig && submitConfig.button) {
-				formData.append(submitConfig.button.name, submitConfig.button.value);
+				formData.append(submitConfig.button.getAttribute("name"), submitConfig.button.getAttribute("value"));
 			}
 			
 			return formData;
@@ -120,10 +122,10 @@ namespace Jhtml.Ui {
 			let monitor = Monitor.of(this.element);
 			let request = this.curRequest = Jhtml.getOrCreateContext(this.element.ownerDocument).requestor
 					.exec("POST", url);
-		
+
 			request.send(formData).then((response: Response) => {
 				if (this.curRequest !== request) return;
-				
+
 				if ((!this.config.successResponseHandler || !this.config.successResponseHandler(response))
 						&& monitor) {
 					monitor.handleDirective(response.directive);

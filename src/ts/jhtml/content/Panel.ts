@@ -2,7 +2,7 @@ namespace Jhtml {
 	
 	export abstract class Content {
     	protected cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
-    	protected attached = false;
+    	protected attached: boolean = false;
     	
 		constructor(public elements: Array<Element>, private _model: Model, private detachedElem: Element) {
 		}
