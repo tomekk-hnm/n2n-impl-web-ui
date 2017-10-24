@@ -2,7 +2,7 @@ namespace Jhtml {
 	
 	export class Context {
 		private _requestor: Requestor;
-		private boundModel: Model;
+		private modelState: ModelState;
 	
 		private compHandlers: { [compName: string]: CompHandler } = {};
 		private readyCbr: Util.CallbackRegistry<ReadyCallback> = new Util.CallbackRegistry<ReadyCallback>();
@@ -24,13 +24,13 @@ namespace Jhtml {
 		}
 		
 		isJhtml(): boolean {
-			return this.getBoundModel() ? true : false;
+			return this.getModelState(false) ? true : false;
 		}
 		
-		private getBoundModel(): Model {
-			if (!this.boundModel) {
+		private getModelState(required: boolean): ModelState {
+			if (!this.modelState) {
 				try {
-					this.boundModel = ModelFactory.createFromDocument(this.document);
+					this.modelState = ModelFactory.createStateFromDocument(this.document);
 					Ui.Scanner.scan(this.document.documentElement);
 				} catch (e) { 
 					if (e instanceof ParseError) return null;
@@ -39,17 +39,19 @@ namespace Jhtml {
 				}
 			}
 			
-			return this.boundModel || null;
-		}
-		
-		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}) {
-			let boundModel: Model = this.getBoundModel();
-			if (!boundModel) {
+			if (!this.modelState && required) {
 				throw new Error("No jhtml context");
 			}
 			
-			for (let name in boundModel.comps) {
-				let comp = boundModel.comps[name];
+			return this.modelState || null;
+		}
+		
+		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}) {
+			let boundModelState: ModelState = this.getModelState(true);
+			
+			
+			for (let name in boundModelState.comps) {
+				let comp = boundModelState.comps[name];
 				
 				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
 						&& !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
@@ -57,42 +59,59 @@ namespace Jhtml {
 				}
 			}
 
-			boundModel.container.detach();
-			boundModel.meta.replaceWith(newModel.meta);
+			boundModelState.container.detach();
+			boundModelState.metaState.replaceWith(newModel.meta);
 			
-			if (!boundModel.container.matches(newModel.container)) {
-				boundModel.container = newModel.container;
+			if (!boundModelState.container.matches(newModel.container)) {
+				boundModelState.container = newModel.container;
 			} 
 
-			boundModel.container.attachTo(boundModel.meta.containerElement);
+			boundModelState.container.attachTo(boundModelState.metaState.containerElement);
 			
 			for (let name in newModel.comps) {
-				let comp = boundModel.comps[name] = newModel.comps[name];
+				let comp = boundModelState.comps[name] = newModel.comps[name];
 				
 				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].attachComp(comp))
 						&& !(this.compHandlers[name] && this.compHandlers[name].attachComp(comp))) {
-					comp.attachTo(boundModel.container.compElements[name]);
+					comp.attachTo(boundModelState.container.compElements[name]);
 				}
 			}
 		}
 		
+		importMeta(meta: Meta) {
+			let boundModelState = this.getModelState(true);
+			
+			boundModelState.metaState.import(meta);
+		}
+		
 		registerNewModel(model: Model) {
 			let container = model.container;
-			let containerReadyCallback = () => {
-				container.off("attached", containerReadyCallback)
-				this.readyCbr.fire(container.attachedElement, { container: container });
-				Ui.Scanner.scan(container.attachedElement);
-			};
-			container.on("attached", containerReadyCallback);
+			if (container) {
+				let containerReadyCallback = () => {
+					container.off("attached", containerReadyCallback)
+					this.readyCbr.fire(container.elements, { container: container });
+					Ui.Scanner.scanArray(container.elements);
+				};
+				container.on("attached", containerReadyCallback);
+			}
 			
 			for (let comp of Object.values(model.comps)) {
 				let compReadyCallback = () => {
 					comp.off("attached", compReadyCallback);
-					this.readyCbr.fire(comp.attachedElement, { comp: Comp });
-					Ui.Scanner.scan(comp.attachedElement);
+					this.readyCbr.fire(comp.elements, { comp: Comp });
+					Ui.Scanner.scanArray(comp.elements);
 				};
 				comp.on("attached", compReadyCallback);
 			}
+			
+			let snippet = model.container;
+			let snippetReadyCallback = () => {
+				container.off("attached", snippetReadyCallback)
+				this.importMeta(model.meta);
+				this.readyCbr.fire(snippet.elements, { container: container });
+				Ui.Scanner.scanArray(snippet.elements);
+			};
+			container.on("attached", snippetReadyCallback);
 		}
 		
 		replace(text: string, mimeType: string, replace: boolean) {
@@ -113,7 +132,7 @@ namespace Jhtml {
 			this.readyCbr.on(readyCallback);
 			
 			if (this._document.readyState === "complete") {
-				readyCallback(this.document.documentElement, {});	
+				readyCallback([this.document.documentElement], {});	
 			}
 		}
 		
@@ -151,7 +170,7 @@ namespace Jhtml {
 	}
 	
 	export interface ReadyCallback {
-		(element: Element, event: ReadyEvent ): any;
+		(elements: Array<Element>, event: ReadyEvent ): any;
 	}
 	
 	export interface ReadyEvent {

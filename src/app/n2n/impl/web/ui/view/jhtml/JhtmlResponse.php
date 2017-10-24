@@ -23,10 +23,7 @@ namespace n2n\impl\web\ui\view\jhtml;
 
 use n2n\web\http\BufferedResponseObject;
 use n2n\web\http\Response;
-use n2n\util\StringUtils;
-use n2n\web\ui\SimpleBuildContext;
 use n2n\impl\web\ui\view\html\HtmlView;
-use n2n\impl\web\ui\view\html\HtmlBuilderMeta;
 
 class JhtmlResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';

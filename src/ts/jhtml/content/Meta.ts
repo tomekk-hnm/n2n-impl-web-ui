@@ -1,6 +1,12 @@
 namespace Jhtml {
 	
-    export class Meta {
+	export class Meta {
+		public headElements: Array<Element> = []; 
+		public bodyElements: Array<Element> = []; 
+		public containerElement: Element|null = null;
+	}
+	
+    export class MetaState {
     
     	constructor(private rootElem: Element, private headElem: Element, private bodyElem: Element,
     			private containerElem: Element) {
@@ -18,10 +24,22 @@ namespace Jhtml {
     		return this.containerElem;
     	}
     	
-
 		private processedElements : Array<Element>;
 		private removableElems: Array<Element>;
     	private newMeta: Meta;
+    	
+    	public import(newMeta: Meta) {
+    		this.processedElements = [];
+			this.removableElems = [];
+			this.newMeta = newMeta;
+
+			this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+			this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+			
+			this.processedElements = null;
+			this.removableElems = null;
+			this.newMeta = null;
+    	}
     	
 		public replaceWith(newMeta: Meta) {
 			this.processedElements = [];
@@ -89,7 +107,7 @@ namespace Jhtml {
 		}
 		
 		private mergeElem(preferedElems: Array<Element>, newElem: Element, target: Meta.Target): Element {
-			if (newElem === this.newMeta.containerElem) {
+			if (newElem === this.newMeta.containerElement) {
 				if (!this.compareExact(this.containerElem, newElem, false)) {
 					let mergedElem =  <Element> newElem.cloneNode(false);
 					this.processedElements.push(mergedElem);
@@ -100,7 +118,7 @@ namespace Jhtml {
 				return this.containerElem;
 			}
 			
-			if (newElem.contains(this.newMeta.containerElem)) {
+			if (newElem.contains(this.newMeta.containerElement)) {
 				let mergedElem;
 				if (mergedElem = this.filterExact(preferedElems, newElem, false)) {
 					this.processedElements.push(mergedElem);

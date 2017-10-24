@@ -68,7 +68,7 @@ namespace Jhtml {
 		
 		private createModelFromHtml(html: string): Model {
 			try {
-				let model = ModelFactory.createFromHtml(html);
+				let model = ModelFactory.createFromHtml(html, true);
 				this.requestor.context.registerNewModel(model);
 				return model;
 			} catch (e) {

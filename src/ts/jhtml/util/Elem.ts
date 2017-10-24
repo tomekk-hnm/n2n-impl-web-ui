@@ -17,9 +17,18 @@ namespace Jhtml.Util {
 	export function bindElemData<T>(elem: Element, key: string, data: any) {
 		elem["data-" + key] = data;
 	}
+	
+	export function findAndSelf(element: Element, selector: string) {
+		let foundElems = find(element, selector);
+		if (element.matches(selector)) {
+			foundElems.unshift(element);
+		}
+		return foundElems;
+	}
 
 	export function find(nodeSelector: NodeSelector, selector: string): Array<Element> {
 		let foundElems: Array<Element> = [];
+	
 		let nodeList = nodeSelector.querySelectorAll(selector);
 		for (let i = 0; i < nodeList.length; i++) {
 			foundElems.push(nodeList.item(i));

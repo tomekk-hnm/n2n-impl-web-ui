@@ -9,31 +9,50 @@ namespace Jhtml {
     	
     	
     	public static createFromJsonObj(jsonObj: any): Model {
-    		throw new Error("not yet implemented");
-//    		let model = new Model();
-//    		
-//    		ModelFactory.compileContent(model, jsonObj);
-//
-//    		ModelFactory.compileElements(model.headElements, "head", jsonObj);
-//    		ModelFactory.compileElements(model.bodyStartElements, "bodyStart", jsonObj);
-//    		ModelFactory.compileElements(model.bodyEndElements, "bodyEnd", jsonObj);
-//			
-//    		return model;
-    	}
-    	    	
-    	public static createFromDocument(document: Document): Model {
-    		let model = new Model(ModelFactory.createMeta(document.documentElement));
-    		ModelFactory.compileContent(model, document.documentElement);
+    		if (typeof jsonObj.content != "string") {
+				throw new ParseError("Missing or invalid property 'content'.");
+			}
+    		
+    		let rootElem = document.createElement("html");
+    		rootElem.innerHTML = jsonObj.content;
+    		let meta: Meta = ModelFactory.buildMeta(rootElem, false);
+    		
+    		ModelFactory.compileMetaElements(meta.headElements, "head", jsonObj);
+    		ModelFactory.compileMetaElements(meta.bodyElements, "bodyStart", jsonObj);
+    		ModelFactory.compileMetaElements(meta.bodyElements, "bodyEnd", jsonObj);
+    		
+    		let model = new Model(meta);
+    		
+    		if (!meta.containerElement) {
+    			model.snippet = new Snippet(Util.array(rootElem.children), model, document.createElement("template"));
+    		} else {
+    			model.container = ModelFactory.compileContainer(meta.containerElement, model);
+    			model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
+    		}
+    		
+    		if (jsonObj.additional) {
+    			model.additionalData = jsonObj.additional; 
+    		}
+
     		return model;
     	}
+    	    	
+    	public static createStateFromDocument(document: Document): ModelState {
+    		let metaState = new MetaState(document.documentElement, document.head, document.body,
+    				ModelFactory.extractContainerElem(document.body, true));
+    		let container = ModelFactory.compileContainer(metaState.containerElement, null)
+    		let comps = ModelFactory.compileComps(container, metaState.containerElement, null)
+    		
+    		return new ModelState(metaState, container, comps);
+    	}
     	
-    	public static createFromHtml(htmlStr: string): Model {
+    	public static createFromHtml(htmlStr: string, full: boolean): Model {
     		let templateElem = document.createElement("html");
 		    templateElem.innerHTML = htmlStr;
 		    
-		    let model = new Model(ModelFactory.createMeta(templateElem));
-		    
-		    ModelFactory.compileContent(model, templateElem);
+		    let model = new Model(ModelFactory.buildMeta(templateElem, true));
+		    model.container = ModelFactory.compileContainer(templateElem, model);
+		    model.comps = ModelFactory.compileComps(model.container, templateElem, model);
 		    
 		    model.container.detach();
 		    for (let comp of Object.values(model.comps)) {
@@ -43,67 +62,92 @@ namespace Jhtml {
     		return model;
     	}
     	
-    	public static createMeta(rootElem: Element) {
-    	    let headElem = rootElem.querySelector("head");
-		    let bodyElem = rootElem.querySelector("body");
+    	private static extractHeadElem(rootElem: Element, required: boolean): Element {
+    		let headElem = rootElem.querySelector("head");
+    		
+    		if (headElem || !required) {
+    			return headElem;
+		    }
+    		
+    		throw new ParseError("head element missing.");
+    	}
+    	
+    	
+    	private static extractBodyElem(rootElem: Element, required: boolean): Element {
+    		let bodyElem = rootElem.querySelector("body");
+    		
+    		if (bodyElem || !required) {
+    			return bodyElem;
+		    }
+    		
+    		throw new ParseError("body element missing.");
+    	}
+    	
+    	public static buildMeta(rootElem: Element, full: boolean): Meta {
+		    let meta = new Meta();
 		    
-		    if (!bodyElem) {
-		    	throw new ParseError("body element missing.");
+		    let elem;
+		    if (elem = ModelFactory.extractHeadElem(rootElem, full)) {
+		    	meta.headElements = Util.array(elem.children);
+		    }
+		    if (elem = ModelFactory.extractBodyElem(rootElem, full || meta.headElements !== null)) {
+		    	meta.bodyElements = Util.array(elem.children);
+		    }
+		    if (meta.bodyElements && (elem = ModelFactory.extractContainerElem(rootElem, true))) {
+		    	meta.containerElement = elem; 
 		    }
 		    
-		    if (!headElem) {
-    			throw new ParseError("head element missing.");
-		    }
-		    
-		    let containerList = Util.find(bodyElem, ModelFactory.CONTAINER_SELECTOR);
+		    return meta;
+    	}
+    	
+    	private static extractContainerElem(rootElem: Element, required: boolean): Element {
+		    let containerList = Util.find(rootElem, ModelFactory.CONTAINER_SELECTOR);
 		    
 		    if (containerList.length == 0) {
+		    	if (!required) return null;
 		    	throw new ParseError("Jhtml container missing.");
 		    }
 		    
 		    if (containerList.length > 1) {
+		    	if (!required) return null;
 		    	throw new ParseError("Multiple jhtml container detected.");
 		    }
 		    
-		    return new Meta(rootElem, headElem, bodyElem, containerList[0]);
+		    return containerList[0];
     	}
     	
-    	private static compileContent(model: Model, rootElem: Element) {
-    		let containerElem = model.meta.containerElement;
-    		let document = containerElem.ownerDocument;
-		   
-		    model.container = new Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), 
+    	private static compileContainer(containerElem: Element, model: Model): Container  {
+    		return new Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), 
 		    		containerElem, model);
     		
-		    for (let compElem of Util.find(containerElem, ModelFactory.COMP_SELECTOR)) {
+    	} 
+    	
+    	private static compileComps(container: Container, containerElem: Element, model: Model): { [name: string]: Comp } {
+    		let comps: { [name: string]: Comp } = {}
+    	
+    		for (let compElem of Util.find(containerElem, ModelFactory.COMP_SELECTOR)) {
 		    	let name: string = compElem.getAttribute(ModelFactory.COMP_ATTR);
 		    	
-		    	if (model.comps[name]) {
+		    	if (comps[name]) {
 		    		throw new ParseError("Duplicated comp name: " + name);
 		    	}
 		    	
-		    	model.container.compElements[name] = compElem;
-		    	model.comps[name] = new Comp(name, compElem, model);
+		    	container.compElements[name] = compElem;
+		    	comps[name] = new Comp(name, compElem, model);
 		    }
-    	} 
-//    	
-//    	private static compileJsonContent(model: Model, jsonObj: any) {
-//    		if (typeof jsonObj.content != "string") {
-//				throw new ParseError("Missing or invalid property 'content'.");
-//			}
-//    		
-//    		ModelFactory.compileContent(model, jsonObj.content);
-//    	}
-//    	
-//    	private static compileElements(elements: Array<Element>, name: string, jsonObj: any) {
-//    		if (!(jsonObj[name] instanceof Array)) {
-//				throw new ParseError("Missing or invalid property '" + name + "'.");
-//			}
-//    		
-//    		for (let elemHtml of jsonObj.head) {
-//    			elements.push(ModelFactory.createElement(elemHtml));
-//    		}
-//    	}
+    		
+    		return comps;
+    	}
+
+    	private static compileMetaElements(elements: Array<Element>, name: string, jsonObj: any) {
+    		if (!(jsonObj[name] instanceof Array)) {
+				throw new ParseError("Missing or invalid property '" + name + "'.");
+			}
+    		
+    		for (let elemHtml of jsonObj.head) {
+    			elements.push(ModelFactory.createElement(elemHtml));
+    		}
+    	}
     	
     	private static createElement(elemHtml: string): Element {
     		let templateElem = document.createElement("template");

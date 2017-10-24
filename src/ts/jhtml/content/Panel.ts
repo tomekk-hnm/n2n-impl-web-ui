@@ -1,18 +1,13 @@
 namespace Jhtml {
-
-    export abstract class Panel {
-    	private detachedElem: Element;
-    	private cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
+	
+	export abstract class Content {
+    	protected cbr: Util.CallbackRegistry<() => any> = new Util.CallbackRegistry<() => any>();
+    	protected attached = false;
     	
-    	constructor(private _name: string, private _attachedElem: Element, private _model: Model) {
-    		this.detachedElem = _attachedElem.ownerDocument.createElement("template");
-    	}
-    	
-    	get name(): string {
-    		return this._name;
-    	}
-    	
-    	get model(): Model {
+		constructor(public elements: Array<Element>, private _model: Model, private detachedElem: Element) {
+		}
+		
+		get model(): Model {
     		return this._model;
     	}
     	
@@ -23,38 +18,37 @@ namespace Jhtml {
     	off(eventType: Content.EventType, callback: () => any) {
     		this.cbr.offType(eventType, callback);
     	}
-    	
-    	get attachedElement(): Element {
-    		return this._attachedElem;
+		
+    	get isAttached() {
+    		return this.attached;
     	}
     	
-    	attachTo(element: Element) {
-    		if (this._attachedElem) {
+    	protected ensureDetached() {
+    		if (this.attached) {
     			throw new Error("Element already attached.");
     		}
+    	}
+		
+		attachTo(element: Element) {
+    		this.ensureDetached();
     		
-    		this._attachedElem = element;
     		for (let childElem of Util.array(this.detachedElem.children)) {
     			element.appendChild(childElem);
     		}
     		
-    		this.cbr.fireType("attached");
+    		this.attached = true;
     	} 
-    	
-    	get attached(): boolean {
-    		return this._attachedElem ? true : false;
-    	}
-    	
-    	detach() {
-    		if (!this._attachedElem) return;
+		
+		detach() {
+    		if (!this.attached) return;
     		
     		this.cbr.fireType("detach");
     		
-    		for (let childElem of Util.array(this._attachedElem.children)) {
+    		for (let childElem of this.elements) {
     			this.detachedElem.appendChild(childElem);
     		}
     		
-    		this._attachedElem = null;
+    		this.attached = false;
     	}
     	
     	dispose() {
@@ -67,7 +61,19 @@ namespace Jhtml {
     		this.cbr = null;
     		this.detachedElem.remove();
     		this.detachedElem = null;
-    		
+    	}
+		
+	}
+	
+    export abstract class Panel extends Content {
+    	
+    	constructor(private _name: string, attachedElem: Element, model: Model) {
+    		super(Util.array(attachedElem.children), model, attachedElem.ownerDocument.createElement("template"));
+    		this.attached = true;
+    	}
+    	
+    	get name(): string {
+    		return this._name;
     	}
     }
     
@@ -87,7 +93,14 @@ namespace Jhtml {
     export class Comp extends Panel {
     }
     
-    export class Snippet extends Panel {
+    export class Snippet extends Content {
     	
+		protected markAttached() {
+			this.ensureDetached();
+			
+			this.attached = true;
+			
+			this.cbr.fireType("attached");
+		}
     }
 }

@@ -6,13 +6,19 @@ namespace Jhtml.Ui {
 		public static readonly FORM_ATTR = "data-jhtml";
 		private static readonly FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
 		
-		static scan(rootElem: Element) {
-			for (let elem of Util.find(rootElem, Scanner.A_SELECTOR)) {
-				Link.from(<HTMLAnchorElement> elem);
+		static scan(elem: Element) {
+			for (let linkElem of Util.findAndSelf(elem, Scanner.A_SELECTOR)) {
+				Link.from(<HTMLAnchorElement> linkElem);
 			}
 			
-			for (let elem of Util.find(rootElem, Scanner.FORM_SELECTOR)) {
-				Form.from(<HTMLFormElement> elem);
+			for (let fromElem of Util.findAndSelf(elem, Scanner.FORM_SELECTOR)) {
+				Form.from(<HTMLFormElement> fromElem);
+			}
+		}
+		
+		static scanArray(elems: Array<Element>) {
+			for (let elem of elems) {
+				Scanner.scan(elem);
 			}
 		}
 	}
