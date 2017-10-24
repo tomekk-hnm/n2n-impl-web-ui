@@ -95,7 +95,7 @@ namespace Jhtml {
     
     export class Snippet extends Content {
     	
-		protected markAttached() {
+		public markAttached() {
 			this.ensureDetached();
 			
 			this.attached = true;

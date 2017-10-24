@@ -192,7 +192,7 @@ declare namespace Jhtml {
         unregisterCompHandler(compName: string): void;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
         handleDirective(directive: Directive): void;
-        lookup(method: Requestor.Method, url: Url): Request;
+        lookupModel(url: Url): Promise<Model>;
         private static readonly KEY;
         private static readonly CSS_CLASS;
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
@@ -234,7 +234,7 @@ declare namespace Jhtml {
     class Comp extends Panel {
     }
     class Snippet extends Content {
-        protected markAttached(): void;
+        markAttached(): void;
     }
 }
 declare namespace Jhtml {
@@ -318,7 +318,9 @@ declare namespace Jhtml {
         constructor(urlStr: string);
         toString(): string;
         equals(url: Url): boolean;
-        extR(pathExt: string): Url;
+        extR(pathExt?: string, queryExt?: {
+            [key: string]: string;
+        }): Url;
         static build(urlExpression: string | Url): Url | null;
         static create(urlExpression: string | Url): Url;
         static absoluteStr(urlExpression: string | Url): string;
@@ -355,7 +357,7 @@ declare namespace Jhtml.Ui {
     namespace Form {
         class Config {
             disableControls: boolean;
-            successResponseHandler: (response: Response) => any;
+            successResponseHandler: (response: Response) => boolean;
             autoSubmitAllowed: boolean;
             actionUrl: Url | string;
         }
@@ -363,7 +365,7 @@ declare namespace Jhtml.Ui {
         interface SubmitDirective {
             success?: () => any;
             error?: () => any;
-            button?: any;
+            button?: Element;
         }
     }
     interface FormCallback {

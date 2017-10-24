@@ -194,7 +194,7 @@ namespace Jhtml.Ui {
 	export namespace Form {
 		export class Config {
 			public disableControls = true;
-			public successResponseHandler: (response: Response) => any;
+			public successResponseHandler: (response: Response) => boolean;
 			public autoSubmitAllowed: boolean = true;
 			public actionUrl: Url|string = null;
 		}
@@ -204,7 +204,7 @@ namespace Jhtml.Ui {
 		export interface SubmitDirective {
 			success?: () => any,
 			error?: () => any,
-			button?: any
+			button?: Element
 			
 		}
 	}

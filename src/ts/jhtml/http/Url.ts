@@ -14,12 +14,25 @@ namespace Jhtml {
             return this.urlStr == url.urlStr;
         }
         
-        public extR(pathExt: string): Url {
-            if (pathExt === null || pathExt === undefined) {
-                return this;
+        public extR(pathExt?: string, queryExt?: { [key: string]: string }): Url {
+        	let newUrlStr = this.urlStr;
+        	
+            if (pathExt !== null || pathExt !== undefined) {
+            	newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
             }
             
-            return new Url(this.urlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt));
+            if (queryExt !== null || queryExt !== undefined) {
+            	let queryExtStr = Object.keys(queryExt)
+            			.map(k => encodeURIComponent(k) + '=' + encodeURIComponent(queryExt[k]))
+            			.join('&');
+            	if (newUrlStr.match(/?/)) {
+            		newUrlStr += "&" + queryExtStr;
+            	} else {
+            		newUrlStr += "?" + queryExtStr;
+            	}
+            }
+            
+            return new Url(newUrlStr);
         }
         
         public static build(urlExpression: string|Url): Url|null {

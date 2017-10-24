@@ -817,8 +817,18 @@ var Jhtml;
         Monitor.prototype.handleDirective = function (directive) {
             directive.exec(this.context, this.history, this.compHandlers);
         };
-        Monitor.prototype.lookup = function (method, url) {
-            return this.context.requestor.exec(method, url);
+        Monitor.prototype.lookupModel = function (url) {
+            var _this = this;
+            return new Promise(function (resolve) {
+                _this.context.requestor.exec("GET", url).send().then(function (response) {
+                    if (response.model) {
+                        resolve(response.model);
+                    }
+                    else {
+                        _this.handleDirective(response.directive);
+                    }
+                });
+            });
         };
         Monitor.of = function (element, selfIncluded) {
             if (selfIncluded === void 0) { selfIncluded = true; }
@@ -1185,11 +1195,23 @@ var Jhtml;
         Url.prototype.equals = function (url) {
             return this.urlStr == url.urlStr;
         };
-        Url.prototype.extR = function (pathExt) {
-            if (pathExt === null || pathExt === undefined) {
-                return this;
+        Url.prototype.extR = function (pathExt, queryExt) {
+            var newUrlStr = this.urlStr;
+            if (pathExt !== null || pathExt !== undefined) {
+                newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
             }
-            return new Url(this.urlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt));
+            if (queryExt !== null || queryExt !== undefined) {
+                var queryExtStr = Object.keys(queryExt)
+                    .map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(queryExt[k]); })
+                    .join('&');
+                if (newUrlStr.match(/?/)) {
+                    newUrlStr += "&" + queryExtStr;
+                }
+                else {
+                    newUrlStr += "?" + queryExtStr;
+                }
+            }
+            return new Url(newUrlStr);
         };
         Url.build = function (urlExpression) {
             if (urlExpression === null || urlExpression === undefined)

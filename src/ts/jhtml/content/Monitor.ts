@@ -53,8 +53,16 @@ namespace Jhtml {
 			directive.exec(this.context, this.history, this.compHandlers);
 		}
 		
-		public lookup(method: Requestor.Method, url: Url): Request {
-			return this.context.requestor.exec(method, url);
+		public lookupModel(url: Url): Promise<Model> {
+			return new Promise(resolve => {
+				this.context.requestor.exec("GET", url).send().then((response: Response) => {
+					if (response.model) {
+						resolve(response.model)
+					} else {
+						this.handleDirective(response.directive);
+					}
+				});
+			});
 		}
 		
 		private static readonly KEY: string = "jhtml-monitor";
