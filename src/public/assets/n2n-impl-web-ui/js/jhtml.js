@@ -361,7 +361,9 @@ var Jhtml;
             }
         };
         Context.prototype.replace = function (text, mimeType, replace) {
-            throw new Error("replace?");
+            this.document.open(mimeType, replace ? "replace" : null);
+            this.document.write(text);
+            this.document.close();
         };
         Context.prototype.registerCompHandler = function (compName, compHandler) {
             this.compHandlers[compName] = compHandler;
@@ -914,6 +916,7 @@ var Jhtml;
                 element.appendChild(childElem);
             }
             this.attached = true;
+            this.cbr.fireType("attached");
         };
         Content.prototype.detach = function () {
             if (!this.attached)

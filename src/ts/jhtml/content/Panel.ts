@@ -37,6 +37,7 @@ namespace Jhtml {
     		}
     		
     		this.attached = true;
+    		this.cbr.fireType("attached");
     	} 
 		
 		detach() {

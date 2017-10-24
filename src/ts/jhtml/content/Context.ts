@@ -117,11 +117,9 @@ namespace Jhtml {
 		}
 		
 		replace(text: string, mimeType: string, replace: boolean) {
-			throw new Error("replace?");
-			
-//			this.document.open(mimeType, replace? "replace" : null);
-//			this.document.write(text);
-//			this.document.close();
+			this.document.open(mimeType, replace? "replace" : null);
+			this.document.write(text);
+			this.document.close();
 		}
 		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
