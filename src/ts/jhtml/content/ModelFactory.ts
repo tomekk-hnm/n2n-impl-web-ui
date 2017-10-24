@@ -13,7 +13,7 @@ namespace Jhtml {
 				throw new ParseError("Missing or invalid property 'content'.");
 			}
     		
-    		let rootElem = document.createElement("html");
+    		let rootElem: Element = document.createElement("html");
     		rootElem.innerHTML = jsonObj.content;
     		let meta: Meta = ModelFactory.buildMeta(rootElem, false);
     		
@@ -24,6 +24,8 @@ namespace Jhtml {
     		let model = new Model(meta);
     		
     		if (!meta.containerElement) {
+    			rootElem = document.createElement("div");
+    			rootElem.innerHTML = jsonObj.content;
     			model.snippet = new Snippet(Util.array(rootElem.children), model, document.createElement("template"));
     		} else {
     			model.container = ModelFactory.compileContainer(meta.containerElement, model);

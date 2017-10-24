@@ -26,7 +26,7 @@ namespace Jhtml {
             	this.compileQueryParts(parts, queryExt, null);
             	let queryExtStr = parts.join("&");
             	
-            	if (newUrlStr.match(/?/)) {
+            	if (newUrlStr.match(/\\?/)) {
             		newUrlStr += "&" + queryExtStr;
             	} else {
             		newUrlStr += "?" + queryExtStr;

@@ -36,6 +36,11 @@ var Jhtml;
         return Jhtml.Context.from(document || window.document);
     }
     Jhtml.getOrCreateContext = getOrCreateContext;
+    function lookupModel(url) {
+        getOrCreateBrowser();
+        return monitor.lookupModel(Jhtml.Url.create(url));
+    }
+    Jhtml.lookupModel = lookupModel;
     window.document.addEventListener("DOMContentLoaded", function () {
         getOrCreateBrowser();
     }, false);
@@ -666,6 +671,8 @@ var Jhtml;
             ModelFactory.compileMetaElements(meta.bodyElements, "bodyEnd", jsonObj);
             var model = new Jhtml.Model(meta);
             if (!meta.containerElement) {
+                rootElem = document.createElement("div");
+                rootElem.innerHTML = jsonObj.content;
                 model.snippet = new Jhtml.Snippet(Jhtml.Util.array(rootElem.children), model, document.createElement("template"));
             }
             else {
@@ -1209,7 +1216,7 @@ var Jhtml;
                 var parts = [];
                 this.compileQueryParts(parts, queryExt, null);
                 var queryExtStr = parts.join("&");
-                if (newUrlStr.match(/?/)) {
+                if (newUrlStr.match(/\\?/)) {
                     newUrlStr += "&" + queryExtStr;
                 }
                 else {

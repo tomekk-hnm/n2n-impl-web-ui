@@ -1,5 +1,4 @@
 namespace Jhtml {
-	
 	export function ready(callback: ReadyCallback, document?: Document) {
 		 return getOrCreateContext().onReady(callback);
 	}
@@ -27,6 +26,11 @@ namespace Jhtml {
 	
 	export function getOrCreateContext(document?: Document): Context {
 		return Context.from(document || window.document);
+	}
+	
+	export function lookupModel(url: Url|string): Promise<Model> {
+		getOrCreateBrowser();
+		return monitor.lookupModel(Url.create(url))
 	}
 	
 	window.document.addEventListener("DOMContentLoaded", () => {

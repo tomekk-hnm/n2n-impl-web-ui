@@ -3,6 +3,7 @@ declare namespace Jhtml {
     function getOrCreateBrowser(): Browser;
     function getOrCreateMonitor(): Monitor;
     function getOrCreateContext(document?: Document): Context;
+    function lookupModel(url: Url | string): Promise<Model>;
 }
 declare namespace Jhtml {
     class Browser {
