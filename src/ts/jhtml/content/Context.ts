@@ -49,7 +49,6 @@ namespace Jhtml {
 		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}) {
 			let boundModelState: ModelState = this.getModelState(true);
 			
-			
 			for (let name in boundModelState.comps) {
 				let comp = boundModelState.comps[name];
 				
