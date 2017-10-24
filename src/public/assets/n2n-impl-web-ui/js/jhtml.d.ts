@@ -61,17 +61,18 @@ declare namespace Jhtml {
     class Context {
         private _document;
         private _requestor;
-        private boundModel;
+        private modelState;
         private compHandlers;
         private readyCbr;
         constructor(_document: Document);
         readonly requestor: Requestor;
         readonly document: Document;
         isJhtml(): boolean;
-        private getBoundModel();
+        private getModelState(required);
         import(newModel: Model, montiorCompHandlers?: {
             [compName: string]: CompHandler;
         }): void;
+        importMeta(meta: Meta): void;
         registerNewModel(model: Model): void;
         replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
@@ -90,7 +91,7 @@ declare namespace Jhtml {
         [compName: string]: CompHandler;
     }
     interface ReadyCallback {
-        (element: Element, event: ReadyEvent): any;
+        (elements: Array<Element>, event: ReadyEvent): any;
     }
     interface ReadyEvent {
         container?: Container;
@@ -99,6 +100,11 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     class Meta {
+        headElements: Array<Element>;
+        bodyElements: Array<Element>;
+        containerElement: Element | null;
+    }
+    class MetaState {
         private rootElem;
         private headElem;
         private bodyElem;
@@ -110,6 +116,7 @@ declare namespace Jhtml {
         private processedElements;
         private removableElems;
         private newMeta;
+        import(newMeta: Meta): void;
         replaceWith(newMeta: Meta): void;
         private mergeInto(newElems, parentElem, target);
         private mergeElem(preferedElems, newElem, target);
@@ -141,6 +148,18 @@ declare namespace Jhtml {
             [name: string]: Comp;
         };
         snippet: Snippet;
+        additionalData: any;
+        isFull(): boolean;
+    }
+    class ModelState {
+        metaState: MetaState;
+        container: Container;
+        comps: {
+            [name: string]: Comp;
+        };
+        constructor(metaState: MetaState, container: Container, comps: {
+            [name: string]: Comp;
+        });
     }
 }
 declare namespace Jhtml {
@@ -150,10 +169,15 @@ declare namespace Jhtml {
         private static readonly CONTAINER_SELECTOR;
         private static readonly COMP_SELECTOR;
         static createFromJsonObj(jsonObj: any): Model;
-        static createFromDocument(document: Document): Model;
-        static createFromHtml(htmlStr: string): Model;
-        static createMeta(rootElem: Element): Meta;
-        private static compileContent(model, rootElem);
+        static createStateFromDocument(document: Document): ModelState;
+        static createFromHtml(htmlStr: string, full: boolean): Model;
+        private static extractHeadElem(rootElem, required);
+        private static extractBodyElem(rootElem, required);
+        static buildMeta(rootElem: Element, full: boolean): Meta;
+        private static extractContainerElem(rootElem, required);
+        private static compileContainer(containerElem, model);
+        private static compileComps(container, containerElem, model);
+        private static compileMetaElements(elements, name, jsonObj);
         private static createElement(elemHtml);
     }
 }
@@ -177,22 +201,26 @@ declare namespace Jhtml {
     }
 }
 declare namespace Jhtml {
-    abstract class Panel {
-        private _name;
-        private _attachedElem;
+    abstract class Content {
+        elements: Array<Element>;
         private _model;
         private detachedElem;
-        private cbr;
-        constructor(_name: string, _attachedElem: Element, _model: Model);
-        readonly name: string;
+        protected cbr: Util.CallbackRegistry<() => any>;
+        protected attached: boolean;
+        constructor(elements: Array<Element>, _model: Model, detachedElem: Element);
         readonly model: Model;
         on(eventType: Content.EventType, callback: () => any): void;
         off(eventType: Content.EventType, callback: () => any): void;
-        readonly attachedElement: Element;
+        readonly isAttached: boolean;
+        protected ensureDetached(): void;
         attachTo(element: Element): void;
-        readonly attached: boolean;
         detach(): void;
         dispose(): void;
+    }
+    abstract class Panel extends Content {
+        private _name;
+        constructor(_name: string, attachedElem: Element, model: Model);
+        readonly name: string;
     }
     namespace Content {
         type EventType = "attached" | "detach" | "dispose";
@@ -205,7 +233,8 @@ declare namespace Jhtml {
     }
     class Comp extends Panel {
     }
-    class Snippet extends Panel {
+    class Snippet extends Content {
+        protected markAttached(): void;
     }
 }
 declare namespace Jhtml {
@@ -357,7 +386,8 @@ declare namespace Jhtml.Ui {
         private static readonly A_SELECTOR;
         static readonly FORM_ATTR: string;
         private static readonly FORM_SELECTOR;
-        static scan(rootElem: Element): void;
+        static scan(elem: Element): void;
+        static scanArray(elems: Array<Element>): void;
     }
 }
 declare namespace Jhtml.Util {
@@ -375,6 +405,7 @@ declare namespace Jhtml.Util {
     function closest(element: Element, selector: string, selfIncluded: boolean): Element;
     function getElemData(elem: Element, key: string): any;
     function bindElemData<T>(elem: Element, key: string, data: any): void;
+    function findAndSelf(element: Element, selector: string): Element[];
     function find(nodeSelector: NodeSelector, selector: string): Array<Element>;
     function array(nodeList: NodeList): Array<Element>;
 }

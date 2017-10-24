@@ -274,12 +274,12 @@ var Jhtml;
             configurable: true
         });
         Context.prototype.isJhtml = function () {
-            return this.getBoundModel() ? true : false;
+            return this.getModelState(false) ? true : false;
         };
-        Context.prototype.getBoundModel = function () {
-            if (!this.boundModel) {
+        Context.prototype.getModelState = function (required) {
+            if (!this.modelState) {
                 try {
-                    this.boundModel = Jhtml.ModelFactory.createFromDocument(this.document);
+                    this.modelState = Jhtml.ModelFactory.createStateFromDocument(this.document);
                     Jhtml.Ui.Scanner.scan(this.document.documentElement);
                 }
                 catch (e) {
@@ -288,49 +288,55 @@ var Jhtml;
                     throw e;
                 }
             }
-            return this.boundModel || null;
+            if (!this.modelState && required) {
+                throw new Error("No jhtml context");
+            }
+            return this.modelState || null;
         };
         Context.prototype.import = function (newModel, montiorCompHandlers) {
             if (montiorCompHandlers === void 0) { montiorCompHandlers = {}; }
-            var boundModel = this.getBoundModel();
-            if (!boundModel) {
-                throw new Error("No jhtml context");
-            }
-            for (var name_1 in boundModel.comps) {
-                var comp = boundModel.comps[name_1];
+            var boundModelState = this.getModelState(true);
+            for (var name_1 in boundModelState.comps) {
+                var comp = boundModelState.comps[name_1];
                 if (!(montiorCompHandlers[name_1] && montiorCompHandlers[name_1].detachComp(comp))
                     && !(this.compHandlers[name_1] && this.compHandlers[name_1].detachComp(comp))) {
                     comp.detach();
                 }
             }
-            boundModel.container.detach();
-            boundModel.meta.replaceWith(newModel.meta);
-            if (!boundModel.container.matches(newModel.container)) {
-                boundModel.container = newModel.container;
+            boundModelState.container.detach();
+            boundModelState.metaState.replaceWith(newModel.meta);
+            if (!boundModelState.container.matches(newModel.container)) {
+                boundModelState.container = newModel.container;
             }
-            boundModel.container.attachTo(boundModel.meta.containerElement);
+            boundModelState.container.attachTo(boundModelState.metaState.containerElement);
             for (var name_2 in newModel.comps) {
-                var comp = boundModel.comps[name_2] = newModel.comps[name_2];
+                var comp = boundModelState.comps[name_2] = newModel.comps[name_2];
                 if (!(montiorCompHandlers[name_2] && montiorCompHandlers[name_2].attachComp(comp))
                     && !(this.compHandlers[name_2] && this.compHandlers[name_2].attachComp(comp))) {
-                    comp.attachTo(boundModel.container.compElements[name_2]);
+                    comp.attachTo(boundModelState.container.compElements[name_2]);
                 }
             }
+        };
+        Context.prototype.importMeta = function (meta) {
+            var boundModelState = this.getModelState(true);
+            boundModelState.metaState.import(meta);
         };
         Context.prototype.registerNewModel = function (model) {
             var _this = this;
             var container = model.container;
-            var containerReadyCallback = function () {
-                container.off("attached", containerReadyCallback);
-                _this.readyCbr.fire(container.attachedElement, { container: container });
-                Jhtml.Ui.Scanner.scan(container.attachedElement);
-            };
-            container.on("attached", containerReadyCallback);
+            if (container) {
+                var containerReadyCallback_1 = function () {
+                    container.off("attached", containerReadyCallback_1);
+                    _this.readyCbr.fire(container.elements, { container: container });
+                    Jhtml.Ui.Scanner.scanArray(container.elements);
+                };
+                container.on("attached", containerReadyCallback_1);
+            }
             var _loop_1 = function (comp) {
                 var compReadyCallback = function () {
                     comp.off("attached", compReadyCallback);
-                    _this.readyCbr.fire(comp.attachedElement, { comp: Jhtml.Comp });
-                    Jhtml.Ui.Scanner.scan(comp.attachedElement);
+                    _this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
+                    Jhtml.Ui.Scanner.scanArray(comp.elements);
                 };
                 comp.on("attached", compReadyCallback);
             };
@@ -338,6 +344,14 @@ var Jhtml;
                 var comp = _a[_i];
                 _loop_1(comp);
             }
+            var snippet = model.container;
+            var snippetReadyCallback = function () {
+                container.off("attached", snippetReadyCallback);
+                _this.importMeta(model.meta);
+                _this.readyCbr.fire(snippet.elements, { container: container });
+                Jhtml.Ui.Scanner.scanArray(snippet.elements);
+            };
+            container.on("attached", snippetReadyCallback);
         };
         Context.prototype.replace = function (text, mimeType, replace) {
             this.document.open(mimeType, replace ? "replace" : null);
@@ -353,7 +367,7 @@ var Jhtml;
         Context.prototype.onReady = function (readyCallback) {
             this.readyCbr.on(readyCallback);
             if (this._document.readyState === "complete") {
-                readyCallback(this.document.documentElement, {});
+                readyCallback([this.document.documentElement], {});
             }
         };
         Context.prototype.offReady = function (readyCallback) {
@@ -373,42 +387,61 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
             return context;
         };
-        Context.KEY = "data-jhtml-context";
         return Context;
     }());
+    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
     var Meta = (function () {
-        function Meta(rootElem, headElem, bodyElem, containerElem) {
+        function Meta() {
+            this.headElements = [];
+            this.bodyElements = [];
+            this.containerElement = null;
+        }
+        return Meta;
+    }());
+    Jhtml.Meta = Meta;
+    var MetaState = (function () {
+        function MetaState(rootElem, headElem, bodyElem, containerElem) {
             this.rootElem = rootElem;
             this.headElem = headElem;
             this.bodyElem = bodyElem;
             this.containerElem = containerElem;
         }
-        Object.defineProperty(Meta.prototype, "headElements", {
+        Object.defineProperty(MetaState.prototype, "headElements", {
             get: function () {
                 return Jhtml.Util.array(this.headElem.children);
             },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Meta.prototype, "bodyElements", {
+        Object.defineProperty(MetaState.prototype, "bodyElements", {
             get: function () {
                 return Jhtml.Util.array(this.bodyElem.children);
             },
             enumerable: true,
             configurable: true
         });
-        Object.defineProperty(Meta.prototype, "containerElement", {
+        Object.defineProperty(MetaState.prototype, "containerElement", {
             get: function () {
                 return this.containerElem;
             },
             enumerable: true,
             configurable: true
         });
-        Meta.prototype.replaceWith = function (newMeta) {
+        MetaState.prototype.import = function (newMeta) {
+            this.processedElements = [];
+            this.removableElems = [];
+            this.newMeta = newMeta;
+            this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+            this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+            this.processedElements = null;
+            this.removableElems = null;
+            this.newMeta = null;
+        };
+        MetaState.prototype.replaceWith = function (newMeta) {
             this.processedElements = [];
             this.removableElems = [];
             this.newMeta = newMeta;
@@ -424,7 +457,7 @@ var Jhtml;
             this.removableElems = null;
             this.newMeta = null;
         };
-        Meta.prototype.mergeInto = function (newElems, parentElem, target) {
+        MetaState.prototype.mergeInto = function (newElems, parentElem, target) {
             var mergedElems = [];
             var curElems = Jhtml.Util.array(parentElem.children);
             for (var i in newElems) {
@@ -459,8 +492,8 @@ var Jhtml;
                 }
             }
         };
-        Meta.prototype.mergeElem = function (preferedElems, newElem, target) {
-            if (newElem === this.newMeta.containerElem) {
+        MetaState.prototype.mergeElem = function (preferedElems, newElem, target) {
+            if (newElem === this.newMeta.containerElement) {
                 if (!this.compareExact(this.containerElem, newElem, false)) {
                     var mergedElem_1 = newElem.cloneNode(false);
                     this.processedElements.push(mergedElem_1);
@@ -469,7 +502,7 @@ var Jhtml;
                 this.processedElements.push(this.containerElem);
                 return this.containerElem;
             }
-            if (newElem.contains(this.newMeta.containerElem)) {
+            if (newElem.contains(this.newMeta.containerElement)) {
                 var mergedElem_2;
                 if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
                     this.processedElements.push(mergedElem_2);
@@ -503,12 +536,12 @@ var Jhtml;
                     return this.cloneNewElem(newElem, false);
             }
         };
-        Meta.prototype.cloneNewElem = function (newElem, deep) {
+        MetaState.prototype.cloneNewElem = function (newElem, deep) {
             var mergedElem = newElem.cloneNode(deep);
             this.processedElements.push(mergedElem);
             return mergedElem;
         };
-        Meta.prototype.attrNames = function (elem) {
+        MetaState.prototype.attrNames = function (elem) {
             var attrNames = [];
             var attrs = elem.attributes;
             for (var i = 0; i < attrs.length; i++) {
@@ -516,11 +549,11 @@ var Jhtml;
             }
             return attrNames;
         };
-        Meta.prototype.findExact = function (matchingElem, checkInner, target) {
+        MetaState.prototype.findExact = function (matchingElem, checkInner, target) {
             if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
             return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
         };
-        Meta.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
+        MetaState.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
             if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
             var foundElem = null;
             if ((target & Meta.Target.HEAD)
@@ -533,7 +566,7 @@ var Jhtml;
             }
             return null;
         };
-        Meta.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
+        MetaState.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
             for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
                 var tagElem = _a[_i];
                 if (tagElem === this.containerElem || tagElem.contains(this.containerElem)
@@ -546,13 +579,13 @@ var Jhtml;
             }
             return null;
         };
-        Meta.prototype.filterExact = function (elems, matchingElem, checkInner) {
+        MetaState.prototype.filterExact = function (elems, matchingElem, checkInner) {
             return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
         };
-        Meta.prototype.containsProcessed = function (elem) {
+        MetaState.prototype.containsProcessed = function (elem) {
             return -1 < this.processedElements.indexOf(elem);
         };
-        Meta.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
+        MetaState.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
             for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
                 var elem = elems_1[_i];
                 if (!this.containsProcessed(elem)
@@ -561,10 +594,10 @@ var Jhtml;
                 }
             }
         };
-        Meta.prototype.compareExact = function (elem1, elem2, checkInner) {
+        MetaState.prototype.compareExact = function (elem1, elem2, checkInner) {
             return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
         };
-        Meta.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
+        MetaState.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
             if (elem1.tagName !== elem2.tagName)
                 return false;
             for (var _i = 0, attrNames_1 = attrNames; _i < attrNames_1.length; _i++) {
@@ -581,9 +614,9 @@ var Jhtml;
             }
             return true;
         };
-        return Meta;
+        return MetaState;
     }());
-    Jhtml.Meta = Meta;
+    Jhtml.MetaState = MetaState;
     (function (Meta) {
         var Target;
         (function (Target) {
@@ -598,10 +631,23 @@ var Jhtml;
         function Model(meta) {
             this.meta = meta;
             this.comps = {};
+            this.additionalData = {};
         }
+        Model.prototype.isFull = function () {
+            return !!this.container;
+        };
         return Model;
     }());
     Jhtml.Model = Model;
+    var ModelState = (function () {
+        function ModelState(metaState, container, comps) {
+            this.metaState = metaState;
+            this.container = container;
+            this.comps = comps;
+        }
+        return ModelState;
+    }());
+    Jhtml.ModelState = ModelState;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -609,18 +655,40 @@ var Jhtml;
         function ModelFactory() {
         }
         ModelFactory.createFromJsonObj = function (jsonObj) {
-            throw new Error("not yet implemented");
-        };
-        ModelFactory.createFromDocument = function (document) {
-            var model = new Jhtml.Model(ModelFactory.createMeta(document.documentElement));
-            ModelFactory.compileContent(model, document.documentElement);
+            if (typeof jsonObj.content != "string") {
+                throw new Jhtml.ParseError("Missing or invalid property 'content'.");
+            }
+            var rootElem = document.createElement("html");
+            rootElem.innerHTML = jsonObj.content;
+            var meta = ModelFactory.buildMeta(rootElem, false);
+            ModelFactory.compileMetaElements(meta.headElements, "head", jsonObj);
+            ModelFactory.compileMetaElements(meta.bodyElements, "bodyStart", jsonObj);
+            ModelFactory.compileMetaElements(meta.bodyElements, "bodyEnd", jsonObj);
+            var model = new Jhtml.Model(meta);
+            if (!meta.containerElement) {
+                model.snippet = new Jhtml.Snippet(Jhtml.Util.array(rootElem.children), model, document.createElement("template"));
+            }
+            else {
+                model.container = ModelFactory.compileContainer(meta.containerElement, model);
+                model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
+            }
+            if (jsonObj.additional) {
+                model.additionalData = jsonObj.additional;
+            }
             return model;
         };
-        ModelFactory.createFromHtml = function (htmlStr) {
+        ModelFactory.createStateFromDocument = function (document) {
+            var metaState = new Jhtml.MetaState(document.documentElement, document.head, document.body, ModelFactory.extractContainerElem(document.body, true));
+            var container = ModelFactory.compileContainer(metaState.containerElement, null);
+            var comps = ModelFactory.compileComps(container, metaState.containerElement, null);
+            return new Jhtml.ModelState(metaState, container, comps);
+        };
+        ModelFactory.createFromHtml = function (htmlStr, full) {
             var templateElem = document.createElement("html");
             templateElem.innerHTML = htmlStr;
-            var model = new Jhtml.Model(ModelFactory.createMeta(templateElem));
-            ModelFactory.compileContent(model, templateElem);
+            var model = new Jhtml.Model(ModelFactory.buildMeta(templateElem, true));
+            model.container = ModelFactory.compileContainer(templateElem, model);
+            model.comps = ModelFactory.compileComps(model.container, templateElem, model);
             model.container.detach();
             for (var _i = 0, _a = Object.values(model.comps); _i < _a.length; _i++) {
                 var comp = _a[_i];
@@ -628,36 +696,71 @@ var Jhtml;
             }
             return model;
         };
-        ModelFactory.createMeta = function (rootElem) {
+        ModelFactory.extractHeadElem = function (rootElem, required) {
             var headElem = rootElem.querySelector("head");
+            if (headElem || !required) {
+                return headElem;
+            }
+            throw new Jhtml.ParseError("head element missing.");
+        };
+        ModelFactory.extractBodyElem = function (rootElem, required) {
             var bodyElem = rootElem.querySelector("body");
-            if (!bodyElem) {
-                throw new Jhtml.ParseError("body element missing.");
+            if (bodyElem || !required) {
+                return bodyElem;
             }
-            if (!headElem) {
-                throw new Jhtml.ParseError("head element missing.");
+            throw new Jhtml.ParseError("body element missing.");
+        };
+        ModelFactory.buildMeta = function (rootElem, full) {
+            var meta = new Jhtml.Meta();
+            var elem;
+            if (elem = ModelFactory.extractHeadElem(rootElem, full)) {
+                meta.headElements = Jhtml.Util.array(elem.children);
             }
-            var containerList = Jhtml.Util.find(bodyElem, ModelFactory.CONTAINER_SELECTOR);
+            if (elem = ModelFactory.extractBodyElem(rootElem, full || meta.headElements !== null)) {
+                meta.bodyElements = Jhtml.Util.array(elem.children);
+            }
+            if (meta.bodyElements && (elem = ModelFactory.extractContainerElem(rootElem, true))) {
+                meta.containerElement = elem;
+            }
+            return meta;
+        };
+        ModelFactory.extractContainerElem = function (rootElem, required) {
+            var containerList = Jhtml.Util.find(rootElem, ModelFactory.CONTAINER_SELECTOR);
             if (containerList.length == 0) {
+                if (!required)
+                    return null;
                 throw new Jhtml.ParseError("Jhtml container missing.");
             }
             if (containerList.length > 1) {
+                if (!required)
+                    return null;
                 throw new Jhtml.ParseError("Multiple jhtml container detected.");
             }
-            return new Jhtml.Meta(rootElem, headElem, bodyElem, containerList[0]);
+            return containerList[0];
         };
-        ModelFactory.compileContent = function (model, rootElem) {
-            var containerElem = model.meta.containerElement;
-            var document = containerElem.ownerDocument;
-            model.container = new Jhtml.Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), containerElem, model);
+        ModelFactory.compileContainer = function (containerElem, model) {
+            return new Jhtml.Container(containerElem.getAttribute(ModelFactory.CONTAINER_ATTR), containerElem, model);
+        };
+        ModelFactory.compileComps = function (container, containerElem, model) {
+            var comps = {};
             for (var _i = 0, _a = Jhtml.Util.find(containerElem, ModelFactory.COMP_SELECTOR); _i < _a.length; _i++) {
                 var compElem = _a[_i];
                 var name_3 = compElem.getAttribute(ModelFactory.COMP_ATTR);
-                if (model.comps[name_3]) {
+                if (comps[name_3]) {
                     throw new Jhtml.ParseError("Duplicated comp name: " + name_3);
                 }
-                model.container.compElements[name_3] = compElem;
-                model.comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
+                container.compElements[name_3] = compElem;
+                comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
+            }
+            return comps;
+        };
+        ModelFactory.compileMetaElements = function (elements, name, jsonObj) {
+            if (!(jsonObj[name] instanceof Array)) {
+                throw new Jhtml.ParseError("Missing or invalid property '" + name + "'.");
+            }
+            for (var _i = 0, _a = jsonObj.head; _i < _a.length; _i++) {
+                var elemHtml = _a[_i];
+                elements.push(ModelFactory.createElement(elemHtml));
             }
         };
         ModelFactory.createElement = function (elemHtml) {
@@ -665,12 +768,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.firstElementChild;
         };
-        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-        ModelFactory.COMP_ATTR = "data-jhtml-comp";
-        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
+    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+    ModelFactory.COMP_ATTR = "data-jhtml-comp";
+    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -743,78 +846,66 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
-        Monitor.KEY = "jhtml-monitor";
-        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
+    Monitor.KEY = "jhtml-monitor";
+    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
-    var Panel = (function () {
-        function Panel(_name, _attachedElem, _model) {
-            this._name = _name;
-            this._attachedElem = _attachedElem;
+    var Content = (function () {
+        function Content(elements, _model, detachedElem) {
+            this.elements = elements;
             this._model = _model;
+            this.detachedElem = detachedElem;
             this.cbr = new Jhtml.Util.CallbackRegistry();
-            this.detachedElem = _attachedElem.ownerDocument.createElement("template");
+            this.attached = false;
         }
-        Object.defineProperty(Panel.prototype, "name", {
-            get: function () {
-                return this._name;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Panel.prototype, "model", {
+        Object.defineProperty(Content.prototype, "model", {
             get: function () {
                 return this._model;
             },
             enumerable: true,
             configurable: true
         });
-        Panel.prototype.on = function (eventType, callback) {
+        Content.prototype.on = function (eventType, callback) {
             this.cbr.onType(eventType, callback);
         };
-        Panel.prototype.off = function (eventType, callback) {
+        Content.prototype.off = function (eventType, callback) {
             this.cbr.offType(eventType, callback);
         };
-        Object.defineProperty(Panel.prototype, "attachedElement", {
+        Object.defineProperty(Content.prototype, "isAttached", {
             get: function () {
-                return this._attachedElem;
+                return this.attached;
             },
             enumerable: true,
             configurable: true
         });
-        Panel.prototype.attachTo = function (element) {
-            if (this._attachedElem) {
+        Content.prototype.ensureDetached = function () {
+            if (this.attached) {
                 throw new Error("Element already attached.");
             }
-            this._attachedElem = element;
+        };
+        Content.prototype.attachTo = function (element) {
+            this.ensureDetached();
             for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
                 var childElem = _a[_i];
                 element.appendChild(childElem);
             }
-            this.cbr.fireType("attached");
+            this.attached = true;
         };
-        Object.defineProperty(Panel.prototype, "attached", {
-            get: function () {
-                return this._attachedElem ? true : false;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Panel.prototype.detach = function () {
-            if (!this._attachedElem)
+        Content.prototype.detach = function () {
+            if (!this.attached)
                 return;
             this.cbr.fireType("detach");
-            for (var _i = 0, _a = Jhtml.Util.array(this._attachedElem.children); _i < _a.length; _i++) {
+            for (var _i = 0, _a = this.elements; _i < _a.length; _i++) {
                 var childElem = _a[_i];
                 this.detachedElem.appendChild(childElem);
             }
-            this._attachedElem = null;
+            this.attached = false;
         };
-        Panel.prototype.dispose = function () {
+        Content.prototype.dispose = function () {
             if (this.attached) {
                 this.detach();
             }
@@ -823,8 +914,26 @@ var Jhtml;
             this.detachedElem.remove();
             this.detachedElem = null;
         };
-        return Panel;
+        return Content;
     }());
+    Jhtml.Content = Content;
+    var Panel = (function (_super) {
+        __extends(Panel, _super);
+        function Panel(_name, attachedElem, model) {
+            var _this = _super.call(this, Jhtml.Util.array(attachedElem.children), model, attachedElem.ownerDocument.createElement("template")) || this;
+            _this._name = _name;
+            _this.attached = true;
+            return _this;
+        }
+        Object.defineProperty(Panel.prototype, "name", {
+            get: function () {
+                return this._name;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        return Panel;
+    }(Content));
     Jhtml.Panel = Panel;
     var Container = (function (_super) {
         __extends(Container, _super);
@@ -853,8 +962,13 @@ var Jhtml;
         function Snippet() {
             return _super !== null && _super.apply(this, arguments) || this;
         }
+        Snippet.prototype.markAttached = function () {
+            this.ensureDetached();
+            this.attached = true;
+            this.cbr.fireType("attached");
+        };
         return Snippet;
-    }(Panel));
+    }(Content));
     Jhtml.Snippet = Snippet;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -975,7 +1089,7 @@ var Jhtml;
         };
         Request.prototype.createModelFromHtml = function (html) {
             try {
-                var model = Jhtml.ModelFactory.createFromHtml(html);
+                var model = Jhtml.ModelFactory.createFromHtml(html, true);
                 this.requestor.context.registerNewModel(model);
                 return model;
             }
@@ -1252,9 +1366,9 @@ var Jhtml;
                 form.observe();
                 return form;
             };
-            Form.KEY = "jhtml-form";
             return Form;
         }());
+        Form.KEY = "jhtml-form";
         Ui.Form = Form;
         var ControlLock = (function () {
             function ControlLock(containerElem) {
@@ -1319,9 +1433,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
-        Link.KEY = "jhtml-link";
         return Link;
     }());
+    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1331,22 +1445,28 @@ var Jhtml;
         var Scanner = (function () {
             function Scanner() {
             }
-            Scanner.scan = function (rootElem) {
-                for (var _i = 0, _a = Jhtml.Util.find(rootElem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
-                    var elem = _a[_i];
-                    Jhtml.Link.from(elem);
+            Scanner.scan = function (elem) {
+                for (var _i = 0, _a = Jhtml.Util.findAndSelf(elem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
+                    var linkElem = _a[_i];
+                    Jhtml.Link.from(linkElem);
                 }
-                for (var _b = 0, _c = Jhtml.Util.find(rootElem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
-                    var elem = _c[_b];
-                    Ui.Form.from(elem);
+                for (var _b = 0, _c = Jhtml.Util.findAndSelf(elem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
+                    var fromElem = _c[_b];
+                    Ui.Form.from(fromElem);
                 }
             };
-            Scanner.A_ATTR = "data-jhtml";
-            Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
-            Scanner.FORM_ATTR = "data-jhtml";
-            Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
+            Scanner.scanArray = function (elems) {
+                for (var _i = 0, elems_2 = elems; _i < elems_2.length; _i++) {
+                    var elem = elems_2[_i];
+                    Scanner.scan(elem);
+                }
+            };
             return Scanner;
         }());
+        Scanner.A_ATTR = "data-jhtml";
+        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+        Scanner.FORM_ATTR = "data-jhtml";
+        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
@@ -1424,6 +1544,14 @@ var Jhtml;
             elem["data-" + key] = data;
         }
         Util.bindElemData = bindElemData;
+        function findAndSelf(element, selector) {
+            var foundElems = find(element, selector);
+            if (element.matches(selector)) {
+                foundElems.unshift(element);
+            }
+            return foundElems;
+        }
+        Util.findAndSelf = findAndSelf;
         function find(nodeSelector, selector) {
             var foundElems = [];
             var nodeList = nodeSelector.querySelectorAll(selector);
