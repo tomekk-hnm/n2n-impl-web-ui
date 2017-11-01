@@ -381,7 +381,7 @@ var Jhtml;
             this.readyCbr.off(readyCallback);
         };
         Context.test = function (document) {
-            var context = Jhtml.Util.getElemData(document.body, Context.KEY);
+            var context = Jhtml.Util.getElemData(document.documentElement, Context.KEY);
             if (context instanceof Context) {
                 return context;
             }
@@ -391,7 +391,7 @@ var Jhtml;
             var context = Context.test(document);
             if (context)
                 return context;
-            Jhtml.Util.bindElemData(document.body, Context.KEY, context = new Context(document));
+            Jhtml.Util.bindElemData(document.documentElement, Context.KEY, context = new Context(document));
             return context;
         };
         Context.KEY = "data-jhtml-context";
@@ -1325,20 +1325,25 @@ var Jhtml;
                 if (this._observing)
                     return;
                 this._observing = true;
-                this.element.addEventListener("submit", function () {
+                this.element.addEventListener("submit", function (evt) {
+                    evt.preventDefault();
+                    return false;
+                }, true);
+                this.element.addEventListener("submit", function (evt) {
                     if (_this.config.autoSubmitAllowed)
                         return false;
                     _this.submit();
-                    return false;
-                }, true);
+                }, false);
                 Jhtml.Util.find(this.element, "input[type=submit], button[type=submit]").forEach(function (elem) {
                     elem.addEventListener("click", function (evt) {
                         evt.preventDefault();
-                        if (!_this.config.autoSubmitAllowed)
-                            return false;
-                        _this.submit({ button: elem });
                         return false;
                     }, true);
+                    elem.addEventListener("click", function (evt) {
+                        if (!_this.config.autoSubmitAllowed)
+                            return;
+                        _this.submit({ button: elem });
+                    }, false);
                 });
             };
             Form.prototype.buildFormData = function (submitConfig) {
