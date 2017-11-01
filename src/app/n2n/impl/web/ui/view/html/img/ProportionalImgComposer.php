@@ -110,7 +110,7 @@ class ProportionalImgComposer implements ImgComposer {
 		if ($file === null || !$file->isValid()) {
 			return $this->createPlaceholderImgSet();
 		}
-	
+
 		$orgImageFile = new ImageFile($file);
 	
 		$thumbFile = null;
@@ -143,12 +143,12 @@ class ProportionalImgComposer implements ImgComposer {
 		foreach ($imageFiles as $width => $imageFile) {
 			$imgSrcs[$width . 'w'] = UiComponentFactory::createImgSrc($imageFile);
 		}
-	
+		
 		$imageSourceSets = array();
-		if (count($imgSrcs) > 1) {
+		if (count($imgSrcs) > 1 || $this->sizesAttr !== null) {
 			$imageSourceSets = array(new ImageSourceSet(array_reverse($imgSrcs, true), null, array('sizes' => $this->sizesAttr)));
 		}
-	
+		
 		$defaultImageFile = reset($imageFiles);
 		return new ImgSet(reset($imgSrcs), '', $defaultImageFile->getWidth(),
 				$defaultImageFile->getHeight(), $imageSourceSets);

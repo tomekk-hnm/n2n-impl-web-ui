@@ -89,8 +89,8 @@ class UiComponentFactory {
 			$attrs['alt'] = $imgSet->getDefaultAltAttr();
 		}
 		
-		$imageSourceSets = $imgSet->getImageSourceSets(); 
-		if (empty($imageSourceSets)) {
+		$imageSourceSets = $imgSet->getImageSourceSets();
+		if (empty($imageSourceSets) || (count($imageSourceSets) == 1 && count($imageSourceSets[0]->getImgSrcs()) <= 1)) {
 			if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
 			if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
 		} else {
