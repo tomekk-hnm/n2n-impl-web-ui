@@ -42,22 +42,27 @@ namespace Jhtml.Ui {
 			
 			this._observing = true;
 			
-			this.element.addEventListener("submit", () => {
-				if (this.config.autoSubmitAllowed) return false;
-				this.submit();
+			this.element.addEventListener("submit", (evt) => {
+				evt.preventDefault();
 				return false;
 			}, true);
+			
+			this.element.addEventListener("submit", (evt) => {
+				if (this.config.autoSubmitAllowed) return false;
+				this.submit();
+			}, false);
 			
 			
 			Util.find(this.element, "input[type=submit], button[type=submit]").forEach((elem: Element) => {
 				elem.addEventListener("click", (evt) => {
 					evt.preventDefault();
-					
-					if (!this.config.autoSubmitAllowed) return false;
-					
-					this.submit({ button: elem });
 					return false;
 				}, true);
+				elem.addEventListener("click", (evt) => {
+					if (!this.config.autoSubmitAllowed) return;
+					
+					this.submit({ button: elem });
+				}, false);
 			});
 		}
 		

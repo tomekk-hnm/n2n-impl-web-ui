@@ -144,7 +144,7 @@ namespace Jhtml {
 		private static KEY: string = "data-jhtml-context";
 		
 		static test(document: Document): Context|null {
-			let context: any = Util.getElemData(document.body, Context.KEY);
+			let context: any = Util.getElemData(document.documentElement, Context.KEY);
 			if (context instanceof Context) {
 				return context;
 			}
@@ -155,7 +155,7 @@ namespace Jhtml {
 			let context = Context.test(document)
 			if (context) return context;
 			
-			Util.bindElemData(document.body, Context.KEY, context = new Context(document));
+			Util.bindElemData(document.documentElement, Context.KEY, context = new Context(document));
 			return context;
 		}
 	}
