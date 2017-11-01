@@ -26,12 +26,6 @@ use n2n\web\http\Response;
 use n2n\impl\web\ui\view\html\HtmlView;
 
 class JhtmlResponse extends BufferedResponseObject {
-	const HEAD_KEY = 'head';
-	const BODY_START_KEY = 'bodyStart';
-	const BODY_END_KEY = 'bodyEnd';
-	const ADDITIONAL_KEY = 'additional';
-	const CONTENT_KEY = 'content';
-	
 	private $htmlView;
 	private $additionalAttrs;
 	
@@ -62,7 +56,7 @@ class JhtmlResponse extends BufferedResponseObject {
 	public function prepareForResponse(Response $response) {
 	    if ('application/json' == $response->getRequest()->getAcceptRange()
 	               ->bestMatch(['text/html', 'application/json'])) {
-	        $this->ajahResponse = new AjahResponse($this->htmlView);
+	        $this->ajahResponse = new JhtmlJsonResponse($this->htmlView);
 	        $this->ajahResponse->prepareForResponse($response);
 	        return;
 	    }

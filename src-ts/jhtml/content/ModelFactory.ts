@@ -155,11 +155,11 @@ namespace Jhtml {
     			elements.push(ModelFactory.createElement(elemHtml));
     		}
     	}
-    	
+
     	private static createElement(elemHtml: string): Element {
     		let templateElem = document.createElement("template");
     		templateElem.innerHTML = elemHtml;
-    		return templateElem.firstElementChild;
+    		return <Element> templateElem.content.firstChild;
     	}
     }
 }

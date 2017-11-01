@@ -28,7 +28,7 @@ use n2n\web\ui\SimpleBuildContext;
 use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\impl\web\ui\view\html\HtmlBuilderMeta;
 
-class AjahResponse extends BufferedResponseObject {
+class JhtmlJsonResponse extends BufferedResponseObject {
 	const HEAD_KEY = 'head';
 	const BODY_START_KEY = 'bodyStart';
 	const BODY_END_KEY = 'bodyEnd';
@@ -70,6 +70,10 @@ class AjahResponse extends BufferedResponseObject {
 					$data[self::HEAD_KEY] = array_merge($data[self::HEAD_KEY], $htmlSnipplets);
 			}
 		}
+		
+		$data[self::HEAD_KEY] = array_values($data[self::HEAD_KEY]);
+		$data[self::BODY_START_KEY] = array_values($data[self::BODY_START_KEY]);
+		$data[self::BODY_END_KEY] = array_values($data[self::BODY_END_KEY]);
 		
 		return StringUtils::jsonEncode($data);
 	}

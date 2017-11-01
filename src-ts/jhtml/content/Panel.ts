@@ -19,7 +19,7 @@ namespace Jhtml {
     		this.cbr.offType(eventType, callback);
     	}
 		
-    	get isAttached() {
+    	get isAttached(): boolean {
     		return this.attached;
     	}
     	

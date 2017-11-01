@@ -778,7 +778,7 @@ var Jhtml;
         ModelFactory.createElement = function (elemHtml) {
             var templateElem = document.createElement("template");
             templateElem.innerHTML = elemHtml;
-            return templateElem.firstElementChild;
+            return templateElem.content.firstChild;
         };
         ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
         ModelFactory.COMP_ATTR = "data-jhtml-comp";
@@ -809,16 +809,14 @@ var Jhtml;
             var config = Jhtml.FullRequestConfig.from(requestConfig);
             var page = this.history.getPageByUrl(url);
             if (!config.forceReload && page) {
-                if (!page.disposed) {
+                if (page.disposed) {
                     page.promise = this.context.requestor.lookupDirective(url);
                 }
-                if (config.pushToHistory && page !== this.history.currentPage) {
-                    this.history.push(page);
-                }
-                return page.promise;
             }
-            page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
-            if (config.pushToHistory) {
+            else {
+                page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
+            }
+            if (config.pushToHistory && page !== this.history.currentPage) {
                 this.history.push(page);
             }
             page.promise.then(function (directive) {
