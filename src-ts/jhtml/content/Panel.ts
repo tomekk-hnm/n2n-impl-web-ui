@@ -29,7 +29,7 @@ namespace Jhtml {
     		}
     	}
 		
-		attachTo(element: Element) {
+		protected attach(element: Element) {
     		this.ensureDetached();
     		
     		for (let childElem of Util.array(this.detachedElem.children)) {
@@ -67,6 +67,7 @@ namespace Jhtml {
 	}
 	
     export abstract class Panel extends Content {
+    	private _loadObserver: LoadObserver;
     	
     	constructor(private _name: string, attachedElem: Element, model: Model) {
     		super(Util.array(attachedElem.children), model, attachedElem.ownerDocument.createElement("template"));
@@ -75,6 +76,22 @@ namespace Jhtml {
     	
     	get name(): string {
     		return this._name;
+    	}
+    	
+    	get loadObserver(): LoadObserver {
+    		return this._loadObserver;
+    	}
+    	
+    	attachTo(element: Element, loadObserver: LoadObserver) {
+    		this._loadObserver = loadObserver;
+    		
+    		this.attach(element);
+    	}
+    	
+    	detach() {
+    		this._loadObserver = null;
+    		
+    		super.detach();
     	}
     }
     
@@ -103,5 +120,9 @@ namespace Jhtml {
 			
 			this.cbr.fireType("attached");
 		}
+		
+		attachTo(element: Element) {
+    		this.attach(element);
+    	}
     }
 }

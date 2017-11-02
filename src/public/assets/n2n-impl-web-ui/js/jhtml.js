@@ -309,22 +309,22 @@ var Jhtml;
                 }
             }
             boundModelState.container.detach();
-            boundModelState.metaState.replaceWith(newModel.meta);
+            var loadObserver = boundModelState.metaState.replaceWith(newModel.meta);
             if (!boundModelState.container.matches(newModel.container)) {
                 boundModelState.container = newModel.container;
             }
-            boundModelState.container.attachTo(boundModelState.metaState.containerElement);
+            boundModelState.container.attachTo(boundModelState.metaState.containerElement, loadObserver);
             for (var name_2 in newModel.comps) {
                 var comp = boundModelState.comps[name_2] = newModel.comps[name_2];
-                if (!(montiorCompHandlers[name_2] && montiorCompHandlers[name_2].attachComp(comp))
-                    && !(this.compHandlers[name_2] && this.compHandlers[name_2].attachComp(comp))) {
-                    comp.attachTo(boundModelState.container.compElements[name_2]);
+                if (!(montiorCompHandlers[name_2] && montiorCompHandlers[name_2].attachComp(comp, loadObserver))
+                    && !(this.compHandlers[name_2] && this.compHandlers[name_2].attachComp(comp, loadObserver))) {
+                    comp.attachTo(boundModelState.container.compElements[name_2], loadObserver);
                 }
             }
         };
         Context.prototype.importMeta = function (meta) {
             var boundModelState = this.getModelState(true);
-            boundModelState.metaState.import(meta);
+            return boundModelState.metaState.import(meta);
         };
         Context.prototype.registerNewModel = function (model) {
             var _this = this;
@@ -332,16 +332,20 @@ var Jhtml;
             if (container) {
                 var containerReadyCallback_1 = function () {
                     container.off("attached", containerReadyCallback_1);
-                    _this.readyCbr.fire(container.elements, { container: container });
-                    Jhtml.Ui.Scanner.scanArray(container.elements);
+                    container.loadObserver.whenLoaded(function () {
+                        _this.readyCbr.fire(container.elements, { container: container });
+                        Jhtml.Ui.Scanner.scanArray(container.elements);
+                    });
                 };
                 container.on("attached", containerReadyCallback_1);
             }
             var _loop_1 = function (comp) {
                 var compReadyCallback = function () {
                     comp.off("attached", compReadyCallback);
-                    _this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
-                    Jhtml.Ui.Scanner.scanArray(comp.elements);
+                    comp.loadObserver.whenLoaded(function () {
+                        _this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
+                        Jhtml.Ui.Scanner.scanArray(comp.elements);
+                    });
                 };
                 comp.on("attached", compReadyCallback);
             };
@@ -353,9 +357,10 @@ var Jhtml;
             if (snippet) {
                 var snippetReadyCallback_1 = function () {
                     snippet.off("attached", snippetReadyCallback_1);
-                    _this.importMeta(model.meta);
-                    _this.readyCbr.fire(snippet.elements, { snippet: snippet });
-                    Jhtml.Ui.Scanner.scanArray(snippet.elements);
+                    _this.importMeta(model.meta).whenLoaded(function () {
+                        _this.readyCbr.fire(snippet.elements, { snippet: snippet });
+                        Jhtml.Ui.Scanner.scanArray(snippet.elements);
+                    });
                 };
                 snippet.on("attached", snippetReadyCallback_1);
             }
@@ -394,9 +399,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.documentElement, Context.KEY, context = new Context(document));
             return context;
         };
-        Context.KEY = "data-jhtml-context";
         return Context;
     }());
+    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -442,16 +447,20 @@ var Jhtml;
             this.processedElements = [];
             this.removableElems = [];
             this.newMeta = newMeta;
+            var loadObserver = this.loadObserver = new LoadObserver();
             this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
             this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
             this.processedElements = null;
             this.removableElems = null;
             this.newMeta = null;
+            this.loadObserver = null;
+            return loadObserver;
         };
         MetaState.prototype.replaceWith = function (newMeta) {
             this.processedElements = [];
             this.removableElems = [];
             this.newMeta = newMeta;
+            var loadObserver = this.loadObserver = new LoadObserver();
             this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
             this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
             for (var _i = 0, _a = this.removableElems; _i < _a.length; _i++) {
@@ -463,6 +472,8 @@ var Jhtml;
             this.processedElements = null;
             this.removableElems = null;
             this.newMeta = null;
+            this.loadObserver = null;
+            return loadObserver;
         };
         MetaState.prototype.mergeInto = function (newElems, parentElem, target) {
             var mergedElems = [];
@@ -488,6 +499,7 @@ var Jhtml;
                     curElem = curElems.shift();
                     continue;
                 }
+                this.loadObserver.addElement(mergedElem);
                 if (!curElem) {
                     parentElem.appendChild(mergedElem);
                     continue;
@@ -544,7 +556,14 @@ var Jhtml;
             }
         };
         MetaState.prototype.cloneNewElem = function (newElem, deep) {
-            var mergedElem = newElem.cloneNode(deep);
+            var mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
+            for (var _i = 0, _a = this.attrNames(newElem); _i < _a.length; _i++) {
+                var name_3 = _a[_i];
+                mergedElem.setAttribute(name_3, newElem.getAttribute(name_3));
+            }
+            if (deep) {
+                mergedElem.innerHTML = newElem.innerHTML;
+            }
             this.processedElements.push(mergedElem);
             return mergedElem;
         };
@@ -631,6 +650,39 @@ var Jhtml;
             Target[Target["BODY"] = 2] = "BODY";
         })(Target = Meta.Target || (Meta.Target = {}));
     })(Meta = Jhtml.Meta || (Jhtml.Meta = {}));
+    var LoadObserver = (function () {
+        function LoadObserver() {
+            this.loadCallbacks = [];
+            this.readyCallback = [];
+            console.log("huii");
+        }
+        LoadObserver.prototype.addElement = function (elem) {
+            var _this = this;
+            var loadCallback = function () {
+                _this.unregisterLoadCallback(loadCallback);
+            };
+            this.loadCallbacks.push(loadCallback);
+            elem.addEventListener("load", loadCallback, false);
+        };
+        LoadObserver.prototype.unregisterLoadCallback = function (callback) {
+            this.loadCallbacks.splice(this.loadCallbacks.indexOf(callback), 1);
+            this.checkFire();
+        };
+        LoadObserver.prototype.whenLoaded = function (callback) {
+            this.readyCallback.push(callback);
+            this.checkFire();
+        };
+        LoadObserver.prototype.checkFire = function () {
+            if (this.loadCallbacks.length > 0)
+                return;
+            var callback;
+            while (callback = this.readyCallback.shift()) {
+                callback();
+            }
+        };
+        return LoadObserver;
+    }());
+    Jhtml.LoadObserver = LoadObserver;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -757,12 +809,12 @@ var Jhtml;
             var comps = {};
             for (var _i = 0, _a = Jhtml.Util.find(containerElem, ModelFactory.COMP_SELECTOR); _i < _a.length; _i++) {
                 var compElem = _a[_i];
-                var name_3 = compElem.getAttribute(ModelFactory.COMP_ATTR);
-                if (comps[name_3]) {
-                    throw new Jhtml.ParseError("Duplicated comp name: " + name_3);
+                var name_4 = compElem.getAttribute(ModelFactory.COMP_ATTR);
+                if (comps[name_4]) {
+                    throw new Jhtml.ParseError("Duplicated comp name: " + name_4);
                 }
-                container.compElements[name_3] = compElem;
-                comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
+                container.compElements[name_4] = compElem;
+                comps[name_4] = new Jhtml.Comp(name_4, compElem, model);
             }
             return comps;
         };
@@ -780,12 +832,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.content.firstChild;
         };
-        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-        ModelFactory.COMP_ATTR = "data-jhtml-comp";
-        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
+    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+    ModelFactory.COMP_ATTR = "data-jhtml-comp";
+    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -866,10 +918,10 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
-        Monitor.KEY = "jhtml-monitor";
-        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
+    Monitor.KEY = "jhtml-monitor";
+    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -907,7 +959,7 @@ var Jhtml;
                 throw new Error("Element already attached.");
             }
         };
-        Content.prototype.attachTo = function (element) {
+        Content.prototype.attach = function (element) {
             this.ensureDetached();
             for (var _i = 0, _a = Jhtml.Util.array(this.detachedElem.children); _i < _a.length; _i++) {
                 var childElem = _a[_i];
@@ -953,6 +1005,21 @@ var Jhtml;
             enumerable: true,
             configurable: true
         });
+        Object.defineProperty(Panel.prototype, "loadObserver", {
+            get: function () {
+                return this._loadObserver;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Panel.prototype.attachTo = function (element, loadObserver) {
+            this._loadObserver = loadObserver;
+            this.attach(element);
+        };
+        Panel.prototype.detach = function () {
+            this._loadObserver = null;
+            _super.prototype.detach.call(this);
+        };
         return Panel;
     }(Content));
     Jhtml.Panel = Panel;
@@ -987,6 +1054,9 @@ var Jhtml;
             this.ensureDetached();
             this.attached = true;
             this.cbr.fireType("attached");
+        };
+        Snippet.prototype.attachTo = function (element) {
+            this.attach(element);
         };
         return Snippet;
     }(Content));
@@ -1228,19 +1298,19 @@ var Jhtml;
         };
         Url.prototype.compileQueryParts = function (parts, queryExt, prefix) {
             for (var key in queryExt) {
-                var name_4 = null;
+                var name_5 = null;
                 if (prefix) {
-                    name_4 = prefix + "[" + key + "]";
+                    name_5 = prefix + "[" + key + "]";
                 }
                 else {
-                    name_4 = key;
+                    name_5 = key;
                 }
                 var value = queryExt[key];
                 if (value instanceof Array || value instanceof Object) {
-                    this.compileQueryParts(parts, value, name_4);
+                    this.compileQueryParts(parts, value, name_5);
                 }
                 else {
-                    parts.push(encodeURIComponent(name_4) + "=" + encodeURIComponent(value));
+                    parts.push(encodeURIComponent(name_5) + "=" + encodeURIComponent(value));
                 }
             }
         };
@@ -1425,9 +1495,9 @@ var Jhtml;
                 form.observe();
                 return form;
             };
-            Form.KEY = "jhtml-form";
             return Form;
         }());
+        Form.KEY = "jhtml-form";
         Ui.Form = Form;
         var ControlLock = (function () {
             function ControlLock(containerElem) {
@@ -1492,9 +1562,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
-        Link.KEY = "jhtml-link";
         return Link;
     }());
+    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1520,12 +1590,12 @@ var Jhtml;
                     Scanner.scan(elem);
                 }
             };
-            Scanner.A_ATTR = "data-jhtml";
-            Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
-            Scanner.FORM_ATTR = "data-jhtml";
-            Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
             return Scanner;
         }());
+        Scanner.A_ATTR = "data-jhtml";
+        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+        Scanner.FORM_ATTR = "data-jhtml";
+        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));

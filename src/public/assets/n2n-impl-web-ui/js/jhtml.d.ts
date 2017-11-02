@@ -73,7 +73,7 @@ declare namespace Jhtml {
         import(newModel: Model, montiorCompHandlers?: {
             [compName: string]: CompHandler;
         }): void;
-        importMeta(meta: Meta): void;
+        importMeta(meta: Meta): LoadObserver;
         registerNewModel(model: Model): void;
         replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
@@ -85,7 +85,7 @@ declare namespace Jhtml {
         static from(document: Document): Context;
     }
     interface CompHandler {
-        attachComp(comp: Comp): boolean;
+        attachComp(comp: Comp, loadObserver: LoadObserver): boolean;
         detachComp(comp: Comp): boolean;
     }
     interface CompHandlerReg {
@@ -118,8 +118,9 @@ declare namespace Jhtml {
         private processedElements;
         private removableElems;
         private newMeta;
-        import(newMeta: Meta): void;
-        replaceWith(newMeta: Meta): void;
+        private loadObserver;
+        import(newMeta: Meta): LoadObserver;
+        replaceWith(newMeta: Meta): LoadObserver;
         private mergeInto(newElems, parentElem, target);
         private mergeElem(preferedElems, newElem, target);
         private cloneNewElem(newElem, deep);
@@ -138,6 +139,15 @@ declare namespace Jhtml {
             HEAD = 1,
             BODY = 2,
         }
+    }
+    class LoadObserver {
+        private loadCallbacks;
+        private readyCallback;
+        constructor();
+        addElement(elem: Element): void;
+        private unregisterLoadCallback(callback);
+        whenLoaded(callback: () => any): void;
+        private checkFire();
     }
 }
 declare namespace Jhtml {
@@ -215,14 +225,18 @@ declare namespace Jhtml {
         off(eventType: Content.EventType, callback: () => any): void;
         readonly isAttached: boolean;
         protected ensureDetached(): void;
-        attachTo(element: Element): void;
+        protected attach(element: Element): void;
         detach(): void;
         dispose(): void;
     }
     abstract class Panel extends Content {
         private _name;
+        private _loadObserver;
         constructor(_name: string, attachedElem: Element, model: Model);
         readonly name: string;
+        readonly loadObserver: LoadObserver;
+        attachTo(element: Element, loadObserver: LoadObserver): void;
+        detach(): void;
     }
     namespace Content {
         type EventType = "attached" | "detach" | "dispose";
@@ -237,6 +251,7 @@ declare namespace Jhtml {
     }
     class Snippet extends Content {
         markAttached(): void;
+        attachTo(element: Element): void;
     }
 }
 declare namespace Jhtml {

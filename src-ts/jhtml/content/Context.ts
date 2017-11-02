@@ -59,28 +59,28 @@ namespace Jhtml {
 			}
 
 			boundModelState.container.detach();
-			boundModelState.metaState.replaceWith(newModel.meta);
+			let loadObserver = boundModelState.metaState.replaceWith(newModel.meta);
 			
 			if (!boundModelState.container.matches(newModel.container)) {
 				boundModelState.container = newModel.container;
 			} 
 
-			boundModelState.container.attachTo(boundModelState.metaState.containerElement);
+			boundModelState.container.attachTo(boundModelState.metaState.containerElement, loadObserver);
 			
 			for (let name in newModel.comps) {
 				let comp = boundModelState.comps[name] = newModel.comps[name];
 				
-				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].attachComp(comp))
-						&& !(this.compHandlers[name] && this.compHandlers[name].attachComp(comp))) {
-					comp.attachTo(boundModelState.container.compElements[name]);
+				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].attachComp(comp, loadObserver))
+						&& !(this.compHandlers[name] && this.compHandlers[name].attachComp(comp, loadObserver))) {
+					comp.attachTo(boundModelState.container.compElements[name], loadObserver);
 				}
 			}
 		}
 		
-		importMeta(meta: Meta) {
+		importMeta(meta: Meta): LoadObserver {
 			let boundModelState = this.getModelState(true);
 			
-			boundModelState.metaState.import(meta);
+			return boundModelState.metaState.import(meta);
 		}
 		
 		registerNewModel(model: Model) {
@@ -88,8 +88,10 @@ namespace Jhtml {
 			if (container) {
 				let containerReadyCallback = () => {
 					container.off("attached", containerReadyCallback)
-					this.readyCbr.fire(container.elements, { container: container });
-					Ui.Scanner.scanArray(container.elements);
+					container.loadObserver.whenLoaded(() => {
+						this.readyCbr.fire(container.elements, { container: container });
+						Ui.Scanner.scanArray(container.elements);
+					});
 				};
 				container.on("attached", containerReadyCallback);
 			}
@@ -97,8 +99,10 @@ namespace Jhtml {
 			for (let comp of Object.values(model.comps)) {
 				let compReadyCallback = () => {
 					comp.off("attached", compReadyCallback);
-					this.readyCbr.fire(comp.elements, { comp: Comp });
-					Ui.Scanner.scanArray(comp.elements);
+					comp.loadObserver.whenLoaded(() => {
+						this.readyCbr.fire(comp.elements, { comp: Comp });
+						Ui.Scanner.scanArray(comp.elements);
+					});
 				};
 				comp.on("attached", compReadyCallback);
 			}
@@ -107,9 +111,10 @@ namespace Jhtml {
 			if (snippet) {
 				let snippetReadyCallback = () => {
 					snippet.off("attached", snippetReadyCallback)
-					this.importMeta(model.meta);
-					this.readyCbr.fire(snippet.elements, { snippet: snippet });
-					Ui.Scanner.scanArray(snippet.elements);
+					this.importMeta(model.meta).whenLoaded(() => {
+						this.readyCbr.fire(snippet.elements, { snippet: snippet });
+						Ui.Scanner.scanArray(snippet.elements);
+					});
 				};
 				snippet.on("attached", snippetReadyCallback);
 			}
@@ -161,7 +166,7 @@ namespace Jhtml {
 	}
 	
 	export interface CompHandler {
-		attachComp(comp: Comp): boolean;
+		attachComp(comp: Comp, loadObserver: LoadObserver): boolean;
 		
 		detachComp(comp: Comp): boolean;
 	}

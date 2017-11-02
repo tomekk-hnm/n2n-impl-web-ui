@@ -27,11 +27,13 @@ namespace Jhtml {
 		private processedElements : Array<Element>;
 		private removableElems: Array<Element>;
     	private newMeta: Meta;
+    	private loadObserver: LoadObserver;
     	
-    	public import(newMeta: Meta) {
+    	public import(newMeta: Meta): LoadObserver {
     		this.processedElements = [];
 			this.removableElems = [];
 			this.newMeta = newMeta;
+			let loadObserver = this.loadObserver = new LoadObserver();
 
 			this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
 			this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
@@ -39,12 +41,16 @@ namespace Jhtml {
 			this.processedElements = null;
 			this.removableElems = null;
 			this.newMeta = null;
+			this.loadObserver = null;
+			
+			return loadObserver;
     	}
     	
-		public replaceWith(newMeta: Meta) {
+    	public replaceWith(newMeta: Meta): LoadObserver {
 			this.processedElements = [];
 			this.removableElems = [];
 			this.newMeta = newMeta;
+			let loadObserver = this.loadObserver = new LoadObserver();
 
 			this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
 			this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
@@ -54,16 +60,19 @@ namespace Jhtml {
 				
 				removableElem.remove();	
 			}
-			
 
 			this.processedElements = null;
 			this.removableElems = null;
 			this.newMeta = null;
+			this.loadObserver = null;
+			
+			return loadObserver;
 		}
     	
 		private mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target) {
 			let mergedElems: Array<Element> = [];
 			let curElems = Util.array(parentElem.children);
+			
 			for (let i in newElems) {
 				let newElem = newElems[i];
 				
@@ -91,12 +100,13 @@ namespace Jhtml {
 					curElem = curElems.shift();
 					continue;
 				}
-						
+
+				this.loadObserver.addElement(mergedElem);
+				
 				if (!curElem) {
 					parentElem.appendChild(mergedElem);
 					continue;
 				}
-				
 				parentElem.insertBefore(mergedElem, curElem);
 				
 				let j;
@@ -162,7 +172,17 @@ namespace Jhtml {
 		}
 		
 		private cloneNewElem(newElem: Element, deep: boolean): Element {
-			let mergedElem = <Element> newElem.cloneNode(deep);
+			let mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
+			
+			for (let name of this.attrNames(newElem)) {
+				mergedElem.setAttribute(name, newElem.getAttribute(name));
+			}
+			
+			if (deep) {
+				mergedElem.innerHTML = newElem.innerHTML;
+			}
+			
+//			let mergedElem = <Element> newElem.cloneNode(deep);
 			this.processedElements.push(mergedElem);
 			return mergedElem;
 		}
@@ -265,4 +285,42 @@ namespace Jhtml {
     		BODY = 2
     	}
     }    
+    
+    export class LoadObserver {
+    	private loadCallbacks: Array<() => any> = [];
+    	private readyCallback: Array<() => any> = [];
+    	
+    	constructor() {
+    		console.log("huii");
+    	}
+    	
+    	public addElement(elem: Element) {
+    		let loadCallback = () => {
+				this.unregisterLoadCallback(loadCallback);
+			}
+    		this.loadCallbacks.push(loadCallback)
+    		elem.addEventListener("load", loadCallback, false);
+    	}
+    	
+    	private unregisterLoadCallback(callback: () => any) {
+    		this.loadCallbacks.splice(this.loadCallbacks.indexOf(callback), 1);
+    		
+    		this.checkFire();
+    	}
+    	
+    	public whenLoaded(callback: () => any) {
+    		this.readyCallback.push(callback);
+    		
+    		this.checkFire();
+    	}
+    	
+    	private checkFire() {
+    		if (this.loadCallbacks.length > 0) return;
+    		
+    		let callback: () => any;
+    		while(callback = this.readyCallback.shift()) {
+    			callback();
+    		}
+    	}
+    }
 }
