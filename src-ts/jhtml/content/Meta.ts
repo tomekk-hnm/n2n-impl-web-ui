@@ -291,7 +291,6 @@ namespace Jhtml {
     	private readyCallback: Array<() => any> = [];
     	
     	constructor() {
-    		console.log("huii");
     	}
     	
     	public addElement(elem: Element) {

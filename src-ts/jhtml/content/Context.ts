@@ -60,6 +60,7 @@ namespace Jhtml {
 
 			boundModelState.container.detach();
 			let loadObserver = boundModelState.metaState.replaceWith(newModel.meta);
+			this.registerLoadObserver(loadObserver);
 			
 			if (!boundModelState.container.matches(newModel.container)) {
 				boundModelState.container = newModel.container;
@@ -80,8 +81,20 @@ namespace Jhtml {
 		importMeta(meta: Meta): LoadObserver {
 			let boundModelState = this.getModelState(true);
 			
-			return boundModelState.metaState.import(meta);
+			let loadObserver = boundModelState.metaState.import(meta);
+			this.registerLoadObserver(loadObserver);
+			return loadObserver;
 		}
+		
+		private loadObservers: Array<LoadObserver> = [];
+		
+		private registerLoadObserver(loadObserver: LoadObserver) {
+			this.loadObservers.push(loadObserver);
+			loadObserver.whenLoaded(() => {
+				this.loadObservers.splice(this.loadObservers.indexOf(loadObserver), 1);
+			});
+		}
+		
 		
 		registerNewModel(model: Model) {
 			let container = model.container;
@@ -137,7 +150,7 @@ namespace Jhtml {
 		onReady(readyCallback: ReadyCallback) {
 			this.readyCbr.on(readyCallback);
 			
-			if (this._document.readyState === "complete") {
+			if (this._document.readyState === "complete" && this.loadObservers.length == 0) {
 				readyCallback([this.document.documentElement], {});	
 			}
 		}

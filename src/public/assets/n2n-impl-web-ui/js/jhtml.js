@@ -259,6 +259,7 @@ var Jhtml;
             this._document = _document;
             this.compHandlers = {};
             this.readyCbr = new Jhtml.Util.CallbackRegistry();
+            this.loadObservers = [];
             this._requestor = new Jhtml.Requestor(this);
             this.document.addEventListener("DOMContentLoaded", function () {
                 _this.readyCbr.fire(_this.document.documentElement, {});
@@ -310,6 +311,7 @@ var Jhtml;
             }
             boundModelState.container.detach();
             var loadObserver = boundModelState.metaState.replaceWith(newModel.meta);
+            this.registerLoadObserver(loadObserver);
             if (!boundModelState.container.matches(newModel.container)) {
                 boundModelState.container = newModel.container;
             }
@@ -324,7 +326,16 @@ var Jhtml;
         };
         Context.prototype.importMeta = function (meta) {
             var boundModelState = this.getModelState(true);
-            return boundModelState.metaState.import(meta);
+            var loadObserver = boundModelState.metaState.import(meta);
+            this.registerLoadObserver(loadObserver);
+            return loadObserver;
+        };
+        Context.prototype.registerLoadObserver = function (loadObserver) {
+            var _this = this;
+            this.loadObservers.push(loadObserver);
+            loadObserver.whenLoaded(function () {
+                _this.loadObservers.splice(_this.loadObservers.indexOf(loadObserver), 1);
+            });
         };
         Context.prototype.registerNewModel = function (model) {
             var _this = this;
@@ -378,7 +389,7 @@ var Jhtml;
         };
         Context.prototype.onReady = function (readyCallback) {
             this.readyCbr.on(readyCallback);
-            if (this._document.readyState === "complete") {
+            if (this._document.readyState === "complete" && this.loadObservers.length == 0) {
                 readyCallback([this.document.documentElement], {});
             }
         };
@@ -399,9 +410,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(document.documentElement, Context.KEY, context = new Context(document));
             return context;
         };
+        Context.KEY = "data-jhtml-context";
         return Context;
     }());
-    Context.KEY = "data-jhtml-context";
     Jhtml.Context = Context;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -654,7 +665,6 @@ var Jhtml;
         function LoadObserver() {
             this.loadCallbacks = [];
             this.readyCallback = [];
-            console.log("huii");
         }
         LoadObserver.prototype.addElement = function (elem) {
             var _this = this;
@@ -832,12 +842,12 @@ var Jhtml;
             templateElem.innerHTML = elemHtml;
             return templateElem.content.firstChild;
         };
+        ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
+        ModelFactory.COMP_ATTR = "data-jhtml-comp";
+        ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
+        ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
         return ModelFactory;
     }());
-    ModelFactory.CONTAINER_ATTR = "data-jhtml-container";
-    ModelFactory.COMP_ATTR = "data-jhtml-comp";
-    ModelFactory.CONTAINER_SELECTOR = "[" + ModelFactory.CONTAINER_ATTR + "]";
-    ModelFactory.COMP_SELECTOR = "[" + ModelFactory.COMP_ATTR + "]";
     Jhtml.ModelFactory = ModelFactory;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -918,10 +928,10 @@ var Jhtml;
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
+        Monitor.KEY = "jhtml-monitor";
+        Monitor.CSS_CLASS = "jhtml-selfmonitored";
         return Monitor;
     }());
-    Monitor.KEY = "jhtml-monitor";
-    Monitor.CSS_CLASS = "jhtml-selfmonitored";
     Jhtml.Monitor = Monitor;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1495,9 +1505,9 @@ var Jhtml;
                 form.observe();
                 return form;
             };
+            Form.KEY = "jhtml-form";
             return Form;
         }());
-        Form.KEY = "jhtml-form";
         Ui.Form = Form;
         var ControlLock = (function () {
             function ControlLock(containerElem) {
@@ -1562,9 +1572,9 @@ var Jhtml;
             Jhtml.Util.bindElemData(element, Link.KEY, link);
             return link;
         };
+        Link.KEY = "jhtml-link";
         return Link;
     }());
-    Link.KEY = "jhtml-link";
     Jhtml.Link = Link;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
@@ -1590,12 +1600,12 @@ var Jhtml;
                     Scanner.scan(elem);
                 }
             };
+            Scanner.A_ATTR = "data-jhtml";
+            Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
+            Scanner.FORM_ATTR = "data-jhtml";
+            Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
             return Scanner;
         }());
-        Scanner.A_ATTR = "data-jhtml";
-        Scanner.A_SELECTOR = "a[" + Scanner.A_ATTR + "]";
-        Scanner.FORM_ATTR = "data-jhtml";
-        Scanner.FORM_SELECTOR = "form[" + Scanner.FORM_ATTR + "]";
         Ui.Scanner = Scanner;
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));

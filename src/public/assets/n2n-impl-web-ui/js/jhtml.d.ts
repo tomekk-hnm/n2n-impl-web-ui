@@ -74,6 +74,8 @@ declare namespace Jhtml {
             [compName: string]: CompHandler;
         }): void;
         importMeta(meta: Meta): LoadObserver;
+        private loadObservers;
+        private registerLoadObserver(loadObserver);
         registerNewModel(model: Model): void;
         replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
