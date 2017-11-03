@@ -1719,10 +1719,10 @@ var Jhtml;
                 this.element = element;
             }
             ElemConfigReader.prototype.buildName = function (key) {
-                return "data-" + key;
+                return "data-jhtml-" + key;
             };
             ElemConfigReader.prototype.readBoolean = function (key, fallback) {
-                var value = this.element.getAttribute("data-" + this.buildName(key));
+                var value = this.element.getAttribute(this.buildName(key));
                 if (value === null) {
                     return fallback;
                 }
