@@ -36,7 +36,8 @@ namespace Jhtml {
 							} else {
 								model = this.createModelFromHtml(this.xhr.responseText);
 							}
-							let response = {url: this.url, model: model, directive: new ModelDirective(model)};
+							let response = {url: this.url, model: model, 
+									directive: model.isFull() ? new FullModelDirective(model) : undefined};
 							model.response = response; 
 							resolve(response);
 							break;

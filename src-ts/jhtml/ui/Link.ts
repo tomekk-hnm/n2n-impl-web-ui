@@ -1,6 +1,7 @@
 namespace Jhtml {
 	export class Link {
 		private requestConfig: RequestConfig;
+		private dcr: Util.CallbackRegistry<DirectiveCallback> = new Util.CallbackRegistry();
 		
 		constructor(private elem: HTMLAnchorElement) {
 			this.requestConfig = FullRequestConfig.fromElement(this.elem);
@@ -15,7 +16,17 @@ namespace Jhtml {
 		}
 		
 		private handle() {
-			Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
+			Monitor.of(this.elem).exec(this.elem.href, this.requestConfig).then((directive: Directive) => {
+				this.dcr.fire();
+			});
+		}
+		
+		onDirective(callback: DirectiveCallback) {
+			this.dcr.on(callback);
+		}
+		
+		offDirective(callback: DirectiveCallback) {
+			this.dcr.off(callback);
 		}
 		
 		private static readonly KEY: string = "jhtml-link";
@@ -30,5 +41,10 @@ namespace Jhtml {
 			Util.bindElemData(element, Link.KEY, link);
 			return link;
 		}
+	}
+	
+	
+	export interface DirectiveCallback {
+		(directive: Directive): any;
 	}
 }
