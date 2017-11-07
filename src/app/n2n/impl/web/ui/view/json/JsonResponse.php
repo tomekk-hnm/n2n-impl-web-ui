@@ -27,9 +27,9 @@ use n2n\util\StringUtils;
 
 class JsonResponse extends BufferedResponseObject { 
 	private $jsonString;
+	
 	/**
-	 * @param unknown $contentType
-	 * @param string $contents
+	 * @param array $data
 	 */
 	public function __construct(array $data = null)  {
 		$this->jsonString = StringUtils::jsonEncode($data);

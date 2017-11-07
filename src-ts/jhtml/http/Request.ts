@@ -31,14 +31,25 @@ namespace Jhtml {
 					switch (this.xhr.status) {
 						case 200:
 							let model: Model;
-							if (this.xhr.getResponseHeader("Content-Type").match(/json/)) {
-								model = this.createModelFromJson(this.url, this.xhr.responseText);
-							} else {
+							let directive: Directive; 
+							if (!this.xhr.getResponseHeader("Content-Type").match(/json/)) {
 								model = this.createModelFromHtml(this.xhr.responseText);
+							} else {
+								let jsonObj: any =  this.createJsonObj(this.url, this.xhr.responseText);
+								if (!(directive = this.scanForDirective(this.url, jsonObj))) {
+									alert(this.xhr.responseText);
+									model = this.createModelFromJson(this.url, jsonObj);
+								}
 							}
-							let response = {url: this.url, model: model, 
-									directive: model.isFull() ? new FullModelDirective(model) : undefined};
-							model.response = response; 
+							
+							if (model && model.isFull()) {
+								directive = new FullModelDirective(model);
+							}
+							
+							let response = {url: this.url, model: model, directive: directive };
+							if (model) {
+								model.response = response;
+							}
 							resolve(response);
 							break;
 						default:
@@ -53,9 +64,31 @@ namespace Jhtml {
 			});
 		}
 		
-		private createModelFromJson(url: Url, jsonText: string): Model {
+		private createJsonObj(url: Url, jsonText: string): any {
 			try {
-				let model = ModelFactory.createFromJsonObj(JSON.parse(jsonText));
+				return JSON.parse(jsonText)
+			} catch (e) {
+				throw new Error(url + "; invalid json response: " + e.message);
+			}
+		}
+		
+		private scanForDirective(url: Url, jsonObj: any): Directive|null {
+			switch(jsonObj.directive) {
+			case "redirect":
+				return new RedirectDirective(false, Jhtml.Url.create(jsonObj.location),
+						FullRequestConfig.from(jsonObj.requestConfig), );
+			case "redirectBack": 
+				return new RedirectDirective(true, Jhtml.Url.create(jsonObj.location),
+						FullRequestConfig.from(jsonObj.requestConfig));
+			default:
+				return null;
+			}
+			
+		}
+		
+		private createModelFromJson(url: Url, jsonObj: any): Model {
+			try {
+				let model = ModelFactory.createFromJsonObj(jsonObj);
 				this.requestor.context.registerNewModel(model);
 				return model;
 			} catch (e) {

@@ -66,6 +66,7 @@ declare namespace Jhtml {
         private compHandlers;
         private readyCbr;
         constructor(_document: Document);
+        private readyBound;
         readonly requestor: Requestor;
         readonly document: Document;
         isJhtml(): boolean;
@@ -202,6 +203,7 @@ declare namespace Jhtml {
         history: History;
         private compHandlers;
         constructor(container: Element);
+        readonly compHandlerReg: CompHandlerReg;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
@@ -266,14 +268,14 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     interface Directive {
-        getModel(): Model | null;
-        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): any;
+        getAdditionalData(): any;
+        exec(monitor: Monitor): any;
     }
     class FullModelDirective implements Directive {
         private model;
         constructor(model: Model);
-        getModel(): Model | null;
-        exec(context: Context, history: History, compHandlerReg: CompHandlerReg): void;
+        getAdditionalData(): any;
+        exec(monitor: Monitor): void;
     }
     class ReplaceDirective implements Directive {
         status: number;
@@ -281,8 +283,17 @@ declare namespace Jhtml {
         mimeType: string;
         url: Url;
         constructor(status: number, responseText: string, mimeType: string, url: Url);
-        getModel(): Model | null;
-        exec(context: Context, history: History): void;
+        getAdditionalData(): any;
+        exec(monitor: Monitor): void;
+    }
+    class RedirectDirective {
+        back: boolean;
+        url: Url;
+        requestConfig: RequestConfig;
+        additionalData: any;
+        constructor(back: boolean, url: Url, requestConfig?: RequestConfig, additionalData?: any);
+        getAdditionalData(): any;
+        exec(monitor: Monitor): void;
     }
 }
 declare namespace Jhtml {
@@ -298,7 +309,9 @@ declare namespace Jhtml {
         abort(): void;
         send(data?: FormData): Promise<Response>;
         private buildPromise();
-        private createModelFromJson(url, jsonText);
+        private createJsonObj(url, jsonText);
+        private scanForDirective(url, jsonObj);
+        private createModelFromJson(url, jsonObj);
         private createModelFromHtml(html);
     }
 }
@@ -402,13 +415,15 @@ declare namespace Jhtml.Ui {
         private dcr;
         constructor(elem: HTMLAnchorElement);
         private handle();
+        readonly element: HTMLAnchorElement;
+        dispose(): void;
         onDirective(callback: DirectiveCallback): void;
         offDirective(callback: DirectiveCallback): void;
         private static readonly KEY;
         static from(element: HTMLAnchorElement): Link;
     }
     interface DirectiveCallback {
-        (directive: Directive): any;
+        (directivePromise: Promise<Directive>): any;
     }
 }
 declare namespace Jhtml.Ui {

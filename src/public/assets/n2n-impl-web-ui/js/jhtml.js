@@ -259,10 +259,11 @@ var Jhtml;
             this._document = _document;
             this.compHandlers = {};
             this.readyCbr = new Jhtml.Util.CallbackRegistry();
+            this.readyBound = false;
             this.loadObservers = [];
             this._requestor = new Jhtml.Requestor(this);
-            this.document.addEventListener("DOMContentLoaded", function () {
-                _this.readyCbr.fire(_this.document.documentElement, {});
+            this._document.addEventListener("DOMContentLoaded", function () {
+                _this.readyCbr.fire([_this.document.documentElement], {});
             }, false);
         }
         Object.defineProperty(Context.prototype, "requestor", {
@@ -389,7 +390,8 @@ var Jhtml;
         };
         Context.prototype.onReady = function (readyCallback) {
             this.readyCbr.on(readyCallback);
-            if (this._document.readyState === "complete" && this.loadObservers.length == 0) {
+            if ((this._document.readyState === "complete" || this._document.readyState === "interactive")
+                && this.loadObservers.length == 0) {
                 readyCallback([this.document.documentElement], {});
             }
         };
@@ -734,14 +736,14 @@ var Jhtml;
             ModelFactory.compileMetaElements(meta.bodyElements, "bodyStart", jsonObj);
             ModelFactory.compileMetaElements(meta.bodyElements, "bodyEnd", jsonObj);
             var model = new Jhtml.Model(meta);
-            if (!meta.containerElement) {
+            if (meta.containerElement) {
+                model.container = ModelFactory.compileContainer(meta.containerElement, model);
+                model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
+            }
+            else if (jsonObj.content) {
                 rootElem = document.createElement("div");
                 rootElem.innerHTML = jsonObj.content;
                 model.snippet = new Jhtml.Snippet(Jhtml.Util.array(rootElem.children), model, document.createElement("template"));
-            }
-            else {
-                model.container = ModelFactory.compileContainer(meta.containerElement, model);
-                model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
             }
             if (jsonObj.additional) {
                 model.additionalData = jsonObj.additional;
@@ -859,6 +861,13 @@ var Jhtml;
             this.context = Jhtml.Context.from(container.ownerDocument);
             this.history = new Jhtml.History();
         }
+        Object.defineProperty(Monitor.prototype, "compHandlerReg", {
+            get: function () {
+                return this.compHandlers;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Monitor.prototype.registerCompHandler = function (compName, compHandler) {
             this.compHandlers[compName] = compHandler;
         };
@@ -887,7 +896,7 @@ var Jhtml;
             return page.promise;
         };
         Monitor.prototype.handleDirective = function (directive) {
-            directive.exec(this.context, this.history, this.compHandlers);
+            directive.exec(this);
         };
         Monitor.prototype.lookupModel = function (url) {
             var _this = this;
@@ -1101,11 +1110,11 @@ var Jhtml;
                 throw new Error("Invalid argument. Full model required.");
             }
         }
-        FullModelDirective.prototype.getModel = function () {
-            return this.model;
+        FullModelDirective.prototype.getAdditionalData = function () {
+            return this.model.additionalData;
         };
-        FullModelDirective.prototype.exec = function (context, history, compHandlerReg) {
-            context.import(this.model, compHandlerReg);
+        FullModelDirective.prototype.exec = function (monitor) {
+            monitor.context.import(this.model, monitor.compHandlerReg);
         };
         return FullModelDirective;
     }());
@@ -1117,15 +1126,33 @@ var Jhtml;
             this.mimeType = mimeType;
             this.url = url;
         }
-        ReplaceDirective.prototype.getModel = function () {
+        ReplaceDirective.prototype.getAdditionalData = function () {
             return null;
         };
-        ReplaceDirective.prototype.exec = function (context, history) {
-            context.replace(this.responseText, this.mimeType, history.currentPage.url.equals(this.url));
+        ReplaceDirective.prototype.exec = function (monitor) {
+            monitor.context.replace(this.responseText, this.mimeType, monitor.history.currentPage.url.equals(this.url));
         };
         return ReplaceDirective;
     }());
     Jhtml.ReplaceDirective = ReplaceDirective;
+    var RedirectDirective = (function () {
+        function RedirectDirective(back, url, requestConfig, additionalData) {
+            this.back = back;
+            this.url = url;
+            this.requestConfig = requestConfig;
+            this.additionalData = additionalData;
+        }
+        RedirectDirective.prototype.getAdditionalData = function () {
+            return this.additionalData;
+        };
+        RedirectDirective.prototype.exec = function (monitor) {
+            if (this.back && !monitor.history.currentPage.url.equals(this.url))
+                return;
+            monitor.exec(this.url, this.requestConfig);
+        };
+        return RedirectDirective;
+    }());
+    Jhtml.RedirectDirective = RedirectDirective;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -1165,15 +1192,24 @@ var Jhtml;
                     switch (_this.xhr.status) {
                         case 200:
                             var model = void 0;
-                            if (_this.xhr.getResponseHeader("Content-Type").match(/json/)) {
-                                model = _this.createModelFromJson(_this.url, _this.xhr.responseText);
-                            }
-                            else {
+                            var directive = void 0;
+                            if (!_this.xhr.getResponseHeader("Content-Type").match(/json/)) {
                                 model = _this.createModelFromHtml(_this.xhr.responseText);
                             }
-                            var response = { url: _this.url, model: model,
-                                directive: model.isFull() ? new Jhtml.FullModelDirective(model) : undefined };
-                            model.response = response;
+                            else {
+                                var jsonObj = _this.createJsonObj(_this.url, _this.xhr.responseText);
+                                if (!(directive = _this.scanForDirective(_this.url, jsonObj))) {
+                                    alert(_this.xhr.responseText);
+                                    model = _this.createModelFromJson(_this.url, jsonObj);
+                                }
+                            }
+                            if (model && model.isFull()) {
+                                directive = new Jhtml.FullModelDirective(model);
+                            }
+                            var response = { url: _this.url, model: model, directive: directive };
+                            if (model) {
+                                model.response = response;
+                            }
                             resolve(response);
                             break;
                         default:
@@ -1185,9 +1221,27 @@ var Jhtml;
                 };
             });
         };
-        Request.prototype.createModelFromJson = function (url, jsonText) {
+        Request.prototype.createJsonObj = function (url, jsonText) {
             try {
-                var model = Jhtml.ModelFactory.createFromJsonObj(JSON.parse(jsonText));
+                return JSON.parse(jsonText);
+            }
+            catch (e) {
+                throw new Error(url + "; invalid json response: " + e.message);
+            }
+        };
+        Request.prototype.scanForDirective = function (url, jsonObj) {
+            switch (jsonObj.directive) {
+                case "redirect":
+                    return new Jhtml.RedirectDirective(false, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig));
+                case "redirectBack":
+                    return new Jhtml.RedirectDirective(true, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig));
+                default:
+                    return null;
+            }
+        };
+        Request.prototype.createModelFromJson = function (url, jsonObj) {
+            try {
+                var model = Jhtml.ModelFactory.createFromJsonObj(jsonObj);
                 this.requestor.context.registerNewModel(model);
                 return model;
             }
@@ -1262,7 +1316,11 @@ var Jhtml;
             var _this = this;
             return new Promise(function (resolve) {
                 _this.exec("GET", url).send().then(function (result) {
-                    resolve(result.directive);
+                    if (result.directive) {
+                        resolve(result.directive);
+                        return;
+                    }
+                    throw new Error(url + " provides no jhtml directive.");
                 });
             });
         };
@@ -1270,7 +1328,11 @@ var Jhtml;
             var _this = this;
             return new Promise(function (resolve) {
                 _this.exec("GET", url).send().then(function (result) {
-                    resolve(result.model);
+                    if (result.directive) {
+                        resolve(result.model);
+                        return;
+                    }
+                    throw new Error(url + " provides no jhtml model.");
                 });
             });
         };
@@ -1574,10 +1636,18 @@ var Jhtml;
                 });
             }
             Link.prototype.handle = function () {
-                var _this = this;
-                Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig).then(function (directive) {
-                    _this.dcr.fire();
-                });
+                this.dcr.fire(Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
+            };
+            Object.defineProperty(Link.prototype, "element", {
+                get: function () {
+                    return this.elem;
+                },
+                enumerable: true,
+                configurable: true
+            });
+            Link.prototype.dispose = function () {
+                this.elem.remove();
+                this.elem = null;
             };
             Link.prototype.onDirective = function (callback) {
                 this.dcr.on(callback);

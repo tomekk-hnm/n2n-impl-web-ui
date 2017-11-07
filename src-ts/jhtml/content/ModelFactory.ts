@@ -23,13 +23,13 @@ namespace Jhtml {
     		
     		let model = new Model(meta);
     		
-    		if (!meta.containerElement) {
+    		if (meta.containerElement) {
+    			model.container = ModelFactory.compileContainer(meta.containerElement, model);
+    			model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
+    		} else if (jsonObj.content) {
     			rootElem = document.createElement("div");
     			rootElem.innerHTML = jsonObj.content;
     			model.snippet = new Snippet(Util.array(rootElem.children), model, document.createElement("template"));
-    		} else {
-    			model.container = ModelFactory.compileContainer(meta.containerElement, model);
-    			model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
     		}
     		
     		if (jsonObj.additional) {

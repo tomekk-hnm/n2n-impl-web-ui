@@ -16,9 +16,16 @@ namespace Jhtml.Ui {
 		}
 		
 		private handle() {
-			Monitor.of(this.elem).exec(this.elem.href, this.requestConfig).then((directive: Directive) => {
-				this.dcr.fire();
-			});
+			this.dcr.fire(Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
+		}
+		
+		get element(): HTMLAnchorElement {
+			return this.elem;
+		}
+		
+		dispose() {
+			this.elem.remove();
+			this.elem = null;
 		}
 		
 		onDirective(callback: DirectiveCallback) {
@@ -45,6 +52,6 @@ namespace Jhtml.Ui {
 	
 	
 	export interface DirectiveCallback {
-		(directive: Directive): any;
+		(directivePromise: Promise<Directive>): any;
 	}
 }

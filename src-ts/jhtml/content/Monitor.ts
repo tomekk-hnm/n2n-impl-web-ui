@@ -10,6 +10,10 @@ namespace Jhtml {
 			this.history = new History();
 		}
 		
+		get compHandlerReg(): CompHandlerReg {
+			return this.compHandlers;
+		}
+		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
 			this.compHandlers[compName] = compHandler;
 		}
@@ -44,7 +48,7 @@ namespace Jhtml {
 		}
 		
 		public handleDirective(directive: Directive) {
-			directive.exec(this.context, this.history, this.compHandlers);
+			directive.exec(this);
 		}
 		
 		public lookupModel(url: Url): Promise<Model> {

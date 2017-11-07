@@ -11,7 +11,12 @@ namespace Jhtml {
 		public lookupDirective(url: Url): Promise<Directive> {
 			return new Promise<Directive>(resolve => {
 				this.exec("GET", url).send().then((result: Response) => {
-					resolve(result.directive);
+					if (result.directive) {
+						resolve(result.directive);
+						return;
+					}
+					
+					throw new Error(url + " provides no jhtml directive.");
 				});
 			});
 		}
@@ -19,7 +24,12 @@ namespace Jhtml {
 		public lookupModel(url: Url): Promise<Model> {
 			return new Promise<Model>(resolve => {
 				this.exec("GET", url).send().then((result: Response) => {
-					resolve(result.model);
+					if (result.directive) {
+						resolve(result.model);
+						return;
+					}
+					
+					throw new Error(url + " provides no jhtml model.");
 				});
 			});
 		}

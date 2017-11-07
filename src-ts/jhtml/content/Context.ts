@@ -10,10 +10,13 @@ namespace Jhtml {
 		constructor(private _document: Document) {
 			this._requestor = new Requestor(this);
 			
-			this.document.addEventListener("DOMContentLoaded", () => {
-				this.readyCbr.fire(this.document.documentElement, {});
+			this._document.addEventListener("DOMContentLoaded", () => {
+				this.readyCbr.fire([this.document.documentElement], {});
 			}, false);
 		}
+		
+		private readyBound: boolean = false;
+	
 		
 		get requestor(): Requestor {
 			return this._requestor;
@@ -149,8 +152,9 @@ namespace Jhtml {
 		
 		onReady(readyCallback: ReadyCallback) {
 			this.readyCbr.on(readyCallback);
-			
-			if (this._document.readyState === "complete" && this.loadObservers.length == 0) {
+
+			if ((this._document.readyState === "complete" || this._document.readyState === "interactive") 
+					 && this.loadObservers.length == 0) {
 				readyCallback([this.document.documentElement], {});	
 			}
 		}

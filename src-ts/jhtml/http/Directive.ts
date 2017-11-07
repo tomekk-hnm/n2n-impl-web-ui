@@ -2,9 +2,9 @@ namespace Jhtml {
 	
 	export interface Directive {
 		
-		getModel(): Model|null;
+		getAdditionalData(): any;
 		
-		exec(context: Context, history: History, compHandlerReg: CompHandlerReg);
+		exec(monitor: Monitor);
 	}
     
     export class FullModelDirective implements Directive {
@@ -14,12 +14,12 @@ namespace Jhtml {
     		}
     	}
     	
-    	getModel(): Model|null {
-    		return this.model;
+    	getAdditionalData(): any {
+    		return this.model.additionalData;
     	}
     	
-    	exec(context: Context, history: History, compHandlerReg: CompHandlerReg) {
-    		context.import(this.model, compHandlerReg);
+    	exec(monitor: Monitor) {
+    		monitor.context.import(this.model, monitor.compHandlerReg);
     	}
     }
     
@@ -27,12 +27,29 @@ namespace Jhtml {
         constructor(public status: number, public responseText: string, public mimeType: string, public url: Url) {
         }
     	
-        getModel(): Model|null {
+        getAdditionalData(): any {
         	return null;
         }
         
-        exec(context: Context, history: History) {
-        	context.replace(this.responseText, this.mimeType, history.currentPage.url.equals(this.url));
+        exec(monitor: Monitor) {
+        	monitor.context.replace(this.responseText, this.mimeType, 
+        			monitor.history.currentPage.url.equals(this.url));
+        }
+    }
+    
+    export class RedirectDirective {
+    	constructor(public back: boolean, public url: Url, public requestConfig?: RequestConfig, 
+    			public additionalData?: any) {
+    	}
+    	
+    	getAdditionalData(): any {
+        	return this.additionalData;
+        }
+        
+        exec(monitor: Monitor) {
+        	if (this.back && !monitor.history.currentPage.url.equals(this.url)) return;
+        	
+        	monitor.exec(this.url, this.requestConfig);
         }
     }
     
