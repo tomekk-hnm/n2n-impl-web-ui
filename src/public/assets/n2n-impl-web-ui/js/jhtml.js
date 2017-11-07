@@ -1094,16 +1094,22 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
-    var ModelDirective = (function () {
-        function ModelDirective(model) {
+    var FullModelDirective = (function () {
+        function FullModelDirective(model) {
             this.model = model;
+            if (!model.isFull()) {
+                throw new Error("Invalid argument. Full model required.");
+            }
         }
-        ModelDirective.prototype.exec = function (context, history, compHandlerReg) {
+        FullModelDirective.prototype.getModel = function () {
+            return this.model;
+        };
+        FullModelDirective.prototype.exec = function (context, history, compHandlerReg) {
             context.import(this.model, compHandlerReg);
         };
-        return ModelDirective;
+        return FullModelDirective;
     }());
-    Jhtml.ModelDirective = ModelDirective;
+    Jhtml.FullModelDirective = FullModelDirective;
     var ReplaceDirective = (function () {
         function ReplaceDirective(status, responseText, mimeType, url) {
             this.status = status;
@@ -1111,6 +1117,9 @@ var Jhtml;
             this.mimeType = mimeType;
             this.url = url;
         }
+        ReplaceDirective.prototype.getModel = function () {
+            return null;
+        };
         ReplaceDirective.prototype.exec = function (context, history) {
             context.replace(this.responseText, this.mimeType, history.currentPage.url.equals(this.url));
         };
@@ -1162,7 +1171,8 @@ var Jhtml;
                             else {
                                 model = _this.createModelFromHtml(_this.xhr.responseText);
                             }
-                            var response = { url: _this.url, model: model, directive: new Jhtml.ModelDirective(model) };
+                            var response = { url: _this.url, model: model,
+                                directive: model.isFull() ? new Jhtml.FullModelDirective(model) : undefined };
                             model.response = response;
                             resolve(response);
                             break;
@@ -1549,33 +1559,46 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
-    var Link = (function () {
-        function Link(elem) {
-            var _this = this;
-            this.elem = elem;
-            this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
-            elem.addEventListener("click", function (evt) {
-                evt.preventDefault();
-                _this.handle();
-                return false;
-            });
-        }
-        Link.prototype.handle = function () {
-            Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig);
-        };
-        Link.from = function (element) {
-            var link = Jhtml.Util.getElemData(element, Link.KEY);
-            if (link instanceof Link) {
-                return link;
+    var Ui;
+    (function (Ui) {
+        var Link = (function () {
+            function Link(elem) {
+                var _this = this;
+                this.elem = elem;
+                this.dcr = new Jhtml.Util.CallbackRegistry();
+                this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
+                elem.addEventListener("click", function (evt) {
+                    evt.preventDefault();
+                    _this.handle();
+                    return false;
+                });
             }
-            link = new Link(element);
-            Jhtml.Util.bindElemData(element, Link.KEY, link);
-            return link;
-        };
-        Link.KEY = "jhtml-link";
-        return Link;
-    }());
-    Jhtml.Link = Link;
+            Link.prototype.handle = function () {
+                var _this = this;
+                Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig).then(function (directive) {
+                    _this.dcr.fire();
+                });
+            };
+            Link.prototype.onDirective = function (callback) {
+                this.dcr.on(callback);
+            };
+            Link.prototype.offDirective = function (callback) {
+                this.dcr.off(callback);
+            };
+            Link.from = function (element) {
+                var link = Jhtml.Util.getElemData(element, Link.KEY);
+                if (link instanceof Link) {
+                    return link;
+                }
+                link = new Link(element);
+                Jhtml.Util.bindElemData(element, Link.KEY, link);
+                return link;
+            };
+            Link.KEY = "jhtml-link";
+            return Link;
+        }());
+        Ui.Link = Link;
+    })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -1587,7 +1610,7 @@ var Jhtml;
             Scanner.scan = function (elem) {
                 for (var _i = 0, _a = Jhtml.Util.findAndSelf(elem, Scanner.A_SELECTOR); _i < _a.length; _i++) {
                     var linkElem = _a[_i];
-                    Jhtml.Link.from(linkElem);
+                    Ui.Link.from(linkElem);
                 }
                 for (var _b = 0, _c = Jhtml.Util.findAndSelf(elem, Scanner.FORM_SELECTOR); _b < _c.length; _b++) {
                     var fromElem = _c[_b];

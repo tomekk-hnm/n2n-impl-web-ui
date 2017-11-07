@@ -266,11 +266,13 @@ declare namespace Jhtml {
 }
 declare namespace Jhtml {
     interface Directive {
+        getModel(): Model | null;
         exec(context: Context, history: History, compHandlerReg: CompHandlerReg): any;
     }
-    class ModelDirective implements Directive {
-        model: Model;
+    class FullModelDirective implements Directive {
+        private model;
         constructor(model: Model);
+        getModel(): Model | null;
         exec(context: Context, history: History, compHandlerReg: CompHandlerReg): void;
     }
     class ReplaceDirective implements Directive {
@@ -279,6 +281,7 @@ declare namespace Jhtml {
         mimeType: string;
         url: Url;
         constructor(status: number, responseText: string, mimeType: string, url: Url);
+        getModel(): Model | null;
         exec(context: Context, history: History): void;
     }
 }
@@ -392,14 +395,20 @@ declare namespace Jhtml.Ui {
         (form: Form): any;
     }
 }
-declare namespace Jhtml {
+declare namespace Jhtml.Ui {
     class Link {
         private elem;
         private requestConfig;
+        private dcr;
         constructor(elem: HTMLAnchorElement);
         private handle();
+        onDirective(callback: DirectiveCallback): void;
+        offDirective(callback: DirectiveCallback): void;
         private static readonly KEY;
         static from(element: HTMLAnchorElement): Link;
+    }
+    interface DirectiveCallback {
+        (directive: Directive): any;
     }
 }
 declare namespace Jhtml.Ui {

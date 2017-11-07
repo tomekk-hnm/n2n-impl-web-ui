@@ -1,4 +1,4 @@
-namespace Jhtml {
+namespace Jhtml.Ui {
 	export class Link {
 		private requestConfig: RequestConfig;
 		private dcr: Util.CallbackRegistry<DirectiveCallback> = new Util.CallbackRegistry();
