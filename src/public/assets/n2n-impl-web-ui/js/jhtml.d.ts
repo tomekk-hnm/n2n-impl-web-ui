@@ -446,6 +446,7 @@ declare namespace Jhtml.Util {
         offType(type: string, callback: C): void;
         fire(...args: Array<any>): void;
         fireType(type: string, ...args: Array<any>): void;
+        clear(): void;
     }
 }
 declare namespace Jhtml.Util {

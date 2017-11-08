@@ -39,5 +39,9 @@ namespace Jhtml.Util {
 				(<any> callback)(...args);
 			}
 		}
+		
+		clear() {
+			this.callbacks = {};
+		}
 	}
 }

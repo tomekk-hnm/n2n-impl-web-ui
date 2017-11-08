@@ -1231,9 +1231,9 @@ var Jhtml;
         Request.prototype.scanForDirective = function (url, jsonObj) {
             switch (jsonObj.directive) {
                 case "redirect":
-                    return new Jhtml.RedirectDirective(false, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig));
+                    return new Jhtml.RedirectDirective(false, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 case "redirectBack":
-                    return new Jhtml.RedirectDirective(true, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig));
+                    return new Jhtml.RedirectDirective(true, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 default:
                     return null;
             }
@@ -1650,6 +1650,7 @@ var Jhtml;
             Link.prototype.dispose = function () {
                 this.elem.remove();
                 this.elem = null;
+                this.dcr.clear();
             };
             Link.prototype.onDirective = function (callback) {
                 this.dcr.on(callback);
@@ -1752,6 +1753,9 @@ var Jhtml;
                     var callback = _b[_a];
                     callback.apply(void 0, args);
                 }
+            };
+            CallbackRegistry.prototype.clear = function () {
+                this.callbacks = {};
             };
             return CallbackRegistry;
         }());

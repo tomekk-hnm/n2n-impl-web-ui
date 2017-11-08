@@ -29,6 +29,7 @@ namespace Jhtml.Ui {
 		dispose() {
 			this.elem.remove();
 			this.elem = null;
+			this.dcr.clear();
 		}
 		
 		onDirective(callback: DirectiveCallback) {

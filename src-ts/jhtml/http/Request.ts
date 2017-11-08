@@ -75,10 +75,10 @@ namespace Jhtml {
 			switch(jsonObj.directive) {
 			case "redirect":
 				return new RedirectDirective(false, Jhtml.Url.create(jsonObj.location),
-						FullRequestConfig.from(jsonObj.requestConfig), );
+						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			case "redirectBack": 
 				return new RedirectDirective(true, Jhtml.Url.create(jsonObj.location),
-						FullRequestConfig.from(jsonObj.requestConfig));
+						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			default:
 				return null;
 			}
