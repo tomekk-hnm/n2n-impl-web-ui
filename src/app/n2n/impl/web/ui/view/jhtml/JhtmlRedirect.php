@@ -22,11 +22,11 @@
 namespace n2n\impl\web\ui\view\jhtml;
 
 use n2n\impl\web\ui\view\json\JsonResponse;
-use n2n\web\http\BufferedResponseObject;
+use n2n\web\http\payload\BufferedPayload;
 use n2n\web\http\Response;
-use n2n\web\http\Redirect;
+use n2n\web\http\payload\impl\Redirect;
 
-class JhtmlRedirect extends BufferedResponseObject {
+class JhtmlRedirect extends BufferedPayload {
 	private $httpLocation;
 	private $directive;
 	private $additionalAttrs;
@@ -54,13 +54,13 @@ class JhtmlRedirect extends BufferedResponseObject {
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
+	 * @see \n2n\web\http\payload\BufferedPayload::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 	    return $this->responseObject->getBufferedContents();
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
+	 * @see \n2n\web\http\payload\Payload::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 		if ('application/json' == $response->getRequest()->getAcceptRange()
@@ -78,9 +78,9 @@ class JhtmlRedirect extends BufferedResponseObject {
 		$this->responseObject->prepareForResponse($response);
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
+	 * @see \n2n\web\http\payload\Payload::toKownPayloadString()
 	 */
-	public function toKownResponseString(): string {
+	public function toKownPayloadString(): string {
 		return 'Jhtml Redirect';
 	}
 	

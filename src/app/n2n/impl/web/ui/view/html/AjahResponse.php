@@ -21,7 +21,7 @@
  */
 namespace n2n\impl\web\ui\view\html;
 
-use n2n\web\http\BufferedResponseObject;
+use n2n\web\http\payload\BufferedPayload;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
 use n2n\web\ui\SimpleBuildContext;
@@ -29,7 +29,7 @@ use n2n\web\ui\SimpleBuildContext;
  * 
  * @deprecated use {@see \n2n\impl\web\ui\view\jhtml\AjahResponse}
  */
-class AjahResponse extends BufferedResponseObject {
+class AjahResponse extends BufferedPayload {
 	const HEAD_KEY = 'head';
 	const BODY_START = 'bodyStart';
 	const BODY_END = 'bodyEnd';
@@ -49,7 +49,7 @@ class AjahResponse extends BufferedResponseObject {
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
+	 * @see \n2n\web\http\payload\BufferedPayload::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 		if (!$this->htmlView->isInitialized()) {
@@ -75,15 +75,15 @@ class AjahResponse extends BufferedResponseObject {
 		return StringUtils::jsonEncode($data);
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
+	 * @see \n2n\web\http\payload\Payload::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 		$response->setHeader('Content-Type: application/json');
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
+	 * @see \n2n\web\http\payload\Payload::toKownPayloadString()
 	 */
-	public function toKownResponseString(): string {
+	public function toKownPayloadString(): string {
 		return 'Ajah Response';
 	}
 	

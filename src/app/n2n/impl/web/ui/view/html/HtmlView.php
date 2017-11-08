@@ -237,7 +237,7 @@ class HtmlView extends View {
 // 		try {
 // 			$this->htmlProperties->validateForResponse();
 // 		} catch (ViewStuffFailedException $e) {
-// 			throw new ViewStuffFailedException('Could not send view to response: ' . $this->toKownResponseString(), 0, $e);
+// 			throw new ViewStuffFailedException('Could not send view to response: ' . $this->toKownPayloadString(), 0, $e);
 // 		}
 	}
 	

@@ -21,11 +21,11 @@
  */
 namespace n2n\impl\web\ui\view\jhtml;
 
-use n2n\web\http\BufferedResponseObject;
+use n2n\web\http\payload\BufferedPayload;
 use n2n\web\http\Response;
 use n2n\impl\web\ui\view\html\HtmlView;
 
-class JhtmlResponse extends BufferedResponseObject {
+class JhtmlResponse extends BufferedPayload {
 	private $htmlView;
 	private $additionalAttrs;
 	
@@ -41,7 +41,7 @@ class JhtmlResponse extends BufferedResponseObject {
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
+	 * @see \n2n\web\http\payload\BufferedPayload::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 	    if ($this->ajahResponse === null) {
@@ -51,7 +51,7 @@ class JhtmlResponse extends BufferedResponseObject {
 	    return $this->ajahResponse->getBufferedContents();
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
+	 * @see \n2n\web\http\payload\Payload::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 	    if ('application/json' == $response->getRequest()->getAcceptRange()
@@ -65,9 +65,9 @@ class JhtmlResponse extends BufferedResponseObject {
 	    $this->htmlView->prepareForResponse($response);
 	}
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
+	 * @see \n2n\web\http\payload\Payload::toKownPayloadString()
 	 */
-	public function toKownResponseString(): string {
+	public function toKownPayloadString(): string {
 		return 'Jhtml Response';
 	}
 	

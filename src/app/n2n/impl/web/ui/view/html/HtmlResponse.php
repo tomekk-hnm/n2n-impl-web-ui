@@ -21,11 +21,14 @@
  */
 namespace n2n\impl\web\ui\view\html;
 
-use n2n\web\http\BufferedResponseObject;
+use n2n\web\http\payload\BufferedPayload;
 use n2n\web\http\Response;
 use n2n\web\ui\SimpleBuildContext;
 
-class HtmlResponse extends BufferedResponseObject {
+/**
+ * @deprecated use {@see \n2n\web\http\payload\impl\HtmlPayload}
+ */
+class HtmlResponse extends BufferedPayload {
 	private $uiComponent;
 	
 	public function __construct($uiComponent) {
@@ -34,7 +37,7 @@ class HtmlResponse extends BufferedResponseObject {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
+	 * @see \n2n\web\http\payload\BufferedPayload::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 		return HtmlUtils::contentsToHtml($this->uiComponent, new SimpleBuildContext());
@@ -42,7 +45,7 @@ class HtmlResponse extends BufferedResponseObject {
 
 	/**
 	 * {@inheritDoc}
-	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
+	 * @see \n2n\web\http\payload\Payload::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 		$response->setHeader('Content-Type: text/html; charset=utf-8');
@@ -50,9 +53,9 @@ class HtmlResponse extends BufferedResponseObject {
 	
 	/**
 	 * {@inheritDoc}
-	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
+	 * @see \n2n\web\http\payload\Payload::toKownPayloadString()
 	 */
-	public function toKownResponseString(): string {
+	public function toKownPayloadString(): string {
 		return 'Html Response';
 	}
 }

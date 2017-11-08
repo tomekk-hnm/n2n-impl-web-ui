@@ -21,11 +21,14 @@
  */
 namespace n2n\impl\web\ui\view\json;
 
-use n2n\web\http\BufferedResponseObject;
+use n2n\web\http\payload\BufferedPayload;
 use n2n\web\http\Response;
 use n2n\util\StringUtils;
 
-class JsonResponse extends BufferedResponseObject { 
+/**
+ * @deprecated use {@see \n2n\web\http\payload\impl\JsonPayload}
+ */
+class JsonResponse extends BufferedPayload { 
 	private $jsonString;
 	
 	/**
@@ -36,23 +39,23 @@ class JsonResponse extends BufferedResponseObject {
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\BufferedResponseObject::getBufferedContents()
+	 * @see \n2n\web\http\payload\BufferedPayload::getBufferedContents()
 	 */
 	public function getBufferedContents(): string {
 		return $this->jsonString;
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::prepareForResponse()
+	 * @see \n2n\web\http\payload\Payload::prepareForResponse()
 	 */
 	public function prepareForResponse(Response $response) {
 		$response->setHeader('Content-Type: application/json');
 	}
 	
 	/* (non-PHPdoc)
-	 * @see \n2n\web\http\ResponseObject::toKownResponseString()
+	 * @see \n2n\web\http\payload\Payload::toKownPayloadString()
 	 */
-	public function toKownResponseString(): string {
+	public function toKownPayloadString(): string {
 		return 'Json Response';
 	}	
 }
