@@ -413,6 +413,7 @@ declare namespace Jhtml.Ui {
         private elem;
         private requestConfig;
         private dcr;
+        disabled: boolean;
         constructor(elem: HTMLAnchorElement);
         private handle();
         readonly element: HTMLAnchorElement;

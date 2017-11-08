@@ -1199,7 +1199,6 @@ var Jhtml;
                             else {
                                 var jsonObj = _this.createJsonObj(_this.url, _this.xhr.responseText);
                                 if (!(directive = _this.scanForDirective(_this.url, jsonObj))) {
-                                    alert(_this.xhr.responseText);
                                     model = _this.createModelFromJson(_this.url, jsonObj);
                                 }
                             }
@@ -1628,6 +1627,7 @@ var Jhtml;
                 var _this = this;
                 this.elem = elem;
                 this.dcr = new Jhtml.Util.CallbackRegistry();
+                this.disabled = false;
                 this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
                 elem.addEventListener("click", function (evt) {
                     evt.preventDefault();
@@ -1636,6 +1636,8 @@ var Jhtml;
                 });
             }
             Link.prototype.handle = function () {
+                if (this.disabled)
+                    return;
                 this.dcr.fire(Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
             };
             Object.defineProperty(Link.prototype, "element", {

@@ -37,7 +37,6 @@ namespace Jhtml {
 							} else {
 								let jsonObj: any =  this.createJsonObj(this.url, this.xhr.responseText);
 								if (!(directive = this.scanForDirective(this.url, jsonObj))) {
-									alert(this.xhr.responseText);
 									model = this.createModelFromJson(this.url, jsonObj);
 								}
 							}
