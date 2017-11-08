@@ -2,6 +2,8 @@ namespace Jhtml.Ui {
 	export class Link {
 		private requestConfig: RequestConfig;
 		private dcr: Util.CallbackRegistry<DirectiveCallback> = new Util.CallbackRegistry();
+
+		disabled: boolean = false;
 		
 		constructor(private elem: HTMLAnchorElement) {
 			this.requestConfig = FullRequestConfig.fromElement(this.elem);
@@ -16,6 +18,7 @@ namespace Jhtml.Ui {
 		}
 		
 		private handle() {
+			if (this.disabled) return;
 			this.dcr.fire(Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
 		}
 		
