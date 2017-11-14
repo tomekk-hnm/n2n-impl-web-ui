@@ -560,10 +560,15 @@ class HtmlBuilder {
 		if ($imgComposer instanceof ImgComposer) {
 			$imgSet = $imgComposer->createImgSet($file, $this->view->getN2nContext());
 			
-			if ($imgSet->isPictureRequired()) {
-				return UiComponentFactory::createPicture($imgSet, $attrs);
-			} else {
+			if (!$imgSet->isPictureRequired()) {
 				return UiComponentFactory::createImg($imgSet, $attrs, $addWidthAttr, $addHeightAttr);
+			} else {
+				$alt = null;
+				if (isset($attrs['alt'])) {
+					$alt = $attrs['alt'];
+					unset($attrs['alt']);
+				}
+				return UiComponentFactory::createPicture($imgSet, $attrs, $alt);
 			}
 		}
 		
