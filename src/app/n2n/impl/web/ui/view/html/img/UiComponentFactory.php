@@ -64,7 +64,7 @@ class UiComponentFactory {
 	}
 	
 	
-	public static function createPicture(ImgSet $imgSet, array $attrs = null) {
+	public static function createPicture(ImgSet $imgSet, array $attrs = null, $defaultAlt = null) {
 		$htmlElement = new HtmlElement('picture', $attrs);
 		
 		foreach ($imgSet->getImageSourceSets() as $imageSourceSet) {
@@ -74,7 +74,7 @@ class UiComponentFactory {
 		}
 		
 		$htmlElement->appendLn(new HtmlElement('img', array('src' => $imgSet->getDefaultSrcAttr(), 
-				'alt' => $imgSet->getDefaultAltAttr())));
+				'alt' => ($defaultAlt !== null ? $defaultAlt : $imgSet->getDefaultAltAttr()))));
 		
 		return $htmlElement;
 	}
@@ -89,8 +89,8 @@ class UiComponentFactory {
 			$attrs['alt'] = $imgSet->getDefaultAltAttr();
 		}
 		
-		$imageSourceSets = $imgSet->getImageSourceSets(); 
-		if (empty($imageSourceSets)) {
+		$imageSourceSets = $imgSet->getImageSourceSets();
+		if (empty($imageSourceSets) || (count($imageSourceSets) == 1 && count($imageSourceSets[0]->getImgSrcs()) <= 1)) {
 			if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
 			if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
 		} else {
