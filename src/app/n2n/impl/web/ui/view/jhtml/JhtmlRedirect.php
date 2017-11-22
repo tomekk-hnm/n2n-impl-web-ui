@@ -94,4 +94,9 @@ class JhtmlRedirect extends BufferedPayload {
 			array $additionalAttrs = array()) {
 		return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT_BACK, $jhtmlExec, $additionalAttrs);
 	}
+	
+	public static function r(string $httpLocation, JhtmlExec $jhtmlExec = null,
+			array $additionalAttrs = array()) {
+				return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT, $jhtmlExec, $additionalAttrs);
+	}
 }
