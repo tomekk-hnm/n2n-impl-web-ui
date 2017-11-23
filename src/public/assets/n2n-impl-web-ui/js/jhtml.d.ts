@@ -127,6 +127,7 @@ declare namespace Jhtml {
         private newMeta;
         private loadObserver;
         import(newMeta: Meta): LoadObserver;
+        private importInto(newElems, parentElem, target);
         replaceWith(newMeta: Meta): LoadObserver;
         private mergeInto(newElems, parentElem, target);
         private mergeElem(preferedElems, newElem, target);
@@ -206,7 +207,7 @@ declare namespace Jhtml {
         context: Context;
         history: History;
         private compHandlers;
-        constructor(container: Element);
+        constructor(container: Element, history: History);
         readonly compHandlerReg: CompHandlerReg;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
@@ -219,7 +220,7 @@ declare namespace Jhtml {
         private static readonly CSS_CLASS;
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
         static test(element: Element): Monitor | null;
-        static from(container: Element): Monitor;
+        static create(container: Element, history: History): Monitor;
     }
 }
 declare namespace Jhtml {

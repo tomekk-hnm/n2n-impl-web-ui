@@ -64,8 +64,6 @@ namespace Jhtml {
 			for (let i = 0; i < importedElems.length; i++) {
 				let importedElem = importedElems[i];
 				
-				console.log(importedElem);
-				
 				if (-1 < curElems.indexOf(importedElem)) {
 					continue;
 				}

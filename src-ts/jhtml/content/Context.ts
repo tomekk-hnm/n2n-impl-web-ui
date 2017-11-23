@@ -11,6 +11,7 @@ namespace Jhtml {
 			this._requestor = new Requestor(this);
 			
 			this._document.addEventListener("DOMContentLoaded", () => {
+				console.log("really ready?");
 				this.readyCbr.fire([this.document.documentElement], {});
 			}, false);
 		}
@@ -102,6 +103,7 @@ namespace Jhtml {
 		registerNewModel(model: Model) {
 			let container = model.container;
 			if (container) {
+				console.log("impossibuu container");
 				let containerReadyCallback = () => {
 					container.off("attached", containerReadyCallback)
 					container.loadObserver.whenLoaded(() => {
@@ -113,6 +115,7 @@ namespace Jhtml {
 			}
 			
 			for (let comp of Object.values(model.comps)) {
+				console.log("impossibuu comp " + comp.name);
 				let compReadyCallback = () => {
 					comp.off("attached", compReadyCallback);
 					comp.loadObserver.whenLoaded(() => {
@@ -128,6 +131,7 @@ namespace Jhtml {
 				let snippetReadyCallback = () => {
 					snippet.off("attached", snippetReadyCallback)
 					this.importMeta(model.meta).whenLoaded(() => {
+						console.log("attached snippet");
 						this.readyCbr.fire(snippet.elements, { snippet: snippet });
 						Ui.Scanner.scanArray(snippet.elements);
 					});

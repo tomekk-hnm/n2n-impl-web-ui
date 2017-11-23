@@ -22,8 +22,9 @@ var Jhtml;
         var context = getOrCreateContext();
         if (!context.isJhtml())
             return null;
-        monitor = Jhtml.Monitor.from(context.document.documentElement);
-        browser = new Jhtml.Browser(window, monitor.history);
+        var history = new Jhtml.History();
+        browser = new Jhtml.Browser(window, history);
+        monitor = Jhtml.Monitor.create(context.document.documentElement, history);
         return browser;
     }
     Jhtml.getOrCreateBrowser = getOrCreateBrowser;
@@ -272,6 +273,7 @@ var Jhtml;
             this.loadObservers = [];
             this._requestor = new Jhtml.Requestor(this);
             this._document.addEventListener("DOMContentLoaded", function () {
+                console.log("really ready?");
                 _this.readyCbr.fire([_this.document.documentElement], {});
             }, false);
         }
@@ -351,6 +353,7 @@ var Jhtml;
             var _this = this;
             var container = model.container;
             if (container) {
+                console.log("impossibuu container");
                 var containerReadyCallback_1 = function () {
                     container.off("attached", containerReadyCallback_1);
                     container.loadObserver.whenLoaded(function () {
@@ -361,6 +364,7 @@ var Jhtml;
                 container.on("attached", containerReadyCallback_1);
             }
             var _loop_1 = function (comp) {
+                console.log("impossibuu comp " + comp.name);
                 var compReadyCallback = function () {
                     comp.off("attached", compReadyCallback);
                     comp.loadObserver.whenLoaded(function () {
@@ -379,6 +383,7 @@ var Jhtml;
                 var snippetReadyCallback_1 = function () {
                     snippet.off("attached", snippetReadyCallback_1);
                     _this.importMeta(model.meta).whenLoaded(function () {
+                        console.log("attached snippet");
                         _this.readyCbr.fire(snippet.elements, { snippet: snippet });
                         Jhtml.Ui.Scanner.scanArray(snippet.elements);
                     });
@@ -467,16 +472,34 @@ var Jhtml;
         });
         MetaState.prototype.import = function (newMeta) {
             this.processedElements = [];
-            this.removableElems = [];
             this.newMeta = newMeta;
             var loadObserver = this.loadObserver = new LoadObserver();
-            this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-            this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+            this.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+            this.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
             this.processedElements = null;
-            this.removableElems = null;
             this.newMeta = null;
             this.loadObserver = null;
             return loadObserver;
+        };
+        MetaState.prototype.importInto = function (newElems, parentElem, target) {
+            var importedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
+            for (var i in newElems) {
+                var newElem = newElems[i];
+                var importedElem = this.mergeElem(curElems, newElem, target);
+                if (importedElem === this.containerElem)
+                    continue;
+                this.importInto(Jhtml.Util.array(newElem.children), importedElem, target);
+                importedElems.push(importedElem);
+            }
+            for (var i = 0; i < importedElems.length; i++) {
+                var importedElem = importedElems[i];
+                if (-1 < curElems.indexOf(importedElem)) {
+                    continue;
+                }
+                this.loadObserver.addElement(importedElem);
+                parentElem.appendChild(importedElem);
+            }
         };
         MetaState.prototype.replaceWith = function (newMeta) {
             this.processedElements = [];
@@ -484,7 +507,7 @@ var Jhtml;
             this.newMeta = newMeta;
             var loadObserver = this.loadObserver = new LoadObserver();
             this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-            this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+            this.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
             for (var _i = 0, _a = this.removableElems; _i < _a.length; _i++) {
                 var removableElem = _a[_i];
                 if (this.containsProcessed(removableElem))
@@ -843,7 +866,7 @@ var Jhtml;
             if (!(jsonObj[name] instanceof Array)) {
                 throw new Jhtml.ParseError("Missing or invalid property '" + name + "'.");
             }
-            for (var _i = 0, _a = jsonObj.head; _i < _a.length; _i++) {
+            for (var _i = 0, _a = jsonObj[name]; _i < _a.length; _i++) {
                 var elemHtml = _a[_i];
                 elements.push(ModelFactory.createElement(elemHtml));
             }
@@ -864,13 +887,13 @@ var Jhtml;
 var Jhtml;
 (function (Jhtml) {
     var Monitor = (function () {
-        function Monitor(container) {
+        function Monitor(container, history) {
             var _this = this;
             this.container = container;
             this.compHandlers = {};
             this.pushing = false;
             this.context = Jhtml.Context.from(container.ownerDocument);
-            this.history = new Jhtml.History();
+            this.history = history;
             this.history.onChanged(function () {
                 _this.historyChanged();
             });
@@ -956,12 +979,13 @@ var Jhtml;
             }
             return null;
         };
-        Monitor.from = function (container) {
+        Monitor.create = function (container, history) {
             var monitor = Monitor.test(container);
-            if (monitor)
-                return monitor;
+            if (monitor) {
+                throw new Error("Element is already monitored.");
+            }
             container.classList.add(Monitor.CSS_CLASS);
-            monitor = new Monitor(container);
+            monitor = new Monitor(container, history);
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         };
