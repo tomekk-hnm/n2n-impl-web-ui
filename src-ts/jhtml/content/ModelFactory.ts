@@ -151,7 +151,7 @@ namespace Jhtml {
 				throw new ParseError("Missing or invalid property '" + name + "'.");
 			}
     		
-    		for (let elemHtml of jsonObj.head) {
+    		for (let elemHtml of jsonObj[name]) {
     			elements.push(ModelFactory.createElement(elemHtml));
     		}
     	}

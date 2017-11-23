@@ -13,8 +13,9 @@ namespace Jhtml {
 	
 		if (!context.isJhtml()) return null;
 		
-		monitor = Monitor.from(context.document.documentElement);
-		browser = new Browser(window, monitor.history);
+		let history = new History();
+		browser = new Browser(window, history);
+		monitor = Monitor.create(context.document.documentElement, history);
 
 		return browser;
 	}

@@ -5,9 +5,9 @@ namespace Jhtml {
 		public history: History;
 		private compHandlers: CompHandlerReg = {};
 		
-		constructor(private container: Element) {
+		constructor(private container: Element, history: History) {
 			this.context = Context.from(container.ownerDocument);
-			this.history = new History();
+			this.history = history;
 			this.history.onChanged(() => {
 			   this.historyChanged(); 
 			});
@@ -107,14 +107,16 @@ namespace Jhtml {
 			return null;
 		}
 		
-		static from(container: Element): Monitor {
+		static create(container: Element, history: History): Monitor {
 			let monitor = Monitor.test(container);
 			
-			if (monitor) return monitor;
+			if (monitor) {
+				throw new Error("Element is already monitored.");
+			}
 			
 			container.classList.add(Monitor.CSS_CLASS);
 			
-			monitor = new Monitor(container);
+			monitor = new Monitor(container, history);
 			Util.bindElemData(container, Monitor.KEY, monitor);
 			
 			return monitor;

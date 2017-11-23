@@ -31,20 +31,49 @@ namespace Jhtml {
     	
     	public import(newMeta: Meta): LoadObserver {
     		this.processedElements = [];
-			this.removableElems = [];
 			this.newMeta = newMeta;
 			let loadObserver = this.loadObserver = new LoadObserver();
-
-			this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-			this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
+			
+			this.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+			this.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
 			
 			this.processedElements = null;
-			this.removableElems = null;
 			this.newMeta = null;
 			this.loadObserver = null;
 			
 			return loadObserver;
     	}
+    	
+    	
+    	private importInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target) {
+			let importedElems: Array<Element> = [];
+			let curElems = Util.array(parentElem.children);
+			
+			for (let i in newElems) {
+				let newElem = newElems[i];
+								
+				let importedElem = this.mergeElem(curElems, newElem, target);
+				
+				if (importedElem === this.containerElem) continue;
+				
+				this.importInto(Util.array(newElem.children), importedElem, target);
+				
+				importedElems.push(importedElem);
+			}
+			
+			for (let i = 0; i < importedElems.length; i++) {
+				let importedElem = importedElems[i];
+				
+				console.log(importedElem);
+				
+				if (-1 < curElems.indexOf(importedElem)) {
+					continue;
+				}
+
+				this.loadObserver.addElement(importedElem);
+				parentElem.appendChild(importedElem);
+			}
+		}
     	
     	public replaceWith(newMeta: Meta): LoadObserver {
 			this.processedElements = [];
@@ -53,8 +82,8 @@ namespace Jhtml {
 			let loadObserver = this.loadObserver = new LoadObserver();
 
 			this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-			this.mergeInto(newMeta.bodyElements, this.headElem, Meta.Target.BODY);
-
+			this.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+			
 			for (let removableElem of this.removableElems) {
 				if (this.containsProcessed(removableElem)) continue;
 				
@@ -75,7 +104,7 @@ namespace Jhtml {
 			
 			for (let i in newElems) {
 				let newElem = newElems[i];
-				
+								
 				let mergedElem = this.mergeElem(curElems, newElem, target);
 				
 				if (mergedElem === this.containerElem) continue;
@@ -107,6 +136,7 @@ namespace Jhtml {
 					parentElem.appendChild(mergedElem);
 					continue;
 				}
+			
 				parentElem.insertBefore(mergedElem, curElem);
 				
 				let j;
