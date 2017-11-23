@@ -3,7 +3,7 @@ namespace Jhtml {
     export class History {
         private _currentIndex: number
         private _entries: Array<History.Entry> = [];
-        private changedCbr = new Util.CallbackRegistry<() => any>();
+        private changedCbr = new Util.CallbackRegistry<(evt: ChangeEvent) => any>();
         private pushCbr = new Util.CallbackRegistry<EntryCallback>();
         
         get currentEntry(): History.Entry {
@@ -33,11 +33,11 @@ namespace Jhtml {
         	return null;
         }
         
-        onChanged(callback: () => any) {
+        onChanged(callback: (evt: ChangeEvent) => any) {
         	this.changedCbr.on(callback);
         }
         
-        offChanged(callback: () => any) {
+        offChanged(callback: (evt: ChangeEvent) => any) {
         	this.changedCbr.off(callback);
         }
         
@@ -62,7 +62,7 @@ namespace Jhtml {
         	if (this._currentIndex == index) return;
         	
         	this._currentIndex = index;
-        	this.changedCbr.fire();
+        	this.changedCbr.fire({ pushed: false });
         }
         
         push(page: Page) {
@@ -82,15 +82,21 @@ namespace Jhtml {
         	this._entries.push(entry);
 
         	this.pushCbr.fire(entry);
-        	this.changedCbr.fire();
+        	this.changedCbr.fire({ pushed: true });
         }
     }
     
     export interface EntryCallback {
         (entry: History.Entry)
     }   
+
+
+    export interface ChangeEvent {
+        pushed: boolean;
+    }
     
     export namespace History {
+        
 	    export class Entry {
 	    	public browserHistoryIndex: number;
 	    	

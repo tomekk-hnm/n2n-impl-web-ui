@@ -52,14 +52,17 @@ var Jhtml;
             var _this = this;
             this.window = window;
             this._history = _history;
+            this.poping = false;
             _history.push(new Jhtml.Page(Jhtml.Url.create(window.location.href), null));
             _history.onPush(function (entry) {
                 _this.onPush(entry);
             });
-            _history.onChanged(function () {
-                _this.onChanged();
+            _history.onChanged(function (evt) {
+                _this.onChanged(evt);
             });
-            this.window.addEventListener("popstate", function (evt) { return _this.onPopstate(evt); });
+            this.window.onpopstate = function (evt) {
+                _this.onPopstate(evt);
+            };
         }
         Object.defineProperty(Browser.prototype, "history", {
             get: function () {
@@ -71,19 +74,25 @@ var Jhtml;
         Browser.prototype.onPopstate = function (evt) {
             var url = Jhtml.Url.create(this.window.location.href);
             var index = 0;
-            if (this.window.history.state && this.window.history.state.historyIndex) {
-                index = this.window.history.state.historyIndex;
+            if (evt.state && evt.state.historyIndex) {
+                index = evt.state.historyIndex;
             }
             try {
+                this.poping = true;
                 this.history.go(index, url);
+                this.poping = false;
             }
             catch (e) {
+                alert("err " + e.message);
                 this.window.location.href = url.toString();
             }
         };
-        Browser.prototype.onChanged = function () {
+        Browser.prototype.onChanged = function (evt) {
+            if (this.poping || evt.pushed)
+                return;
             var entry = this.history.currentEntry;
             if (entry.browserHistoryIndex !== undefined) {
+                alert("noo");
                 this.window.history.go(entry.browserHistoryIndex);
                 return;
             }
@@ -163,7 +172,7 @@ var Jhtml;
             if (this._currentIndex == index)
                 return;
             this._currentIndex = index;
-            this.changedCbr.fire();
+            this.changedCbr.fire({ pushed: false });
         };
         History.prototype.push = function (page) {
             var sPage = this.getPageByUrl(page.url);
@@ -179,7 +188,7 @@ var Jhtml;
             var entry = new History.Entry(this._currentIndex, page);
             this._entries.push(entry);
             this.pushCbr.fire(entry);
-            this.changedCbr.fire();
+            this.changedCbr.fire({ pushed: true });
         };
         return History;
     }());
@@ -856,10 +865,15 @@ var Jhtml;
 (function (Jhtml) {
     var Monitor = (function () {
         function Monitor(container) {
+            var _this = this;
             this.container = container;
             this.compHandlers = {};
+            this.pushing = false;
             this.context = Jhtml.Context.from(container.ownerDocument);
             this.history = new Jhtml.History();
+            this.history.onChanged(function () {
+                _this.historyChanged();
+            });
         }
         Object.defineProperty(Monitor.prototype, "compHandlerReg", {
             get: function () {
@@ -888,7 +902,9 @@ var Jhtml;
                 page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
             }
             if (config.pushToHistory && page !== this.history.currentPage) {
+                this.pushing = true;
                 this.history.push(page);
+                this.pushing = false;
             }
             page.promise.then(function (directive) {
                 _this.handleDirective(directive);
@@ -909,6 +925,18 @@ var Jhtml;
                         _this.handleDirective(response.directive);
                     }
                 });
+            });
+        };
+        Monitor.prototype.historyChanged = function () {
+            var _this = this;
+            if (this.pushing)
+                return;
+            var currentPage = this.history.currentPage;
+            if (!currentPage.promise) {
+                currentPage.promise = this.context.requestor.lookupDirective(currentPage.url);
+            }
+            currentPage.promise.then(function (directive) {
+                _this.handleDirective(directive);
             });
         };
         Monitor.of = function (element, selfIncluded) {

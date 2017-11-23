@@ -11,8 +11,9 @@ declare namespace Jhtml {
         private _history;
         constructor(window: Window, _history: History);
         readonly history: History;
+        private poping;
         private onPopstate(evt);
-        private onChanged();
+        private onChanged(evt);
         private onPush(entry);
     }
 }
@@ -25,8 +26,8 @@ declare namespace Jhtml {
         readonly currentEntry: History.Entry;
         readonly currentPage: Page;
         getPageByUrl(url: Url): Page;
-        onChanged(callback: () => any): void;
-        offChanged(callback: () => any): void;
+        onChanged(callback: (evt: ChangeEvent) => any): void;
+        offChanged(callback: (evt: ChangeEvent) => any): void;
         onPush(callback: EntryCallback): void;
         offPush(callback: EntryCallback): void;
         go(index: number, checkUrl?: Url): void;
@@ -34,6 +35,9 @@ declare namespace Jhtml {
     }
     interface EntryCallback {
         (entry: History.Entry): any;
+    }
+    interface ChangeEvent {
+        pushed: boolean;
     }
     namespace History {
         class Entry {
@@ -206,9 +210,11 @@ declare namespace Jhtml {
         readonly compHandlerReg: CompHandlerReg;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
+        private pushing;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
         handleDirective(directive: Directive): void;
         lookupModel(url: Url): Promise<Model>;
+        private historyChanged();
         private static readonly KEY;
         private static readonly CSS_CLASS;
         static of(element: Element, selfIncluded?: boolean): Monitor | null;

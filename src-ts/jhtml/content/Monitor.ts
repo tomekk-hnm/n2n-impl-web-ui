@@ -8,6 +8,9 @@ namespace Jhtml {
 		constructor(private container: Element) {
 			this.context = Context.from(container.ownerDocument);
 			this.history = new History();
+			this.history.onChanged(() => {
+			   this.historyChanged(); 
+			});
 		}
 		
 		get compHandlerReg(): CompHandlerReg {
@@ -21,6 +24,8 @@ namespace Jhtml {
 		unregisterCompHandler(compName: string) {
 			delete this.compHandlers[compName];
 		}
+		
+		private pushing: boolean = false;
 		
 		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Directive> {
 			let url = Url.create(urlExpr);
@@ -37,7 +42,9 @@ namespace Jhtml {
 			}
 
 			if (config.pushToHistory && page !== this.history.currentPage) {
+			    this.pushing = true;
 				this.history.push(page);
+				this.pushing = false;
 			}
 			
 			page.promise.then((directive: Directive) => {
@@ -61,6 +68,20 @@ namespace Jhtml {
 					}
 				});
 			});
+		}
+		
+		private historyChanged() {
+		    if (this.pushing) return;
+		    
+		    let currentPage = this.history.currentPage;
+		    
+		    if (!currentPage.promise) {
+		        currentPage.promise = this.context.requestor.lookupDirective(currentPage.url);
+		    }
+		    
+		    currentPage.promise.then(directive => {
+                this.handleDirective(directive);
+            });
 		}
 		
 		private static readonly KEY: string = "jhtml-monitor";

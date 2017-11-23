@@ -7,35 +7,50 @@ namespace Jhtml {
 	        	this.onPush(entry);
 	        });
 	        
-	        _history.onChanged(() => {
-	        	this.onChanged();
+	        _history.onChanged((evt) => {
+	        	this.onChanged(evt);
 	        });
+
+//	        this.window.addEventListener("popstate", (evt) => {
+//        	    this.onPopstate(evt)
+//        	});
 	        
-        	this.window.addEventListener("popstate", (evt) => this.onPopstate(evt));
+	        this.window.onpopstate = (evt) => {
+                this.onPopstate(evt)
+            };
 		}
         
         get history(): History {
         	return this._history;
         }
         
+        private poping: boolean = false;
+        
         private onPopstate(evt) {
         	let url: Url = Url.create(this.window.location.href);
         	let index: number = 0;
         
-            if (this.window.history.state && this.window.history.state.historyIndex) {
-            	 index = this.window.history.state.historyIndex;
+            if (evt.state && evt.state.historyIndex) {
+            	 index = evt.state.historyIndex;
             }
             
             try {
+                this.poping = true;
         		this.history.go(index, url);
+        		this.poping = false;
         	} catch (e) {
-        		this.window.location.href = url.toString();
+        	    alert("err " + e.message);
+        	    this.window.location.href = url.toString();
         	}
         }
         
-        private onChanged() {
+        private onChanged(evt: ChangeEvent) {
+            if (this.poping || evt.pushed) return;
+           
         	let entry: History.Entry = this.history.currentEntry;
-        	if (entry.browserHistoryIndex !== undefined) {
+            
+            if (entry.browserHistoryIndex !== undefined) {
+                alert("noo");
         		this.window.history.go(entry.browserHistoryIndex);
         		return;
         	}
@@ -45,7 +60,6 @@ namespace Jhtml {
         
         private onPush(entry: History.Entry) {
         	entry.browserHistoryIndex = this.window.history.length;
-        	
         	let urlStr = entry.page.url.toString();
         	let stateObj = {
         		"url": urlStr,
