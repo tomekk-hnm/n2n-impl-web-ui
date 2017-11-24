@@ -372,6 +372,7 @@ declare namespace Jhtml.Ui {
         private fire(eventType);
         on(eventType: Form.EventType, callback: FormCallback): void;
         off(eventType: Form.EventType, callback: FormCallback): void;
+        private tmpSubmitDirective;
         observe(): void;
         private buildFormData(submitConfig?);
         private controlLock;

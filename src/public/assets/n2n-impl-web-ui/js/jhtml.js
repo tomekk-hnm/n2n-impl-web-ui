@@ -351,9 +351,7 @@ var Jhtml;
             var _this = this;
             var container = model.container;
             if (container) {
-                console.log("impossibuu container");
                 var containerReadyCallback_1 = function () {
-                    console.log("impossibuu container attached");
                     container.off("attached", containerReadyCallback_1);
                     container.loadObserver.whenLoaded(function () {
                         _this.readyCbr.fire(container.elements, { container: container });
@@ -363,9 +361,7 @@ var Jhtml;
                 container.on("attached", containerReadyCallback_1);
             }
             var _loop_1 = function (comp) {
-                console.log("impossibuu comp " + comp.name);
                 var compReadyCallback = function () {
-                    console.log("impossibuu comp attached");
                     comp.off("attached", compReadyCallback);
                     comp.loadObserver.whenLoaded(function () {
                         _this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
@@ -1321,6 +1317,7 @@ var Jhtml;
                 this._config = new Form.Config();
                 this.callbackRegistery = new Jhtml.Util.CallbackRegistry();
                 this.curRequest = null;
+                this.tmpSubmitDirective = null;
                 this.controlLockAutoReleaseable = true;
             }
             Object.defineProperty(Form.prototype, "element", {
@@ -1362,23 +1359,22 @@ var Jhtml;
                     return;
                 this._observing = true;
                 this.element.addEventListener("submit", function (evt) {
+                    console.log("submitted");
                     evt.preventDefault();
-                    return false;
-                }, true);
-                this.element.addEventListener("submit", function (evt) {
-                    if (_this.config.autoSubmitAllowed)
-                        return false;
-                    _this.submit();
+                    if (_this.config.autoSubmitAllowed) {
+                        var submitDirective_1 = _this.tmpSubmitDirective;
+                        setTimeout(function () {
+                            _this.submit(submitDirective_1);
+                        });
+                    }
+                    _this.tmpSubmitDirective = null;
                 }, false);
+                this.element.addEventListener("submit", function (evt) {
+                    console.log("on submit");
+                }, true);
                 Jhtml.Util.find(this.element, "input[type=submit], button[type=submit]").forEach(function (elem) {
                     elem.addEventListener("click", function (evt) {
-                        evt.preventDefault();
-                        return false;
-                    }, true);
-                    elem.addEventListener("click", function (evt) {
-                        if (!_this.config.autoSubmitAllowed)
-                            return;
-                        _this.submit({ button: elem });
+                        _this.tmpSubmitDirective = { button: elem };
                     }, false);
                 });
             };

@@ -37,31 +37,38 @@ namespace Jhtml.Ui {
 			this.callbackRegistery.offType(eventType.toString(), callback);
 		}
 		
+		
+		private tmpSubmitDirective: Form.SubmitDirective = null;
+		
 		public observe() {
 			if (this._observing) return;
 			
 			this._observing = true;
 			
 			this.element.addEventListener("submit", (evt) => {
+				console.log("submitted");
 				evt.preventDefault();
-				return false;
-			}, true);
-			
-			this.element.addEventListener("submit", (evt) => {
-				if (this.config.autoSubmitAllowed) return false;
-				this.submit();
+				if (this.config.autoSubmitAllowed) {
+					let submitDirective = this.tmpSubmitDirective;
+					setTimeout(() => {
+						this.submit(submitDirective);
+					});
+				}
+				this.tmpSubmitDirective = null;
 			}, false);
 			
 			
+			this.element.addEventListener("submit", (evt) => {
+				console.log("on submit");
+			}, true);
+			
 			Util.find(this.element, "input[type=submit], button[type=submit]").forEach((elem: Element) => {
+//				elem.addEventListener("click", (evt) => {
+//					
+//					return false;
+//				}, true);
 				elem.addEventListener("click", (evt) => {
-					evt.preventDefault();
-					return false;
-				}, true);
-				elem.addEventListener("click", (evt) => {
-					if (!this.config.autoSubmitAllowed) return;
-					
-					this.submit({ button: elem });
+					this.tmpSubmitDirective = { button: elem };
 				}, false);
 			});
 		}
