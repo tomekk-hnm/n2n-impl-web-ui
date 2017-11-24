@@ -119,28 +119,15 @@ declare namespace Jhtml {
         private bodyElem;
         private containerElem;
         constructor(rootElem: Element, headElem: Element, bodyElem: Element, containerElem: Element);
+        private markAsUsed(elements);
         readonly headElements: Array<Element>;
         readonly bodyElements: Array<Element>;
         readonly containerElement: Element;
-        private processedElements;
-        private removableElems;
-        private newMeta;
-        private loadObserver;
+        private usedElements;
+        private blockedElements;
         import(newMeta: Meta): LoadObserver;
-        private importInto(newElems, parentElem, target);
         replaceWith(newMeta: Meta): LoadObserver;
-        private mergeInto(newElems, parentElem, target);
-        private mergeElem(preferedElems, newElem, target);
-        private cloneNewElem(newElem, deep);
-        private attrNames(elem);
-        private findExact(matchingElem, checkInner, target?);
-        private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
-        private findIn(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
-        private filterExact(elems, matchingElem, checkInner);
-        private containsProcessed(elem);
-        private filter(elems, matchingElem, attrNames, checkInner, checkAttrNum);
-        private compareExact(elem1, elem2, checkInner);
-        private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
+        private containsBlocked(element);
     }
     namespace Meta {
         enum Target {
@@ -206,6 +193,7 @@ declare namespace Jhtml {
         private container;
         context: Context;
         history: History;
+        active: boolean;
         private compHandlers;
         constructor(container: Element, history: History);
         readonly compHandlerReg: CompHandlerReg;
@@ -470,5 +458,35 @@ declare namespace Jhtml.Util {
         constructor(element: Element);
         private buildName(key);
         readBoolean(key: string, fallback: boolean): boolean;
+    }
+}
+declare namespace Jhtml {
+    class Merger {
+        private rootElem;
+        private headElem;
+        private bodyElem;
+        private currentContainerElem;
+        private newContainerElem;
+        private _loadObserver;
+        private _processedElements;
+        private _blockedElements;
+        private removableElements;
+        constructor(rootElem: any, headElem: any, bodyElem: any, currentContainerElem: Element, newContainerElem: Element | null);
+        readonly loadObserver: LoadObserver;
+        readonly processedElements: Element[];
+        readonly remainingElements: Element[];
+        importInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
+        mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
+        private mergeElem(preferedElems, newElem, target);
+        private cloneNewElem(newElem, deep);
+        private attrNames(elem);
+        private findExact(matchingElem, checkInner, target?);
+        private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
+        private findIn(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
+        private filterExact(elems, matchingElem, checkInner);
+        private containsProcessed(elem);
+        private filter(elems, matchingElem, attrNames, checkInner, checkAttrNum);
+        private compareExact(elem1, elem2, checkInner);
+        private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
     }
 }

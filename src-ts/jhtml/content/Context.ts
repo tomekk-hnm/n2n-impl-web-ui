@@ -11,7 +11,6 @@ namespace Jhtml {
 			this._requestor = new Requestor(this);
 			
 			this._document.addEventListener("DOMContentLoaded", () => {
-				console.log("really ready?");
 				this.readyCbr.fire([this.document.documentElement], {});
 			}, false);
 		}
@@ -99,12 +98,12 @@ namespace Jhtml {
 			});
 		}
 		
-		
 		registerNewModel(model: Model) {
 			let container = model.container;
 			if (container) {
 				console.log("impossibuu container");
 				let containerReadyCallback = () => {
+					console.log("impossibuu container attached");
 					container.off("attached", containerReadyCallback)
 					container.loadObserver.whenLoaded(() => {
 						this.readyCbr.fire(container.elements, { container: container });
@@ -117,6 +116,7 @@ namespace Jhtml {
 			for (let comp of Object.values(model.comps)) {
 				console.log("impossibuu comp " + comp.name);
 				let compReadyCallback = () => {
+					console.log("impossibuu comp attached");
 					comp.off("attached", compReadyCallback);
 					comp.loadObserver.whenLoaded(() => {
 						this.readyCbr.fire(comp.elements, { comp: Comp });

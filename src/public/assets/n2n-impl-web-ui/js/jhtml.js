@@ -73,10 +73,10 @@ var Jhtml;
             configurable: true
         });
         Browser.prototype.onPopstate = function (evt) {
-            var url = Jhtml.Url.create(this.window.location.href);
+            var url = Jhtml.Url.create(this.window.location.toString());
             var index = 0;
-            if (evt.state && evt.state.historyIndex) {
-                index = evt.state.historyIndex;
+            if (evt.state && evt.state.jhtmlHistoryIndex) {
+                index = evt.state.jhtmlHistoryIndex;
             }
             try {
                 this.poping = true;
@@ -100,11 +100,10 @@ var Jhtml;
             this.window.location.href = entry.page.url.toString();
         };
         Browser.prototype.onPush = function (entry) {
-            entry.browserHistoryIndex = this.window.history.length;
             var urlStr = entry.page.url.toString();
             var stateObj = {
-                "url": urlStr,
-                "historyIndex": entry.index
+                "jhtmlUrl": urlStr,
+                "jhtmlHistoryIndex": entry.index
             };
             this.window.history.pushState(stateObj, "Page", urlStr);
         };
@@ -273,7 +272,6 @@ var Jhtml;
             this.loadObservers = [];
             this._requestor = new Jhtml.Requestor(this);
             this._document.addEventListener("DOMContentLoaded", function () {
-                console.log("really ready?");
                 _this.readyCbr.fire([_this.document.documentElement], {});
             }, false);
         }
@@ -355,6 +353,7 @@ var Jhtml;
             if (container) {
                 console.log("impossibuu container");
                 var containerReadyCallback_1 = function () {
+                    console.log("impossibuu container attached");
                     container.off("attached", containerReadyCallback_1);
                     container.loadObserver.whenLoaded(function () {
                         _this.readyCbr.fire(container.elements, { container: container });
@@ -366,6 +365,7 @@ var Jhtml;
             var _loop_1 = function (comp) {
                 console.log("impossibuu comp " + comp.name);
                 var compReadyCallback = function () {
+                    console.log("impossibuu comp attached");
                     comp.off("attached", compReadyCallback);
                     comp.loadObserver.whenLoaded(function () {
                         _this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
@@ -448,7 +448,20 @@ var Jhtml;
             this.headElem = headElem;
             this.bodyElem = bodyElem;
             this.containerElem = containerElem;
+            this.usedElements = [];
+            this.blockedElements = [];
+            this.markAsUsed(this.headElements);
+            this.markAsUsed(this.bodyElements);
         }
+        MetaState.prototype.markAsUsed = function (elements) {
+            for (var _i = 0, elements_1 = elements; _i < elements_1.length; _i++) {
+                var element = elements_1[_i];
+                if (element === this.containerElement)
+                    continue;
+                this.usedElements.push(element);
+                this.markAsUsed(Jhtml.Util.array(element.children));
+            }
+        };
         Object.defineProperty(MetaState.prototype, "headElements", {
             get: function () {
                 return Jhtml.Util.array(this.headElem.children);
@@ -471,219 +484,40 @@ var Jhtml;
             configurable: true
         });
         MetaState.prototype.import = function (newMeta) {
-            this.processedElements = [];
-            this.newMeta = newMeta;
-            var loadObserver = this.loadObserver = new LoadObserver();
-            this.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-            this.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
-            this.processedElements = null;
-            this.newMeta = null;
-            this.loadObserver = null;
-            return loadObserver;
-        };
-        MetaState.prototype.importInto = function (newElems, parentElem, target) {
-            var importedElems = [];
-            var curElems = Jhtml.Util.array(parentElem.children);
-            for (var i in newElems) {
-                var newElem = newElems[i];
-                var importedElem = this.mergeElem(curElems, newElem, target);
-                if (importedElem === this.containerElem)
-                    continue;
-                this.importInto(Jhtml.Util.array(newElem.children), importedElem, target);
-                importedElems.push(importedElem);
-            }
-            for (var i = 0; i < importedElems.length; i++) {
-                var importedElem = importedElems[i];
-                if (-1 < curElems.indexOf(importedElem)) {
-                    continue;
-                }
-                this.loadObserver.addElement(importedElem);
-                parentElem.appendChild(importedElem);
-            }
+            var merger = new Jhtml.Merger(this.rootElem, this.headElem, this.bodyElem, this.containerElem, newMeta.containerElement);
+            merger.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+            merger.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+            return merger.loadObserver;
         };
         MetaState.prototype.replaceWith = function (newMeta) {
-            this.processedElements = [];
-            this.removableElems = [];
-            this.newMeta = newMeta;
-            var loadObserver = this.loadObserver = new LoadObserver();
-            this.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
-            this.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
-            for (var _i = 0, _a = this.removableElems; _i < _a.length; _i++) {
-                var removableElem = _a[_i];
-                if (this.containsProcessed(removableElem))
+            var _this = this;
+            var merger = new Jhtml.Merger(this.rootElem, this.headElem, this.bodyElem, this.containerElem, newMeta.containerElement);
+            merger.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
+            merger.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+            var removableElements = new Array();
+            var remainingElements = merger.remainingElements;
+            var remainingElement;
+            while (remainingElement = remainingElements.pop()) {
+                if (this.containsBlocked(remainingElement))
                     continue;
-                removableElem.remove();
-            }
-            this.processedElements = null;
-            this.removableElems = null;
-            this.newMeta = null;
-            this.loadObserver = null;
-            return loadObserver;
-        };
-        MetaState.prototype.mergeInto = function (newElems, parentElem, target) {
-            var mergedElems = [];
-            var curElems = Jhtml.Util.array(parentElem.children);
-            for (var i in newElems) {
-                var newElem = newElems[i];
-                var mergedElem = this.mergeElem(curElems, newElem, target);
-                if (mergedElem === this.containerElem)
-                    continue;
-                this.mergeInto(Jhtml.Util.array(newElem.children), mergedElem, target);
-                mergedElems.push(mergedElem);
-            }
-            for (var i = 0; i < curElems.length; i++) {
-                if (-1 < mergedElems.indexOf(curElems[i]))
-                    continue;
-                this.removableElems.push(curElems[i]);
-                curElems.splice(i, 1);
-            }
-            var curElem = curElems.shift();
-            for (var i = 0; i < mergedElems.length; i++) {
-                var mergedElem = mergedElems[i];
-                if (mergedElem === curElem) {
-                    curElem = curElems.shift();
+                if (-1 == this.usedElements.indexOf(remainingElement)) {
+                    this.blockedElements.push(remainingElement);
                     continue;
                 }
-                this.loadObserver.addElement(mergedElem);
-                if (!curElem) {
-                    parentElem.appendChild(mergedElem);
-                    continue;
-                }
-                parentElem.insertBefore(mergedElem, curElem);
-                var j = void 0;
-                if (-1 < (j = curElems.indexOf(mergedElem))) {
-                    curElems.splice(j, 1);
-                }
+                removableElements.push(remainingElement);
             }
-        };
-        MetaState.prototype.mergeElem = function (preferedElems, newElem, target) {
-            if (newElem === this.newMeta.containerElement) {
-                if (!this.compareExact(this.containerElem, newElem, false)) {
-                    var mergedElem_1 = newElem.cloneNode(false);
-                    this.processedElements.push(mergedElem_1);
-                    return mergedElem_1;
-                }
-                this.processedElements.push(this.containerElem);
-                return this.containerElem;
-            }
-            if (newElem.contains(this.newMeta.containerElement)) {
-                var mergedElem_2;
-                if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
-                    this.processedElements.push(mergedElem_2);
-                    return mergedElem_2;
-                }
-                return this.cloneNewElem(newElem, false);
-            }
-            var mergedElem;
-            switch (newElem.tagName) {
-                case "SCRIPT":
-                    if ((mergedElem = this.filter(preferedElems, newElem, ["src", "type"], true, false))
-                        || (mergedElem = this.find(newElem, ["src", "type"], true, false))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
+            merger.loadObserver.whenLoaded(function () {
+                for (var _i = 0, removableElements_1 = removableElements; _i < removableElements_1.length; _i++) {
+                    var removableElement = removableElements_1[_i];
+                    if (-1 < _this.usedElements.indexOf(removableElement)) {
+                        removableElement.remove();
                     }
-                    return this.cloneNewElem(newElem, true);
-                case "STYLE":
-                case "LINK":
-                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
-                        || (mergedElem = this.findExact(newElem, true))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
-                    }
-                    return this.cloneNewElem(newElem, true);
-                default:
-                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
-                        || (mergedElem = this.findExact(newElem, true, target))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
-                    }
-                    return this.cloneNewElem(newElem, false);
-            }
-        };
-        MetaState.prototype.cloneNewElem = function (newElem, deep) {
-            var mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
-            for (var _i = 0, _a = this.attrNames(newElem); _i < _a.length; _i++) {
-                var name_3 = _a[_i];
-                mergedElem.setAttribute(name_3, newElem.getAttribute(name_3));
-            }
-            if (deep) {
-                mergedElem.innerHTML = newElem.innerHTML;
-            }
-            this.processedElements.push(mergedElem);
-            return mergedElem;
-        };
-        MetaState.prototype.attrNames = function (elem) {
-            var attrNames = [];
-            var attrs = elem.attributes;
-            for (var i = 0; i < attrs.length; i++) {
-                attrNames.push(attrs[i].nodeName);
-            }
-            return attrNames;
-        };
-        MetaState.prototype.findExact = function (matchingElem, checkInner, target) {
-            if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
-            return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
-        };
-        MetaState.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
-            if (target === void 0) { target = Meta.Target.HEAD | Meta.Target.BODY; }
-            var foundElem = null;
-            if ((target & Meta.Target.HEAD)
-                && (foundElem = this.findIn(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
-                return foundElem;
-            }
-            if ((target & Meta.Target.BODY)
-                && (foundElem = this.findIn(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
-                return foundElem;
-            }
-            return null;
-        };
-        MetaState.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
-            for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
-                var tagElem = _a[_i];
-                if (tagElem === this.containerElem || tagElem.contains(this.containerElem)
-                    || this.containerElem.contains(tagElem) || this.containsProcessed(tagElem)) {
-                    continue;
                 }
-                if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
-                    return tagElem;
-                }
-            }
-            return null;
+            });
+            return merger.loadObserver;
         };
-        MetaState.prototype.filterExact = function (elems, matchingElem, checkInner) {
-            return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
-        };
-        MetaState.prototype.containsProcessed = function (elem) {
-            return -1 < this.processedElements.indexOf(elem);
-        };
-        MetaState.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
-            for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
-                var elem = elems_1[_i];
-                if (!this.containsProcessed(elem)
-                    && this.compare(elem, matchingElem, attrNames, checkInner, checkAttrNum)) {
-                    return elem;
-                }
-            }
-        };
-        MetaState.prototype.compareExact = function (elem1, elem2, checkInner) {
-            return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
-        };
-        MetaState.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
-            if (elem1.tagName !== elem2.tagName)
-                return false;
-            for (var _i = 0, attrNames_1 = attrNames; _i < attrNames_1.length; _i++) {
-                var attrName = attrNames_1[_i];
-                if (elem1.getAttribute(attrName) !== elem2.getAttribute(attrName)) {
-                    return false;
-                }
-            }
-            if (checkInner && elem1.innerHTML.trim() !== elem2.innerHTML.trim()) {
-                return false;
-            }
-            if (checkAttrNum && elem1.attributes.length != elem2.attributes.length) {
-                return false;
-            }
-            return true;
+        MetaState.prototype.containsBlocked = function (element) {
+            return -1 < this.blockedElements.indexOf(element);
         };
         return MetaState;
     }());
@@ -853,12 +687,12 @@ var Jhtml;
             var comps = {};
             for (var _i = 0, _a = Jhtml.Util.find(containerElem, ModelFactory.COMP_SELECTOR); _i < _a.length; _i++) {
                 var compElem = _a[_i];
-                var name_4 = compElem.getAttribute(ModelFactory.COMP_ATTR);
-                if (comps[name_4]) {
-                    throw new Jhtml.ParseError("Duplicated comp name: " + name_4);
+                var name_3 = compElem.getAttribute(ModelFactory.COMP_ATTR);
+                if (comps[name_3]) {
+                    throw new Jhtml.ParseError("Duplicated comp name: " + name_3);
                 }
-                container.compElements[name_4] = compElem;
-                comps[name_4] = new Jhtml.Comp(name_4, compElem, model);
+                container.compElements[name_3] = compElem;
+                comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
             }
             return comps;
         };
@@ -890,6 +724,7 @@ var Jhtml;
         function Monitor(container, history) {
             var _this = this;
             this.container = container;
+            this.active = true;
             this.compHandlers = {};
             this.pushing = false;
             this.context = Jhtml.Context.from(container.ownerDocument);
@@ -952,7 +787,7 @@ var Jhtml;
         };
         Monitor.prototype.historyChanged = function () {
             var _this = this;
-            if (this.pushing)
+            if (this.pushing || !this.active)
                 return;
             var currentPage = this.history.currentPage;
             if (!currentPage.promise) {
@@ -1431,19 +1266,19 @@ var Jhtml;
         };
         Url.prototype.compileQueryParts = function (parts, queryExt, prefix) {
             for (var key in queryExt) {
-                var name_5 = null;
+                var name_4 = null;
                 if (prefix) {
-                    name_5 = prefix + "[" + key + "]";
+                    name_4 = prefix + "[" + key + "]";
                 }
                 else {
-                    name_5 = key;
+                    name_4 = key;
                 }
                 var value = queryExt[key];
                 if (value instanceof Array || value instanceof Object) {
-                    this.compileQueryParts(parts, value, name_5);
+                    this.compileQueryParts(parts, value, name_4);
                 }
                 else {
-                    parts.push(encodeURIComponent(name_5) + "=" + encodeURIComponent(value));
+                    parts.push(encodeURIComponent(name_4) + "=" + encodeURIComponent(value));
                 }
             }
         };
@@ -1743,8 +1578,8 @@ var Jhtml;
                 }
             };
             Scanner.scanArray = function (elems) {
-                for (var _i = 0, elems_2 = elems; _i < elems_2.length; _i++) {
-                    var elem = elems_2[_i];
+                for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
+                    var elem = elems_1[_i];
                     Scanner.scan(elem);
                 }
             };
@@ -1893,5 +1728,230 @@ var Jhtml;
         }());
         Util.ElemConfigReader = ElemConfigReader;
     })(Util = Jhtml.Util || (Jhtml.Util = {}));
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
+    var Merger = (function () {
+        function Merger(rootElem, headElem, bodyElem, currentContainerElem, newContainerElem) {
+            this.rootElem = rootElem;
+            this.headElem = headElem;
+            this.bodyElem = bodyElem;
+            this.currentContainerElem = currentContainerElem;
+            this.newContainerElem = newContainerElem;
+            this._loadObserver = new Jhtml.LoadObserver();
+            this._processedElements = [];
+            this._blockedElements = [];
+            this.removableElements = [];
+        }
+        Object.defineProperty(Merger.prototype, "loadObserver", {
+            get: function () {
+                return this._loadObserver;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Merger.prototype, "processedElements", {
+            get: function () {
+                return this._processedElements;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Merger.prototype, "remainingElements", {
+            get: function () {
+                var _this = this;
+                return this.removableElements.filter(function (removableElement) { return !_this.containsProcessed(removableElement); });
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Merger.prototype.importInto = function (newElems, parentElem, target) {
+            var importedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
+            for (var i in newElems) {
+                var newElem = newElems[i];
+                var importedElem = this.mergeElem(curElems, newElem, target);
+                if (importedElem === this.currentContainerElem)
+                    continue;
+                this.importInto(Jhtml.Util.array(newElem.children), importedElem, target);
+                importedElems.push(importedElem);
+            }
+            for (var i = 0; i < importedElems.length; i++) {
+                var importedElem = importedElems[i];
+                if (-1 < curElems.indexOf(importedElem)) {
+                    continue;
+                }
+                this.loadObserver.addElement(importedElem);
+                parentElem.appendChild(importedElem);
+            }
+        };
+        Merger.prototype.mergeInto = function (newElems, parentElem, target) {
+            var mergedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
+            for (var i in newElems) {
+                var newElem = newElems[i];
+                var mergedElem = this.mergeElem(curElems, newElem, target);
+                if (mergedElem === this.currentContainerElem)
+                    continue;
+                this.mergeInto(Jhtml.Util.array(newElem.children), mergedElem, target);
+                mergedElems.push(mergedElem);
+            }
+            for (var i = 0; i < curElems.length; i++) {
+                if (-1 < mergedElems.indexOf(curElems[i]))
+                    continue;
+                this.removableElements.push(curElems[i]);
+                curElems.splice(i, 1);
+            }
+            var curElem = curElems.shift();
+            for (var i = 0; i < mergedElems.length; i++) {
+                var mergedElem = mergedElems[i];
+                if (mergedElem === curElem) {
+                    curElem = curElems.shift();
+                    continue;
+                }
+                this.loadObserver.addElement(mergedElem);
+                if (!curElem) {
+                    parentElem.appendChild(mergedElem);
+                    continue;
+                }
+                parentElem.insertBefore(mergedElem, curElem);
+                var j = void 0;
+                if (-1 < (j = curElems.indexOf(mergedElem))) {
+                    curElems.splice(j, 1);
+                }
+            }
+        };
+        Merger.prototype.mergeElem = function (preferedElems, newElem, target) {
+            if (newElem === this.newContainerElem) {
+                if (!this.compareExact(this.currentContainerElem, newElem, false)) {
+                    var mergedElem_1 = newElem.cloneNode(false);
+                    this.processedElements.push(mergedElem_1);
+                    return mergedElem_1;
+                }
+                this.processedElements.push(this.currentContainerElem);
+                return this.currentContainerElem;
+            }
+            if (this.newContainerElem && newElem.contains(this.newContainerElem)) {
+                var mergedElem_2;
+                if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
+                    this.processedElements.push(mergedElem_2);
+                    return mergedElem_2;
+                }
+                return this.cloneNewElem(newElem, false);
+            }
+            var mergedElem;
+            switch (newElem.tagName) {
+                case "SCRIPT":
+                    if ((mergedElem = this.filter(preferedElems, newElem, ["src", "type"], true, false))
+                        || (mergedElem = this.find(newElem, ["src", "type"], true, false))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                case "STYLE":
+                case "LINK":
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                default:
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true, target))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, false);
+            }
+        };
+        Merger.prototype.cloneNewElem = function (newElem, deep) {
+            var mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
+            for (var _i = 0, _a = this.attrNames(newElem); _i < _a.length; _i++) {
+                var name_5 = _a[_i];
+                mergedElem.setAttribute(name_5, newElem.getAttribute(name_5));
+            }
+            if (deep) {
+                mergedElem.innerHTML = newElem.innerHTML;
+            }
+            this.processedElements.push(mergedElem);
+            return mergedElem;
+        };
+        Merger.prototype.attrNames = function (elem) {
+            var attrNames = [];
+            var attrs = elem.attributes;
+            for (var i = 0; i < attrs.length; i++) {
+                attrNames.push(attrs[i].nodeName);
+            }
+            return attrNames;
+        };
+        Merger.prototype.findExact = function (matchingElem, checkInner, target) {
+            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
+            return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
+        };
+        Merger.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
+            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
+            var foundElem = null;
+            if ((target & Jhtml.Meta.Target.HEAD)
+                && (foundElem = this.findIn(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                return foundElem;
+            }
+            if ((target & Jhtml.Meta.Target.BODY)
+                && (foundElem = this.findIn(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                return foundElem;
+            }
+            return null;
+        };
+        Merger.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
+            for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
+                var tagElem = _a[_i];
+                if (tagElem === this.currentContainerElem || tagElem.contains(this.currentContainerElem)
+                    || this.currentContainerElem.contains(tagElem) || this.containsProcessed(tagElem)) {
+                    continue;
+                }
+                if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
+                    return tagElem;
+                }
+            }
+            return null;
+        };
+        Merger.prototype.filterExact = function (elems, matchingElem, checkInner) {
+            return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
+        };
+        Merger.prototype.containsProcessed = function (elem) {
+            return -1 < this.processedElements.indexOf(elem);
+        };
+        Merger.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
+            for (var _i = 0, elems_2 = elems; _i < elems_2.length; _i++) {
+                var elem = elems_2[_i];
+                if (!this.containsProcessed(elem)
+                    && this.compare(elem, matchingElem, attrNames, checkInner, checkAttrNum)) {
+                    return elem;
+                }
+            }
+        };
+        Merger.prototype.compareExact = function (elem1, elem2, checkInner) {
+            return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
+        };
+        Merger.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
+            if (elem1.tagName !== elem2.tagName)
+                return false;
+            for (var _i = 0, attrNames_1 = attrNames; _i < attrNames_1.length; _i++) {
+                var attrName = attrNames_1[_i];
+                if (elem1.getAttribute(attrName) !== elem2.getAttribute(attrName)) {
+                    return false;
+                }
+            }
+            if (checkInner && elem1.innerHTML.trim() !== elem2.innerHTML.trim()) {
+                return false;
+            }
+            if (checkAttrNum && elem1.attributes.length != elem2.attributes.length) {
+                return false;
+            }
+            return true;
+        };
+        return Merger;
+    }());
+    Jhtml.Merger = Merger;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

@@ -27,11 +27,11 @@ namespace Jhtml {
         private poping: boolean = false;
         
         private onPopstate(evt) {
-        	let url: Url = Url.create(this.window.location.href);
+        	let url: Url = Url.create(this.window.location.toString());
         	let index: number = 0;
         
-            if (evt.state && evt.state.historyIndex) {
-            	 index = evt.state.historyIndex;
+        	if (evt.state && evt.state.jhtmlHistoryIndex) {
+            	 index = evt.state.jhtmlHistoryIndex;
             }
             
             try {
@@ -59,11 +59,10 @@ namespace Jhtml {
         }
         
         private onPush(entry: History.Entry) {
-        	entry.browserHistoryIndex = this.window.history.length;
         	let urlStr = entry.page.url.toString();
         	let stateObj = {
-        		"url": urlStr,
-				"historyIndex": entry.index
+        		"jhtmlUrl": urlStr,
+				"jhtmlHistoryIndex": entry.index
         	};
             this.window.history.pushState(stateObj, "Page", urlStr);
         }

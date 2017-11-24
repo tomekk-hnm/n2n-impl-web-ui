@@ -3,6 +3,7 @@ namespace Jhtml {
 	export class Monitor {
 		public context: Context;
 		public history: History;
+		public active: boolean = true;
 		private compHandlers: CompHandlerReg = {};
 		
 		constructor(private container: Element, history: History) {
@@ -71,7 +72,7 @@ namespace Jhtml {
 		}
 		
 		private historyChanged() {
-		    if (this.pushing) return;
+		    if (this.pushing || !this.active) return;
 		    
 		    let currentPage = this.history.currentPage;
 		    
