@@ -46,13 +46,13 @@ namespace Jhtml {
         	return this.additionalData;
         }
         
-        exec(monitor: Monitor) {
+    	exec(monitor: Monitor) {
             switch (this.back) {
             case RedirectDirective.Type.REFERER:
                 if (!monitor.history.currentPage.url.equals(this.srcUrl)) return;
             case RedirectDirective.Type.BACK:
                 if (monitor.history.currentEntry.index > 0) {
-                	if (!this.requestConfig) {
+                	if (!this.requestConfig.forceReload) {
                 		monitor.history.go(monitor.history.currentEntry.index - 1);
                 	} else {
                 		let entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
