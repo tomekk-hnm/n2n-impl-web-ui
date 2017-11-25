@@ -40,6 +40,7 @@ class JhtmlRedirect extends BufferedPayload {
 	
 	const DIRECTIVE_REDIRECT = 'redirect';
 	const DIRECTIVE_REDIRECT_BACK = 'redirectBack';
+	const DIRECTIVE_REDIRECT_TO_REFERER = 'redirectToReferer';
 	
 	public function __construct(string $httpLocation, string $directive = null, JhtmlExec $jhtmlExec = null,
 			array $additionalAttrs = array())  {
@@ -95,8 +96,19 @@ class JhtmlRedirect extends BufferedPayload {
 		return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT_BACK, $jhtmlExec, $additionalAttrs);
 	}
 	
-	public static function r(string $httpLocation, JhtmlExec $jhtmlExec = null,
+	/**
+	 * @param string $httpLocation
+	 * @param JhtmlExec $jhtmlExec
+	 * @param array $additionalAttrs
+	 * @return \n2n\impl\web\ui\view\jhtml\JhtmlRedirect
+	 */
+	public static function referer(string $httpLocation, JhtmlExec $jhtmlExec = null,
+	    array $additionalAttrs = array()) {
+	        return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT_TO_REFERER, $jhtmlExec, $additionalAttrs);
+	}
+	
+	public static function redirect(string $httpLocation, JhtmlExec $jhtmlExec = null,
 			array $additionalAttrs = array()) {
-				return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT, $jhtmlExec, $additionalAttrs);
+		return new JhtmlRedirect($httpLocation, self::DIRECTIVE_REDIRECT, $jhtmlExec, $additionalAttrs);
 	}
 }

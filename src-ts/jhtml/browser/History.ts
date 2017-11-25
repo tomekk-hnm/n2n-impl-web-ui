@@ -23,6 +23,14 @@ namespace Jhtml {
         	return null;
         }
         
+        getEntryByIndex(index: number): History.Entry {
+        	if (this._entries[index]) {
+        		return this._entries[index];
+        	}
+        	
+        	return null;
+        }
+        
         getPageByUrl(url: Url): Page {
         	for (let entry of this._entries) {
         		if (!entry.page.url.equals(url)) continue;

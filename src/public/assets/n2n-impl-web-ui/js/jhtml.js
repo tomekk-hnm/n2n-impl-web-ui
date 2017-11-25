@@ -140,6 +140,12 @@ var Jhtml;
             enumerable: true,
             configurable: true
         });
+        History.prototype.getEntryByIndex = function (index) {
+            if (this._entries[index]) {
+                return this._entries[index];
+            }
+            return null;
+        };
         History.prototype.getPageByUrl = function (url) {
             for (var _i = 0, _a = this._entries; _i < _a.length; _i++) {
                 var entry = _a[_i];
@@ -429,6 +435,231 @@ var Jhtml;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
+    var Merger = (function () {
+        function Merger(rootElem, headElem, bodyElem, currentContainerElem, newContainerElem) {
+            this.rootElem = rootElem;
+            this.headElem = headElem;
+            this.bodyElem = bodyElem;
+            this.currentContainerElem = currentContainerElem;
+            this.newContainerElem = newContainerElem;
+            this._loadObserver = new Jhtml.LoadObserver();
+            this._processedElements = [];
+            this._blockedElements = [];
+            this.removableElements = [];
+        }
+        Object.defineProperty(Merger.prototype, "loadObserver", {
+            get: function () {
+                return this._loadObserver;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Merger.prototype, "processedElements", {
+            get: function () {
+                return this._processedElements;
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Object.defineProperty(Merger.prototype, "remainingElements", {
+            get: function () {
+                var _this = this;
+                return this.removableElements.filter(function (removableElement) { return !_this.containsProcessed(removableElement); });
+            },
+            enumerable: true,
+            configurable: true
+        });
+        Merger.prototype.importInto = function (newElems, parentElem, target) {
+            var importedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
+            for (var i in newElems) {
+                var newElem = newElems[i];
+                var importedElem = this.mergeElem(curElems, newElem, target);
+                if (importedElem === this.currentContainerElem)
+                    continue;
+                this.importInto(Jhtml.Util.array(newElem.children), importedElem, target);
+                importedElems.push(importedElem);
+            }
+            for (var i = 0; i < importedElems.length; i++) {
+                var importedElem = importedElems[i];
+                if (-1 < curElems.indexOf(importedElem)) {
+                    continue;
+                }
+                this.loadObserver.addElement(importedElem);
+                parentElem.appendChild(importedElem);
+            }
+        };
+        Merger.prototype.mergeInto = function (newElems, parentElem, target) {
+            var mergedElems = [];
+            var curElems = Jhtml.Util.array(parentElem.children);
+            for (var i in newElems) {
+                var newElem = newElems[i];
+                var mergedElem = this.mergeElem(curElems, newElem, target);
+                if (mergedElem === this.currentContainerElem)
+                    continue;
+                this.mergeInto(Jhtml.Util.array(newElem.children), mergedElem, target);
+                mergedElems.push(mergedElem);
+            }
+            for (var i = 0; i < curElems.length; i++) {
+                if (-1 < mergedElems.indexOf(curElems[i]))
+                    continue;
+                this.removableElements.push(curElems[i]);
+                curElems.splice(i, 1);
+            }
+            var curElem = curElems.shift();
+            for (var i = 0; i < mergedElems.length; i++) {
+                var mergedElem = mergedElems[i];
+                if (mergedElem === curElem) {
+                    curElem = curElems.shift();
+                    continue;
+                }
+                this.loadObserver.addElement(mergedElem);
+                if (!curElem) {
+                    parentElem.appendChild(mergedElem);
+                    continue;
+                }
+                parentElem.insertBefore(mergedElem, curElem);
+                var j = void 0;
+                if (-1 < (j = curElems.indexOf(mergedElem))) {
+                    curElems.splice(j, 1);
+                }
+            }
+        };
+        Merger.prototype.mergeElem = function (preferedElems, newElem, target) {
+            if (newElem === this.newContainerElem) {
+                if (!this.compareExact(this.currentContainerElem, newElem, false)) {
+                    var mergedElem_1 = newElem.cloneNode(false);
+                    this.processedElements.push(mergedElem_1);
+                    return mergedElem_1;
+                }
+                this.processedElements.push(this.currentContainerElem);
+                return this.currentContainerElem;
+            }
+            if (this.newContainerElem && newElem.contains(this.newContainerElem)) {
+                var mergedElem_2;
+                if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
+                    this.processedElements.push(mergedElem_2);
+                    return mergedElem_2;
+                }
+                return this.cloneNewElem(newElem, false);
+            }
+            var mergedElem;
+            switch (newElem.tagName) {
+                case "SCRIPT":
+                    if ((mergedElem = this.filter(preferedElems, newElem, ["src", "type"], true, false))
+                        || (mergedElem = this.find(newElem, ["src", "type"], true, false))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                case "STYLE":
+                case "LINK":
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, true);
+                default:
+                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
+                        || (mergedElem = this.findExact(newElem, true, target))) {
+                        this.processedElements.push(mergedElem);
+                        return mergedElem;
+                    }
+                    return this.cloneNewElem(newElem, false);
+            }
+        };
+        Merger.prototype.cloneNewElem = function (newElem, deep) {
+            var mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
+            for (var _i = 0, _a = this.attrNames(newElem); _i < _a.length; _i++) {
+                var name_3 = _a[_i];
+                mergedElem.setAttribute(name_3, newElem.getAttribute(name_3));
+            }
+            if (deep) {
+                mergedElem.innerHTML = newElem.innerHTML;
+            }
+            this.processedElements.push(mergedElem);
+            return mergedElem;
+        };
+        Merger.prototype.attrNames = function (elem) {
+            var attrNames = [];
+            var attrs = elem.attributes;
+            for (var i = 0; i < attrs.length; i++) {
+                attrNames.push(attrs[i].nodeName);
+            }
+            return attrNames;
+        };
+        Merger.prototype.findExact = function (matchingElem, checkInner, target) {
+            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
+            return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
+        };
+        Merger.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
+            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
+            var foundElem = null;
+            if ((target & Jhtml.Meta.Target.HEAD)
+                && (foundElem = this.findIn(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                return foundElem;
+            }
+            if ((target & Jhtml.Meta.Target.BODY)
+                && (foundElem = this.findIn(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
+                return foundElem;
+            }
+            return null;
+        };
+        Merger.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
+            for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
+                var tagElem = _a[_i];
+                if (tagElem === this.currentContainerElem || tagElem.contains(this.currentContainerElem)
+                    || this.currentContainerElem.contains(tagElem) || this.containsProcessed(tagElem)) {
+                    continue;
+                }
+                if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
+                    return tagElem;
+                }
+            }
+            return null;
+        };
+        Merger.prototype.filterExact = function (elems, matchingElem, checkInner) {
+            return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
+        };
+        Merger.prototype.containsProcessed = function (elem) {
+            return -1 < this.processedElements.indexOf(elem);
+        };
+        Merger.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
+            for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
+                var elem = elems_1[_i];
+                if (!this.containsProcessed(elem)
+                    && this.compare(elem, matchingElem, attrNames, checkInner, checkAttrNum)) {
+                    return elem;
+                }
+            }
+        };
+        Merger.prototype.compareExact = function (elem1, elem2, checkInner) {
+            return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
+        };
+        Merger.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
+            if (elem1.tagName !== elem2.tagName)
+                return false;
+            for (var _i = 0, attrNames_1 = attrNames; _i < attrNames_1.length; _i++) {
+                var attrName = attrNames_1[_i];
+                if (elem1.getAttribute(attrName) !== elem2.getAttribute(attrName)) {
+                    return false;
+                }
+            }
+            if (checkInner && elem1.innerHTML.trim() !== elem2.innerHTML.trim()) {
+                return false;
+            }
+            if (checkAttrNum && elem1.attributes.length != elem2.attributes.length) {
+                return false;
+            }
+            return true;
+        };
+        return Merger;
+    }());
+    Jhtml.Merger = Merger;
+})(Jhtml || (Jhtml = {}));
+var Jhtml;
+(function (Jhtml) {
     var Meta = (function () {
         function Meta() {
             this.headElements = [];
@@ -683,12 +914,12 @@ var Jhtml;
             var comps = {};
             for (var _i = 0, _a = Jhtml.Util.find(containerElem, ModelFactory.COMP_SELECTOR); _i < _a.length; _i++) {
                 var compElem = _a[_i];
-                var name_3 = compElem.getAttribute(ModelFactory.COMP_ATTR);
-                if (comps[name_3]) {
-                    throw new Jhtml.ParseError("Duplicated comp name: " + name_3);
+                var name_4 = compElem.getAttribute(ModelFactory.COMP_ATTR);
+                if (comps[name_4]) {
+                    throw new Jhtml.ParseError("Duplicated comp name: " + name_4);
                 }
-                container.compElements[name_3] = compElem;
-                comps[name_3] = new Jhtml.Comp(name_3, compElem, model);
+                container.compElements[name_4] = compElem;
+                comps[name_4] = new Jhtml.Comp(name_4, compElem, model);
             }
             return comps;
         };
@@ -1019,9 +1250,10 @@ var Jhtml;
     }());
     Jhtml.ReplaceDirective = ReplaceDirective;
     var RedirectDirective = (function () {
-        function RedirectDirective(back, url, requestConfig, additionalData) {
+        function RedirectDirective(srcUrl, back, targetUrl, requestConfig, additionalData) {
+            this.srcUrl = srcUrl;
             this.back = back;
-            this.url = url;
+            this.targetUrl = targetUrl;
             this.requestConfig = requestConfig;
             this.additionalData = additionalData;
         }
@@ -1029,13 +1261,36 @@ var Jhtml;
             return this.additionalData;
         };
         RedirectDirective.prototype.exec = function (monitor) {
-            if (this.back && !monitor.history.currentPage.url.equals(this.url))
-                return;
-            monitor.exec(this.url, this.requestConfig);
+            switch (this.back) {
+                case RedirectDirective.Type.REFERER:
+                    if (!monitor.history.currentPage.url.equals(this.srcUrl))
+                        return;
+                case RedirectDirective.Type.BACK:
+                    if (monitor.history.currentEntry.index > 0) {
+                        if (!this.requestConfig) {
+                            monitor.history.go(monitor.history.currentEntry.index - 1);
+                        }
+                        else {
+                            var entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
+                            monitor.exec(entry.page.url, this.requestConfig);
+                        }
+                    }
+                default:
+                    monitor.exec(this.targetUrl, this.requestConfig);
+                    break;
+            }
         };
         return RedirectDirective;
     }());
     Jhtml.RedirectDirective = RedirectDirective;
+    (function (RedirectDirective) {
+        var Type;
+        (function (Type) {
+            Type[Type["TARGET"] = 0] = "TARGET";
+            Type[Type["REFERER"] = 1] = "REFERER";
+            Type[Type["BACK"] = 2] = "BACK";
+        })(Type = RedirectDirective.Type || (RedirectDirective.Type = {}));
+    })(RedirectDirective = Jhtml.RedirectDirective || (Jhtml.RedirectDirective = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -1114,9 +1369,11 @@ var Jhtml;
         Request.prototype.scanForDirective = function (url, jsonObj) {
             switch (jsonObj.directive) {
                 case "redirect":
-                    return new Jhtml.RedirectDirective(false, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
+                    return new Jhtml.RedirectDirective(url, Jhtml.RedirectDirective.Type.TARGET, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
+                case "redirectToReferer":
+                    return new Jhtml.RedirectDirective(url, Jhtml.RedirectDirective.Type.REFERER, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 case "redirectBack":
-                    return new Jhtml.RedirectDirective(true, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
+                    return new Jhtml.RedirectDirective(url, Jhtml.RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 default:
                     return null;
             }
@@ -1262,19 +1519,19 @@ var Jhtml;
         };
         Url.prototype.compileQueryParts = function (parts, queryExt, prefix) {
             for (var key in queryExt) {
-                var name_4 = null;
+                var name_5 = null;
                 if (prefix) {
-                    name_4 = prefix + "[" + key + "]";
+                    name_5 = prefix + "[" + key + "]";
                 }
                 else {
-                    name_4 = key;
+                    name_5 = key;
                 }
                 var value = queryExt[key];
                 if (value instanceof Array || value instanceof Object) {
-                    this.compileQueryParts(parts, value, name_4);
+                    this.compileQueryParts(parts, value, name_5);
                 }
                 else {
-                    parts.push(encodeURIComponent(name_4) + "=" + encodeURIComponent(value));
+                    parts.push(encodeURIComponent(name_5) + "=" + encodeURIComponent(value));
                 }
             }
         };
@@ -1574,8 +1831,8 @@ var Jhtml;
                 }
             };
             Scanner.scanArray = function (elems) {
-                for (var _i = 0, elems_1 = elems; _i < elems_1.length; _i++) {
-                    var elem = elems_1[_i];
+                for (var _i = 0, elems_2 = elems; _i < elems_2.length; _i++) {
+                    var elem = elems_2[_i];
                     Scanner.scan(elem);
                 }
             };
@@ -1724,230 +1981,5 @@ var Jhtml;
         }());
         Util.ElemConfigReader = ElemConfigReader;
     })(Util = Jhtml.Util || (Jhtml.Util = {}));
-})(Jhtml || (Jhtml = {}));
-var Jhtml;
-(function (Jhtml) {
-    var Merger = (function () {
-        function Merger(rootElem, headElem, bodyElem, currentContainerElem, newContainerElem) {
-            this.rootElem = rootElem;
-            this.headElem = headElem;
-            this.bodyElem = bodyElem;
-            this.currentContainerElem = currentContainerElem;
-            this.newContainerElem = newContainerElem;
-            this._loadObserver = new Jhtml.LoadObserver();
-            this._processedElements = [];
-            this._blockedElements = [];
-            this.removableElements = [];
-        }
-        Object.defineProperty(Merger.prototype, "loadObserver", {
-            get: function () {
-                return this._loadObserver;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Merger.prototype, "processedElements", {
-            get: function () {
-                return this._processedElements;
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Object.defineProperty(Merger.prototype, "remainingElements", {
-            get: function () {
-                var _this = this;
-                return this.removableElements.filter(function (removableElement) { return !_this.containsProcessed(removableElement); });
-            },
-            enumerable: true,
-            configurable: true
-        });
-        Merger.prototype.importInto = function (newElems, parentElem, target) {
-            var importedElems = [];
-            var curElems = Jhtml.Util.array(parentElem.children);
-            for (var i in newElems) {
-                var newElem = newElems[i];
-                var importedElem = this.mergeElem(curElems, newElem, target);
-                if (importedElem === this.currentContainerElem)
-                    continue;
-                this.importInto(Jhtml.Util.array(newElem.children), importedElem, target);
-                importedElems.push(importedElem);
-            }
-            for (var i = 0; i < importedElems.length; i++) {
-                var importedElem = importedElems[i];
-                if (-1 < curElems.indexOf(importedElem)) {
-                    continue;
-                }
-                this.loadObserver.addElement(importedElem);
-                parentElem.appendChild(importedElem);
-            }
-        };
-        Merger.prototype.mergeInto = function (newElems, parentElem, target) {
-            var mergedElems = [];
-            var curElems = Jhtml.Util.array(parentElem.children);
-            for (var i in newElems) {
-                var newElem = newElems[i];
-                var mergedElem = this.mergeElem(curElems, newElem, target);
-                if (mergedElem === this.currentContainerElem)
-                    continue;
-                this.mergeInto(Jhtml.Util.array(newElem.children), mergedElem, target);
-                mergedElems.push(mergedElem);
-            }
-            for (var i = 0; i < curElems.length; i++) {
-                if (-1 < mergedElems.indexOf(curElems[i]))
-                    continue;
-                this.removableElements.push(curElems[i]);
-                curElems.splice(i, 1);
-            }
-            var curElem = curElems.shift();
-            for (var i = 0; i < mergedElems.length; i++) {
-                var mergedElem = mergedElems[i];
-                if (mergedElem === curElem) {
-                    curElem = curElems.shift();
-                    continue;
-                }
-                this.loadObserver.addElement(mergedElem);
-                if (!curElem) {
-                    parentElem.appendChild(mergedElem);
-                    continue;
-                }
-                parentElem.insertBefore(mergedElem, curElem);
-                var j = void 0;
-                if (-1 < (j = curElems.indexOf(mergedElem))) {
-                    curElems.splice(j, 1);
-                }
-            }
-        };
-        Merger.prototype.mergeElem = function (preferedElems, newElem, target) {
-            if (newElem === this.newContainerElem) {
-                if (!this.compareExact(this.currentContainerElem, newElem, false)) {
-                    var mergedElem_1 = newElem.cloneNode(false);
-                    this.processedElements.push(mergedElem_1);
-                    return mergedElem_1;
-                }
-                this.processedElements.push(this.currentContainerElem);
-                return this.currentContainerElem;
-            }
-            if (this.newContainerElem && newElem.contains(this.newContainerElem)) {
-                var mergedElem_2;
-                if (mergedElem_2 = this.filterExact(preferedElems, newElem, false)) {
-                    this.processedElements.push(mergedElem_2);
-                    return mergedElem_2;
-                }
-                return this.cloneNewElem(newElem, false);
-            }
-            var mergedElem;
-            switch (newElem.tagName) {
-                case "SCRIPT":
-                    if ((mergedElem = this.filter(preferedElems, newElem, ["src", "type"], true, false))
-                        || (mergedElem = this.find(newElem, ["src", "type"], true, false))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
-                    }
-                    return this.cloneNewElem(newElem, true);
-                case "STYLE":
-                case "LINK":
-                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
-                        || (mergedElem = this.findExact(newElem, true))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
-                    }
-                    return this.cloneNewElem(newElem, true);
-                default:
-                    if ((mergedElem = this.filterExact(preferedElems, newElem, true))
-                        || (mergedElem = this.findExact(newElem, true, target))) {
-                        this.processedElements.push(mergedElem);
-                        return mergedElem;
-                    }
-                    return this.cloneNewElem(newElem, false);
-            }
-        };
-        Merger.prototype.cloneNewElem = function (newElem, deep) {
-            var mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
-            for (var _i = 0, _a = this.attrNames(newElem); _i < _a.length; _i++) {
-                var name_5 = _a[_i];
-                mergedElem.setAttribute(name_5, newElem.getAttribute(name_5));
-            }
-            if (deep) {
-                mergedElem.innerHTML = newElem.innerHTML;
-            }
-            this.processedElements.push(mergedElem);
-            return mergedElem;
-        };
-        Merger.prototype.attrNames = function (elem) {
-            var attrNames = [];
-            var attrs = elem.attributes;
-            for (var i = 0; i < attrs.length; i++) {
-                attrNames.push(attrs[i].nodeName);
-            }
-            return attrNames;
-        };
-        Merger.prototype.findExact = function (matchingElem, checkInner, target) {
-            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
-            return this.find(matchingElem, this.attrNames(matchingElem), checkInner, true, target);
-        };
-        Merger.prototype.find = function (matchingElem, matchingAttrNames, checkInner, checkAttrNum, target) {
-            if (target === void 0) { target = Jhtml.Meta.Target.HEAD | Jhtml.Meta.Target.BODY; }
-            var foundElem = null;
-            if ((target & Jhtml.Meta.Target.HEAD)
-                && (foundElem = this.findIn(this.headElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
-                return foundElem;
-            }
-            if ((target & Jhtml.Meta.Target.BODY)
-                && (foundElem = this.findIn(this.bodyElem, matchingElem, matchingAttrNames, checkInner, checkAttrNum))) {
-                return foundElem;
-            }
-            return null;
-        };
-        Merger.prototype.findIn = function (nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum) {
-            for (var _i = 0, _a = Jhtml.Util.find(nodeSelector, matchingElem.tagName); _i < _a.length; _i++) {
-                var tagElem = _a[_i];
-                if (tagElem === this.currentContainerElem || tagElem.contains(this.currentContainerElem)
-                    || this.currentContainerElem.contains(tagElem) || this.containsProcessed(tagElem)) {
-                    continue;
-                }
-                if (this.compare(tagElem, matchingElem, matchingAttrNames, checkInner, chekAttrNum)) {
-                    return tagElem;
-                }
-            }
-            return null;
-        };
-        Merger.prototype.filterExact = function (elems, matchingElem, checkInner) {
-            return this.filter(elems, matchingElem, this.attrNames(matchingElem), checkInner, true);
-        };
-        Merger.prototype.containsProcessed = function (elem) {
-            return -1 < this.processedElements.indexOf(elem);
-        };
-        Merger.prototype.filter = function (elems, matchingElem, attrNames, checkInner, checkAttrNum) {
-            for (var _i = 0, elems_2 = elems; _i < elems_2.length; _i++) {
-                var elem = elems_2[_i];
-                if (!this.containsProcessed(elem)
-                    && this.compare(elem, matchingElem, attrNames, checkInner, checkAttrNum)) {
-                    return elem;
-                }
-            }
-        };
-        Merger.prototype.compareExact = function (elem1, elem2, checkInner) {
-            return this.compare(elem1, elem2, this.attrNames(elem1), checkInner, true);
-        };
-        Merger.prototype.compare = function (elem1, elem2, attrNames, checkInner, checkAttrNum) {
-            if (elem1.tagName !== elem2.tagName)
-                return false;
-            for (var _i = 0, attrNames_1 = attrNames; _i < attrNames_1.length; _i++) {
-                var attrName = attrNames_1[_i];
-                if (elem1.getAttribute(attrName) !== elem2.getAttribute(attrName)) {
-                    return false;
-                }
-            }
-            if (checkInner && elem1.innerHTML.trim() !== elem2.innerHTML.trim()) {
-                return false;
-            }
-            if (checkAttrNum && elem1.attributes.length != elem2.attributes.length) {
-                return false;
-            }
-            return true;
-        };
-        return Merger;
-    }());
-    Jhtml.Merger = Merger;
 })(Jhtml || (Jhtml = {}));
 //# sourceMappingURL=jhtml.js.map

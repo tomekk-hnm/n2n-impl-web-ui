@@ -25,6 +25,7 @@ declare namespace Jhtml {
         private pushCbr;
         readonly currentEntry: History.Entry;
         readonly currentPage: Page;
+        getEntryByIndex(index: number): History.Entry;
         getPageByUrl(url: Url): Page;
         onChanged(callback: (evt: ChangeEvent) => any): void;
         offChanged(callback: (evt: ChangeEvent) => any): void;
@@ -105,6 +106,36 @@ declare namespace Jhtml {
         container?: Container;
         comp?: Comp;
         snippet?: Snippet;
+    }
+}
+declare namespace Jhtml {
+    class Merger {
+        private rootElem;
+        private headElem;
+        private bodyElem;
+        private currentContainerElem;
+        private newContainerElem;
+        private _loadObserver;
+        private _processedElements;
+        private _blockedElements;
+        private removableElements;
+        constructor(rootElem: any, headElem: any, bodyElem: any, currentContainerElem: Element, newContainerElem: Element | null);
+        readonly loadObserver: LoadObserver;
+        readonly processedElements: Element[];
+        readonly remainingElements: Element[];
+        importInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
+        mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
+        private mergeElem(preferedElems, newElem, target);
+        private cloneNewElem(newElem, deep);
+        private attrNames(elem);
+        private findExact(matchingElem, checkInner, target?);
+        private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
+        private findIn(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
+        private filterExact(elems, matchingElem, checkInner);
+        private containsProcessed(elem);
+        private filter(elems, matchingElem, attrNames, checkInner, checkAttrNum);
+        private compareExact(elem1, elem2, checkInner);
+        private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
     }
 }
 declare namespace Jhtml {
@@ -282,13 +313,21 @@ declare namespace Jhtml {
         exec(monitor: Monitor): void;
     }
     class RedirectDirective {
-        back: boolean;
-        url: Url;
+        srcUrl: Url;
+        back: RedirectDirective.Type;
+        targetUrl: Url;
         requestConfig: RequestConfig;
         additionalData: any;
-        constructor(back: boolean, url: Url, requestConfig?: RequestConfig, additionalData?: any);
+        constructor(srcUrl: Url, back: RedirectDirective.Type, targetUrl: Url, requestConfig?: RequestConfig, additionalData?: any);
         getAdditionalData(): any;
         exec(monitor: Monitor): void;
+    }
+    namespace RedirectDirective {
+        enum Type {
+            TARGET = 0,
+            REFERER = 1,
+            BACK = 2,
+        }
     }
 }
 declare namespace Jhtml {
@@ -459,35 +498,5 @@ declare namespace Jhtml.Util {
         constructor(element: Element);
         private buildName(key);
         readBoolean(key: string, fallback: boolean): boolean;
-    }
-}
-declare namespace Jhtml {
-    class Merger {
-        private rootElem;
-        private headElem;
-        private bodyElem;
-        private currentContainerElem;
-        private newContainerElem;
-        private _loadObserver;
-        private _processedElements;
-        private _blockedElements;
-        private removableElements;
-        constructor(rootElem: any, headElem: any, bodyElem: any, currentContainerElem: Element, newContainerElem: Element | null);
-        readonly loadObserver: LoadObserver;
-        readonly processedElements: Element[];
-        readonly remainingElements: Element[];
-        importInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
-        mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
-        private mergeElem(preferedElems, newElem, target);
-        private cloneNewElem(newElem, deep);
-        private attrNames(elem);
-        private findExact(matchingElem, checkInner, target?);
-        private find(matchingElem, matchingAttrNames, checkInner, checkAttrNum, target?);
-        private findIn(nodeSelector, matchingElem, matchingAttrNames, checkInner, chekAttrNum);
-        private filterExact(elems, matchingElem, checkInner);
-        private containsProcessed(elem);
-        private filter(elems, matchingElem, attrNames, checkInner, checkAttrNum);
-        private compareExact(elem1, elem2, checkInner);
-        private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
     }
 }

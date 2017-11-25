@@ -74,10 +74,13 @@ namespace Jhtml {
 		private scanForDirective(url: Url, jsonObj: any): Directive|null {
 			switch(jsonObj.directive) {
 			case "redirect":
-				return new RedirectDirective(false, Jhtml.Url.create(jsonObj.location),
+				return new RedirectDirective(url, RedirectDirective.Type.TARGET, Jhtml.Url.create(jsonObj.location),
 						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
+			case "redirectToReferer":
+				return new RedirectDirective(url, RedirectDirective.Type.REFERER, Jhtml.Url.create(jsonObj.location),
+                        FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			case "redirectBack": 
-				return new RedirectDirective(true, Jhtml.Url.create(jsonObj.location),
+				return new RedirectDirective(url, RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location),
 						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			default:
 				return null;

@@ -38,8 +38,8 @@ namespace Jhtml {
     }
     
     export class RedirectDirective {
-    	constructor(public back: boolean, public url: Url, public requestConfig?: RequestConfig, 
-    			public additionalData?: any) {
+    	constructor(public srcUrl: Url, public back: RedirectDirective.Type, public targetUrl: Url, 
+    			public requestConfig?: RequestConfig, public additionalData?: any) {
     	}
     	
     	getAdditionalData(): any {
@@ -47,9 +47,28 @@ namespace Jhtml {
         }
         
         exec(monitor: Monitor) {
-        	if (this.back && !monitor.history.currentPage.url.equals(this.url)) return;
-        	
-        	monitor.exec(this.url, this.requestConfig);
+            switch (this.back) {
+            case RedirectDirective.Type.REFERER:
+                if (!monitor.history.currentPage.url.equals(this.srcUrl)) return;
+            case RedirectDirective.Type.BACK:
+                if (monitor.history.currentEntry.index > 0) {
+                	if (!this.requestConfig) {
+                		monitor.history.go(monitor.history.currentEntry.index - 1);
+                	} else {
+                		let entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
+                		monitor.exec(entry.page.url, this.requestConfig);
+                	}
+                } 
+            default:
+                monitor.exec(this.targetUrl, this.requestConfig);
+                break;
+            }
+        }
+    }
+    
+    export namespace RedirectDirective {
+        export enum Type {
+            TARGET, REFERER, BACK 
         }
     }
     
