@@ -35,12 +35,10 @@ namespace Jhtml {
 			
 			let page = this.history.getPageByUrl(url);
 
-			if (!config.forceReload && page) {
-				if (page.disposed) {
-					page.promise = this.context.requestor.lookupDirective(url);
-				}
-			} else {
+			if (!page) {
 				page = new Page(url, this.context.requestor.lookupDirective(url));
+			} else if (page.disposed || config.forceReload) {
+				page.promise = this.context.requestor.lookupDirective(url);
 			}
 
 			if (config.pushToHistory && page !== this.history.currentPage) {

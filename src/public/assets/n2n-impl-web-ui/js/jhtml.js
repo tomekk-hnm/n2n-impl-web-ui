@@ -61,9 +61,9 @@ var Jhtml;
         onPopstate(evt) {
             let url = Jhtml.Url.create(this.window.location.toString());
             let index = 0;
-            if (evt.state && evt.state.jhtmlHistoryIndex) {
+            if (evt.state && evt.state.jhtmlHistoryIndex !== undefined) {
                 index = evt.state.jhtmlHistoryIndex;
-                console.log("pop " + index + " " + evt.state.url + " c: " + url);
+                console.log("pop " + index + " " + evt.state.jhtmlUrl + " c: " + url);
             }
             try {
                 this.poping = true;
@@ -317,6 +317,7 @@ var Jhtml;
                 let comp = boundModelState.comps[name];
                 if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
                     && !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
+                    console.log("name " + name);
                     comp.detach();
                 }
             }
@@ -914,13 +915,11 @@ var Jhtml;
             let url = Jhtml.Url.create(urlExpr);
             let config = Jhtml.FullRequestConfig.from(requestConfig);
             let page = this.history.getPageByUrl(url);
-            if (!config.forceReload && page) {
-                if (page.disposed) {
-                    page.promise = this.context.requestor.lookupDirective(url);
-                }
-            }
-            else {
+            if (!page) {
                 page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
+            }
+            else if (page.disposed || config.forceReload) {
+                page.promise = this.context.requestor.lookupDirective(url);
             }
             if (config.pushToHistory && page !== this.history.currentPage) {
                 this.pushing = true;

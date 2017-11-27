@@ -31,10 +31,10 @@ namespace Jhtml {
         private onPopstate(evt) {
         	let url: Url = Url.create(this.window.location.toString());
         	let index: number = 0;
-        
-        	if (evt.state && evt.state.jhtmlHistoryIndex) {
+        	
+        	if (evt.state && evt.state.jhtmlHistoryIndex !== undefined) {
             	 index = evt.state.jhtmlHistoryIndex;
-            	 console.log("pop " + index + " " + evt.state.url + " c: " + url)
+            	 console.log("pop " + index + " " + evt.state.jhtmlUrl + " c: " + url)
             }
             
             try {
