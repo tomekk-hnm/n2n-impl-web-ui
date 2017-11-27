@@ -54,11 +54,6 @@ namespace Jhtml {
                 }
             case RedirectDirective.Type.BACK:
                 if (monitor.history.currentEntry.index > 0) {
-                	if (!this.requestConfig.forceReload) {
-                		monitor.history.go(monitor.history.currentEntry.index - 1);
-                		return;
-                	} 
-
                 	let entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
                 	monitor.exec(entry.page.url, this.requestConfig);
                 	return;
