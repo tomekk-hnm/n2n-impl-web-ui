@@ -1037,7 +1037,9 @@ var Jhtml;
             directive.exec(this);
         };
         Monitor.prototype.triggerDirectiveCallbacks = function (evt) {
+            console.log("start fire");
             this.directiveCbr.fire(evt);
+            console.log("end fire");
         };
         Monitor.prototype.onDirective = function (callback) {
             this.directiveCbr.on(callback);

@@ -62,7 +62,9 @@ namespace Jhtml {
 		}
 		
 		private triggerDirectiveCallbacks(evt: DirectiveEvent) {
+			console.log("start fire");
 			this.directiveCbr.fire(evt);
+			console.log("end fire");
 		}
 		
 		public onDirective(callback: (evt: DirectiveEvent) => any) {
