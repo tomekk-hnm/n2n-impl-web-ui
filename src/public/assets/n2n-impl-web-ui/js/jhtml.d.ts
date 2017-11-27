@@ -21,12 +21,16 @@ declare namespace Jhtml {
     class History {
         private _currentIndex;
         private _entries;
+        private changeCbr;
         private changedCbr;
         private pushCbr;
+        readonly currentIndex: number;
         readonly currentEntry: History.Entry;
         readonly currentPage: Page;
         getEntryByIndex(index: number): History.Entry;
         getPageByUrl(url: Url): Page;
+        onChange(callback: (evt: ChangeEvent) => any): void;
+        offChange(callback: (evt: ChangeEvent) => any): void;
         onChanged(callback: (evt: ChangeEvent) => any): void;
         offChanged(callback: (evt: ChangeEvent) => any): void;
         onPush(callback: EntryCallback): void;
@@ -39,12 +43,13 @@ declare namespace Jhtml {
     }
     interface ChangeEvent {
         pushed: boolean;
+        indexDelta: number;
     }
     namespace History {
         class Entry {
             private _index;
             private _page;
-            browserHistoryIndex: number;
+            scrollPos: number;
             constructor(_index: number, _page: Page);
             readonly index: number;
             readonly page: Page;
@@ -56,11 +61,19 @@ declare namespace Jhtml {
         private _url;
         promise: Promise<Directive> | null;
         private _loaded;
+        private _config;
         constructor(_url: Url, promise: Promise<Directive> | null);
+        readonly config: Page.Config;
         readonly loaded: boolean;
         readonly url: Url;
         dispose(): void;
         readonly disposed: boolean;
+    }
+    namespace Page {
+        class Config {
+            frozen: boolean;
+            keep: boolean;
+        }
     }
 }
 declare namespace Jhtml {
@@ -226,13 +239,17 @@ declare namespace Jhtml {
         history: History;
         active: boolean;
         private compHandlers;
+        private directiveCbr;
         constructor(container: Element, history: History);
         readonly compHandlerReg: CompHandlerReg;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
         private pushing;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
-        handleDirective(directive: Directive): void;
+        handleDirective(directive: Directive, fresh?: boolean): void;
+        private triggerDirectiveCallbacks(evt);
+        onDirective(callback: (evt: DirectiveEvent) => any): void;
+        offDirective(callback: (evt: DirectiveEvent) => any): void;
         lookupModel(url: Url): Promise<Model>;
         private historyChanged();
         private static readonly KEY;
@@ -240,6 +257,10 @@ declare namespace Jhtml {
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
         static test(element: Element): Monitor | null;
         static create(container: Element, history: History): Monitor;
+    }
+    interface DirectiveEvent {
+        directive: Directive;
+        new: boolean;
     }
 }
 declare namespace Jhtml {

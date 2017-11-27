@@ -47,15 +47,9 @@ namespace Jhtml {
         private onChanged(evt: ChangeEvent) {
             if (this.poping || evt.pushed) return;
            
-        	let entry: History.Entry = this.history.currentEntry;
+            this.window.history.go(evt.indexDelta);
             
-            if (entry.browserHistoryIndex !== undefined) {
-                alert("noo");
-        		this.window.history.go(entry.browserHistoryIndex);
-        		return;
-        	}
-        	
-        	this.window.location.href = entry.page.url.toString();
+//        	this.window.location.href = this.history.currentEntry.page.url.toString();
         }
         
         private onPush(entry: History.Entry) {

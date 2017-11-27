@@ -91,13 +91,7 @@ var Jhtml;
         Browser.prototype.onChanged = function (evt) {
             if (this.poping || evt.pushed)
                 return;
-            var entry = this.history.currentEntry;
-            if (entry.browserHistoryIndex !== undefined) {
-                alert("noo");
-                this.window.history.go(entry.browserHistoryIndex);
-                return;
-            }
-            this.window.location.href = entry.page.url.toString();
+            this.window.history.go(evt.indexDelta);
         };
         Browser.prototype.onPush = function (entry) {
             var urlStr = entry.page.url.toString();
@@ -116,9 +110,17 @@ var Jhtml;
     var History = (function () {
         function History() {
             this._entries = [];
+            this.changeCbr = new Jhtml.Util.CallbackRegistry();
             this.changedCbr = new Jhtml.Util.CallbackRegistry();
             this.pushCbr = new Jhtml.Util.CallbackRegistry();
         }
+        Object.defineProperty(History.prototype, "currentIndex", {
+            get: function () {
+                return this._currentIndex;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(History.prototype, "currentEntry", {
             get: function () {
                 if (this._entries[this._currentIndex]) {
@@ -155,6 +157,12 @@ var Jhtml;
             }
             return null;
         };
+        History.prototype.onChange = function (callback) {
+            this.changeCbr.on(callback);
+        };
+        History.prototype.offChange = function (callback) {
+            this.changeCbr.off(callback);
+        };
         History.prototype.onChanged = function (callback) {
             this.changedCbr.on(callback);
         };
@@ -177,24 +185,31 @@ var Jhtml;
             }
             if (this._currentIndex == index)
                 return;
+            var evt = { pushed: false, indexDelta: (index - this._currentIndex) };
+            this.changeCbr.fire(evt);
             this._currentIndex = index;
-            this.changedCbr.fire({ pushed: false });
+            this.changedCbr.fire(evt);
         };
         History.prototype.push = function (page) {
             var sPage = this.getPageByUrl(page.url);
             if (sPage && sPage !== page) {
                 throw new Error("Page with same url already registered.");
             }
-            var nextI = this._currentIndex + 1;
-            for (var i = nextI; i < this._entries.length; i++) {
-                this._entries[i].page.dispose();
+            var evt = { pushed: true, indexDelta: 1 };
+            this.changeCbr.fire(evt);
+            var nextI = (this._currentIndex || -1) + 1;
+            for (var i = 0; i < this._entries.length; i++) {
+                var iPage = this._entries[i].page;
+                if (!iPage.config.frozen || i >= nextI) {
+                    iPage.dispose();
+                }
             }
             this._entries.splice(nextI);
-            this._currentIndex = this._entries.length;
+            this._currentIndex = nextI;
             var entry = new History.Entry(this._currentIndex, page);
             this._entries.push(entry);
             this.pushCbr.fire(entry);
-            this.changedCbr.fire({ pushed: true });
+            this.changedCbr.fire(evt);
         };
         return History;
     }());
@@ -204,6 +219,7 @@ var Jhtml;
             function Entry(_index, _page) {
                 this._index = _index;
                 this._page = _page;
+                this.scrollPos = 0;
             }
             Object.defineProperty(Entry.prototype, "index", {
                 get: function () {
@@ -232,12 +248,20 @@ var Jhtml;
             this._url = _url;
             this.promise = promise;
             this._loaded = false;
+            this._config = new Page.Config();
             if (promise) {
                 promise.then(function () {
                     _this._loaded = true;
                 });
             }
         }
+        Object.defineProperty(Page.prototype, "config", {
+            get: function () {
+                return this._config;
+            },
+            enumerable: true,
+            configurable: true
+        });
         Object.defineProperty(Page.prototype, "loaded", {
             get: function () {
                 return this._loaded;
@@ -265,6 +289,16 @@ var Jhtml;
         return Page;
     }());
     Jhtml.Page = Page;
+    (function (Page) {
+        var Config = (function () {
+            function Config() {
+                this.frozen = false;
+                this.keep = false;
+            }
+            return Config;
+        }());
+        Page.Config = Config;
+    })(Page = Jhtml.Page || (Jhtml.Page = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -953,6 +987,7 @@ var Jhtml;
             this.container = container;
             this.active = true;
             this.compHandlers = {};
+            this.directiveCbr = new Jhtml.Util.CallbackRegistry();
             this.pushing = false;
             this.context = Jhtml.Context.from(container.ownerDocument);
             this.history = history;
@@ -996,8 +1031,19 @@ var Jhtml;
             });
             return page.promise;
         };
-        Monitor.prototype.handleDirective = function (directive) {
+        Monitor.prototype.handleDirective = function (directive, fresh) {
+            if (fresh === void 0) { fresh = true; }
+            this.triggerDirectiveCallbacks({ directive: directive, new: fresh });
             directive.exec(this);
+        };
+        Monitor.prototype.triggerDirectiveCallbacks = function (evt) {
+            this.directiveCbr.fire(evt);
+        };
+        Monitor.prototype.onDirective = function (callback) {
+            this.directiveCbr.on(callback);
+        };
+        Monitor.prototype.offDirective = function (callback) {
+            this.directiveCbr.off(callback);
         };
         Monitor.prototype.lookupModel = function (url) {
             var _this = this;
@@ -1263,21 +1309,21 @@ var Jhtml;
         RedirectDirective.prototype.exec = function (monitor) {
             switch (this.back) {
                 case RedirectDirective.Type.REFERER:
-                    if (!monitor.history.currentPage.url.equals(this.srcUrl))
+                    if (!monitor.history.currentPage.url.equals(this.srcUrl)) {
                         return;
+                    }
                 case RedirectDirective.Type.BACK:
                     if (monitor.history.currentEntry.index > 0) {
-                        if (!this.requestConfig) {
+                        if (!this.requestConfig.forceReload) {
                             monitor.history.go(monitor.history.currentEntry.index - 1);
+                            return;
                         }
-                        else {
-                            var entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
-                            monitor.exec(entry.page.url, this.requestConfig);
-                        }
+                        var entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
+                        monitor.exec(entry.page.url, this.requestConfig);
+                        return;
                     }
                 default:
                     monitor.exec(this.targetUrl, this.requestConfig);
-                    break;
             }
         };
         return RedirectDirective;

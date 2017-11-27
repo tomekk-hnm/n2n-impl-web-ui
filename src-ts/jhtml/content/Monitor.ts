@@ -5,6 +5,7 @@ namespace Jhtml {
 		public history: History;
 		public active: boolean = true;
 		private compHandlers: CompHandlerReg = {};
+		private directiveCbr = new Util.CallbackRegistry<(evt: DirectiveEvent) => any>();
 		
 		constructor(private container: Element, history: History) {
 			this.context = Context.from(container.ownerDocument);
@@ -55,8 +56,21 @@ namespace Jhtml {
 			return page.promise;
 		}
 		
-		public handleDirective(directive: Directive) {
+		public handleDirective(directive: Directive, fresh: boolean = true) {
+			this.triggerDirectiveCallbacks({ directive: directive, new: fresh });
 			directive.exec(this);
+		}
+		
+		private triggerDirectiveCallbacks(evt: DirectiveEvent) {
+			this.directiveCbr.fire(evt);
+		}
+		
+		public onDirective(callback: (evt: DirectiveEvent) => any) {
+			this.directiveCbr.on(callback);
+		}
+		
+		public offDirective(callback: (evt: DirectiveEvent) => any) {
+			this.directiveCbr.off(callback);
 		}
 		
 		public lookupModel(url: Url): Promise<Model> {
@@ -122,5 +136,10 @@ namespace Jhtml {
 			
 			return monitor;
 		}
+	}
+	
+	export interface DirectiveEvent {
+		directive: Directive;
+		new: boolean;
 	}
 } 

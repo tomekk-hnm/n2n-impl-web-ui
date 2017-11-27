@@ -3,8 +3,13 @@ namespace Jhtml {
     export class History {
         private _currentIndex: number
         private _entries: Array<History.Entry> = [];
+        private changeCbr = new Util.CallbackRegistry<(evt: ChangeEvent) => any>();
         private changedCbr = new Util.CallbackRegistry<(evt: ChangeEvent) => any>();
         private pushCbr = new Util.CallbackRegistry<EntryCallback>();
+        
+        get currentIndex(): number {
+        	return this._currentIndex;
+        }
         
         get currentEntry(): History.Entry {
         	if (this._entries[this._currentIndex]) {
@@ -41,6 +46,14 @@ namespace Jhtml {
         	return null;
         }
         
+        onChange(callback: (evt: ChangeEvent) => any) {
+        	this.changeCbr.on(callback);
+        }
+        
+        offChange(callback: (evt: ChangeEvent) => any) {
+        	this.changeCbr.off(callback);
+        }
+        
         onChanged(callback: (evt: ChangeEvent) => any) {
         	this.changedCbr.on(callback);
         }
@@ -68,9 +81,11 @@ namespace Jhtml {
         	}
         	
         	if (this._currentIndex == index) return;
-        	
+
+        	let evt: ChangeEvent = { pushed: false, indexDelta: (index - this._currentIndex) };
+        	this.changeCbr.fire(evt);
         	this._currentIndex = index;
-        	this.changedCbr.fire({ pushed: false });
+        	this.changedCbr.fire(evt);
         }
         
         push(page: Page) {
@@ -79,18 +94,24 @@ namespace Jhtml {
         		throw new Error("Page with same url already registered.");
         	}
         	
-        	let nextI = this._currentIndex + 1;
-        	for (let i = nextI; i < this._entries.length; i++) {
-        		this._entries[i].page.dispose();
+        	let evt: ChangeEvent = { pushed: true, indexDelta: 1 };
+        	this.changeCbr.fire(evt);
+        	
+        	let nextI = (this._currentIndex || -1) + 1;
+        	for (let i = 0; i < this._entries.length; i++) {
+        		let iPage = this._entries[i].page;
+        		if (!iPage.config.frozen || i >= nextI) {
+        			iPage.dispose();
+        		}
         	}
         	this._entries.splice(nextI);
         	
-        	this._currentIndex = this._entries.length;
+        	this._currentIndex = nextI;
         	let entry = new History.Entry(this._currentIndex, page);
         	this._entries.push(entry);
-
+        	
         	this.pushCbr.fire(entry);
-        	this.changedCbr.fire({ pushed: true });
+        	this.changedCbr.fire(evt);
         }
     }
     
@@ -101,12 +122,13 @@ namespace Jhtml {
 
     export interface ChangeEvent {
         pushed: boolean;
+    	indexDelta: number;
     }
     
     export namespace History {
         
 	    export class Entry {
-	    	public browserHistoryIndex: number;
+	    	scrollPos: number = 0;
 	    	
 	    	constructor(private _index: number, private _page: Page) {
 	    	}
@@ -115,7 +137,7 @@ namespace Jhtml {
 	    		return this._index;
 	    	}
 	    	
-	    	get page(): Page{
+	    	get page(): Page {
 	    		return this._page;
 	    	}
 	    }
