@@ -11,6 +11,10 @@ namespace Jhtml {
     		return this._model;
     	}
     	
+		private fire(eventType: Content.EventType) {
+			this.cbr.fireType(eventType);
+		}
+		
     	on(eventType: Content.EventType, callback: () => any) {
     		this.cbr.onType(eventType, callback);
     	}
@@ -32,12 +36,12 @@ namespace Jhtml {
 		protected attach(element: Element) {
     		this.ensureDetached();
     		
-    		for (let childElem of Util.array(this.detachedElem.children)) {
+    		for (let childElem of this.elements) {
     			element.appendChild(childElem);
     		}
     		
     		this.attached = true;
-    		this.cbr.fireType("attached");
+    		this.fire("attached");
     	} 
 		
 		detach() {
@@ -57,7 +61,7 @@ namespace Jhtml {
     			this.detach();
     		}
     		
-    		this.cbr.fireType("dispose");
+    		this.fire("dispose");
     		
     		this.cbr = null;
     		this.detachedElem.remove();

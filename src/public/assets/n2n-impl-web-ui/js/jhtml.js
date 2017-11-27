@@ -714,11 +714,15 @@ var Jhtml;
             this.readyCallback = [];
         }
         addElement(elem) {
+            let tn;
             let loadCallback = () => {
+                elem.removeEventListener("load", loadCallback);
+                clearTimeout(tn);
                 this.unregisterLoadCallback(loadCallback);
             };
             this.loadCallbacks.push(loadCallback);
             elem.addEventListener("load", loadCallback, false);
+            tn = setTimeout(loadCallback, 5000);
         }
         unregisterLoadCallback(callback) {
             this.loadCallbacks.splice(this.loadCallbacks.indexOf(callback), 1);
@@ -1011,6 +1015,9 @@ var Jhtml;
         get model() {
             return this._model;
         }
+        fire(eventType) {
+            this.cbr.fireType(eventType);
+        }
         on(eventType, callback) {
             this.cbr.onType(eventType, callback);
         }
@@ -1027,11 +1034,11 @@ var Jhtml;
         }
         attach(element) {
             this.ensureDetached();
-            for (let childElem of Jhtml.Util.array(this.detachedElem.children)) {
+            for (let childElem of this.elements) {
                 element.appendChild(childElem);
             }
             this.attached = true;
-            this.cbr.fireType("attached");
+            this.fire("attached");
         }
         detach() {
             if (!this.attached)
@@ -1046,7 +1053,7 @@ var Jhtml;
             if (this.attached) {
                 this.detach();
             }
-            this.cbr.fireType("dispose");
+            this.fire("dispose");
             this.cbr = null;
             this.detachedElem.remove();
             this.detachedElem = null;

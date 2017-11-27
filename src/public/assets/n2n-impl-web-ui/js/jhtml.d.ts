@@ -279,6 +279,7 @@ declare namespace Jhtml {
         protected attached: boolean;
         constructor(elements: Array<Element>, _model: Model, detachedElem: Element);
         readonly model: Model;
+        private fire(eventType);
         on(eventType: Content.EventType, callback: () => any): void;
         off(eventType: Content.EventType, callback: () => any): void;
         readonly isAttached: boolean;

@@ -101,11 +101,15 @@ namespace Jhtml {
     	}
     	
     	public addElement(elem: Element) {
+    		let tn: number;
     		let loadCallback = () => {
+    			elem.removeEventListener("load", loadCallback);
+    			clearTimeout(tn);
 				this.unregisterLoadCallback(loadCallback);
 			}
     		this.loadCallbacks.push(loadCallback)
-    		elem.addEventListener("load", loadCallback, false);
+			elem.addEventListener("load", loadCallback, false);
+    		tn = setTimeout(loadCallback, 5000);
     	}
     	
     	private unregisterLoadCallback(callback: () => any) {
