@@ -1037,9 +1037,7 @@ var Jhtml;
             directive.exec(this);
         };
         Monitor.prototype.triggerDirectiveCallbacks = function (evt) {
-            console.log("start fire");
             this.directiveCbr.fire(evt);
-            console.log("end fire");
         };
         Monitor.prototype.onDirective = function (callback) {
             this.directiveCbr.on(callback);
@@ -1316,10 +1314,6 @@ var Jhtml;
                     }
                 case RedirectDirective.Type.BACK:
                     if (monitor.history.currentEntry.index > 0) {
-                        if (!this.requestConfig.forceReload) {
-                            monitor.history.go(monitor.history.currentEntry.index - 1);
-                            return;
-                        }
                         var entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
                         monitor.exec(entry.page.url, this.requestConfig);
                         return;
