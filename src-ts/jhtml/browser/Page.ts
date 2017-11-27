@@ -1,14 +1,12 @@
 namespace Jhtml {
     export class Page {
+    	private _promise: Promise<Directive>|null = null;
     	private _loaded: boolean = false;
     	private _config = new Page.Config();
+    	private cbr = new Util.CallbackRegistry<() => any>();
     
-    	constructor(private _url: Url, public promise: Promise<Directive>|null) {
-    		if (promise) {
-	    		promise.then(() => {
-	    			this._loaded = true;
-	    		});
-    		}
+    	constructor(private _url: Url, promise: Promise<Directive>|null) {
+    		this.promise = promise;
     	}
     	
     	get config(): Page.Config {
@@ -27,6 +25,39 @@ namespace Jhtml {
     		this.promise = null;
     	}
     	
+    	private fire(eventType: Page.EventType) {
+    		this.cbr.fireType(eventType);
+    	}
+    	
+    	on(eventType: Page.EventType, callback: () => any) {
+    		this.cbr.onType(eventType, callback);
+    	}
+    	
+    	off(eventType: Page.EventType, callback: () => any) {
+    		this.cbr.offType(eventType, callback);
+    	}
+    	
+    	get promise() {
+    		return this._promise;
+    	}
+    	
+    	set promise(promise: Promise<Directive>|null) {
+    		if (this._promise === promise) return;
+    		
+    		this._promise = promise;
+    		
+    		if (!promise) {
+    			this.fire("disposed");
+    			return;
+    		}
+    		
+    		this._loaded = false;
+    		promise.then(() => {
+    			this._loaded = true;
+    		});
+    		this.fire("promiseAssigned");
+    	}
+    	
     	get disposed(): boolean {
     		return this.promise ? false : true;
     	}
@@ -37,5 +68,7 @@ namespace Jhtml {
     		frozen: boolean = false;
     		keep: boolean = false;
     	}
+    	
+    	export type EventType = "disposed" | "promiseAssigned";
     }
 }

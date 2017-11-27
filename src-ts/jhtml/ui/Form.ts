@@ -46,7 +46,6 @@ namespace Jhtml.Ui {
 			this._observing = true;
 			
 			this.element.addEventListener("submit", (evt) => {
-				console.log("submitted");
 				evt.preventDefault();
 				if (this.config.autoSubmitAllowed) {
 					let submitDirective = this.tmpSubmitDirective;
@@ -58,9 +57,9 @@ namespace Jhtml.Ui {
 			}, false);
 			
 			
-			this.element.addEventListener("submit", (evt) => {
-				console.log("on submit");
-			}, true);
+//			this.element.addEventListener("submit", (evt) => {
+//				console.log("on submit");
+//			}, true);
 			
 			Util.find(this.element, "input[type=submit], button[type=submit]").forEach((elem: Element) => {
 //				elem.addEventListener("click", (evt) => {

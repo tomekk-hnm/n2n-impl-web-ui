@@ -1,7 +1,7 @@
 namespace Jhtml {
 	export class Browser {
         constructor(private window: Window, private _history: History) {
-	        _history.push(new Page(Url.create(window.location.href), null));
+	        let entry = _history.push(new Page(Url.create(window.location.href), null));
 	        
 	        _history.onPush((entry: History.Entry) => {
 	        	this.onPush(entry);
@@ -14,6 +14,8 @@ namespace Jhtml {
 //	        this.window.addEventListener("popstate", (evt) => {
 //        	    this.onPopstate(evt)
 //        	});
+
+        	this.window.history.replaceState(this.buildStateObj(entry), "Page", entry.page.url.toString());
 	        
 	        this.window.onpopstate = (evt) => {
                 this.onPopstate(evt)
@@ -32,6 +34,7 @@ namespace Jhtml {
         
         	if (evt.state && evt.state.jhtmlHistoryIndex) {
             	 index = evt.state.jhtmlHistoryIndex;
+            	 console.log("pop " + index + " " + evt.state.url + " c: " + url)
             }
             
             try {
@@ -53,12 +56,14 @@ namespace Jhtml {
         }
         
         private onPush(entry: History.Entry) {
-        	let urlStr = entry.page.url.toString();
-        	let stateObj = {
-        		"jhtmlUrl": urlStr,
+        	this.window.history.pushState(this.buildStateObj(entry), "Page", entry.page.url.toString());
+        }
+        
+        private buildStateObj(entry: History.Entry) {
+        	return {
+        		"jhtmlUrl": entry.page.url.toString(),
 				"jhtmlHistoryIndex": entry.index
         	};
-            this.window.history.pushState(stateObj, "Page", urlStr);
         }
 	}
 }

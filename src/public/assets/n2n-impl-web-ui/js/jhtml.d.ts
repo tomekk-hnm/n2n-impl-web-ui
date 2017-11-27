@@ -15,6 +15,7 @@ declare namespace Jhtml {
         private onPopstate(evt);
         private onChanged(evt);
         private onPush(entry);
+        private buildStateObj(entry);
     }
 }
 declare namespace Jhtml {
@@ -36,7 +37,7 @@ declare namespace Jhtml {
         onPush(callback: EntryCallback): void;
         offPush(callback: EntryCallback): void;
         go(index: number, checkUrl?: Url): void;
-        push(page: Page): void;
+        push(page: Page): History.Entry;
     }
     interface EntryCallback {
         (entry: History.Entry): any;
@@ -59,14 +60,19 @@ declare namespace Jhtml {
 declare namespace Jhtml {
     class Page {
         private _url;
-        promise: Promise<Directive> | null;
+        private _promise;
         private _loaded;
         private _config;
+        private cbr;
         constructor(_url: Url, promise: Promise<Directive> | null);
         readonly config: Page.Config;
         readonly loaded: boolean;
         readonly url: Url;
         dispose(): void;
+        private fire(eventType);
+        on(eventType: Page.EventType, callback: () => any): void;
+        off(eventType: Page.EventType, callback: () => any): void;
+        promise: Promise<Directive> | null;
         readonly disposed: boolean;
     }
     namespace Page {
@@ -74,6 +80,7 @@ declare namespace Jhtml {
             frozen: boolean;
             keep: boolean;
         }
+        type EventType = "disposed" | "promiseAssigned";
     }
 }
 declare namespace Jhtml {

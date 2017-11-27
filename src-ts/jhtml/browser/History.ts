@@ -1,7 +1,7 @@
 namespace Jhtml {
     
     export class History {
-        private _currentIndex: number
+        private _currentIndex: number = null;
         private _entries: Array<History.Entry> = [];
         private changeCbr = new Util.CallbackRegistry<(evt: ChangeEvent) => any>();
         private changedCbr = new Util.CallbackRegistry<(evt: ChangeEvent) => any>();
@@ -88,7 +88,7 @@ namespace Jhtml {
         	this.changedCbr.fire(evt);
         }
         
-        push(page: Page) {
+        push(page: Page): History.Entry {
         	let sPage = this.getPageByUrl(page.url);
         	if (sPage && sPage !== page) {
         		throw new Error("Page with same url already registered.");
@@ -97,21 +97,22 @@ namespace Jhtml {
         	let evt: ChangeEvent = { pushed: true, indexDelta: 1 };
         	this.changeCbr.fire(evt);
         	
-        	let nextI = (this._currentIndex || -1) + 1;
+        	let nextI = (this._currentIndex === null ? 0 : this._currentIndex + 1);
+        	console.log("push " + nextI + " - " + page.url);
         	for (let i = 0; i < this._entries.length; i++) {
         		let iPage = this._entries[i].page;
-        		if (!iPage.config.frozen || i >= nextI) {
+        		if ((!iPage.config.frozen && !iPage.config.keep) || i >= nextI) {
         			iPage.dispose();
         		}
         	}
         	this._entries.splice(nextI);
-        	
         	this._currentIndex = nextI;
         	let entry = new History.Entry(this._currentIndex, page);
         	this._entries.push(entry);
         	
         	this.pushCbr.fire(entry);
         	this.changedCbr.fire(evt);
+        	return entry;
         }
     }
     
