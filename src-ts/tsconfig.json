@@ -6,7 +6,7 @@
 		"declaration": true,
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
-		"target": "es5",
+		"target": "es6",
 		"removeComments": true,
 		"lib": [
 	    	"es2017",
