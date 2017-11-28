@@ -37,6 +37,7 @@ declare namespace Jhtml {
         onPush(callback: EntryCallback): void;
         offPush(callback: EntryCallback): void;
         go(index: number, checkUrl?: Url): void;
+        private getFirstIndexOfPage(page);
         push(page: Page): History.Entry;
     }
     interface EntryCallback {
@@ -252,6 +253,7 @@ declare namespace Jhtml {
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
         private pushing;
+        private pendingPromise;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
         handleDirective(directive: Directive, fresh?: boolean): void;
         private triggerDirectiveCallbacks(evt);

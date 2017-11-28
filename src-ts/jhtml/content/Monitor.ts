@@ -28,6 +28,7 @@ namespace Jhtml {
 		}
 		
 		private pushing: boolean = false;
+		private pendingPromise: Promise<Directive> = null;
 		
 		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Directive> {
 			let url = Url.create(urlExpr);
@@ -37,21 +38,32 @@ namespace Jhtml {
 
 			if (!page) {
 				page = new Page(url, this.context.requestor.lookupDirective(url));
-			} else if (page.disposed || config.forceReload) {
+			} else if (page.config.frozen) {
+				if (page.disposed) {
+					throw new Error("Targed page is frozen and disposed.");
+				}
+			} else if (page.disposed || config.forceReload || !page.config.keep) {
 				page.promise = this.context.requestor.lookupDirective(url);
+			} else {
+				console.log("do nothing " + page.url)
 			}
-
+			
+			// page.promise could be changed by history.push callback
+			let promise = this.pendingPromise = page.promise;
+			
 			if (config.pushToHistory && page !== this.history.currentPage) {
 			    this.pushing = true;
 				this.history.push(page);
 				this.pushing = false;
 			}
-			
-			page.promise.then((directive: Directive) => {
+
+			promise.then((directive: Directive) => {
+				if (promise !== this.pendingPromise) return;
+				
 				this.handleDirective(directive);	
 			});
 			
-			return page.promise;
+			return promise;
 		}
 		
 		public handleDirective(directive: Directive, fresh: boolean = true) {

@@ -88,6 +88,12 @@ namespace Jhtml {
         	this.changedCbr.fire(evt);
         }
         
+        private getFirstIndexOfPage(page: Page): number {
+        	return this._entries.findIndex((entry: History.Entry) => {
+        		return entry.page === page;
+        	});
+        }
+        
         push(page: Page): History.Entry {
         	let sPage = this.getPageByUrl(page.url);
         	if (sPage && sPage !== page) {
@@ -98,11 +104,12 @@ namespace Jhtml {
         	this.changeCbr.fire(evt);
         	
         	let nextI = (this._currentIndex === null ? 0 : this._currentIndex + 1);
-        	for (let i = 0; i < this._entries.length; i++) {
+        	for (let i = nextI; i < this._entries.length; i++) {
         		let iPage = this._entries[i].page;
-        		if ((!iPage.config.frozen && !iPage.config.keep) || i >= nextI) {
-        			iPage.dispose();
-        		}
+        		
+        		if (nextI >= this.getFirstIndexOfPage(iPage)) continue;
+        		
+        		iPage.dispose();
         	}
         	this._entries.splice(nextI);
         	this._currentIndex = nextI;

@@ -164,6 +164,11 @@ var Jhtml;
             this._currentIndex = index;
             this.changedCbr.fire(evt);
         }
+        getFirstIndexOfPage(page) {
+            return this._entries.findIndex((entry) => {
+                return entry.page === page;
+            });
+        }
         push(page) {
             let sPage = this.getPageByUrl(page.url);
             if (sPage && sPage !== page) {
@@ -172,11 +177,11 @@ var Jhtml;
             let evt = { pushed: true, indexDelta: 1 };
             this.changeCbr.fire(evt);
             let nextI = (this._currentIndex === null ? 0 : this._currentIndex + 1);
-            for (let i = 0; i < this._entries.length; i++) {
+            for (let i = nextI; i < this._entries.length; i++) {
                 let iPage = this._entries[i].page;
-                if ((!iPage.config.frozen && !iPage.config.keep) || i >= nextI) {
-                    iPage.dispose();
-                }
+                if (nextI >= this.getFirstIndexOfPage(iPage))
+                    continue;
+                iPage.dispose();
             }
             this._entries.splice(nextI);
             this._currentIndex = nextI;
@@ -897,6 +902,7 @@ var Jhtml;
             this.compHandlers = {};
             this.directiveCbr = new Jhtml.Util.CallbackRegistry();
             this.pushing = false;
+            this.pendingPromise = null;
             this.context = Jhtml.Context.from(container.ownerDocument);
             this.history = history;
             this.history.onChanged(() => {
@@ -919,18 +925,29 @@ var Jhtml;
             if (!page) {
                 page = new Jhtml.Page(url, this.context.requestor.lookupDirective(url));
             }
-            else if (page.disposed || config.forceReload) {
+            else if (page.config.frozen) {
+                if (page.disposed) {
+                    throw new Error("Targed page is frozen and disposed.");
+                }
+            }
+            else if (page.disposed || config.forceReload || !page.config.keep) {
                 page.promise = this.context.requestor.lookupDirective(url);
             }
+            else {
+                console.log("do nothing " + page.url);
+            }
+            let promise = this.pendingPromise = page.promise;
             if (config.pushToHistory && page !== this.history.currentPage) {
                 this.pushing = true;
                 this.history.push(page);
                 this.pushing = false;
             }
-            page.promise.then((directive) => {
+            promise.then((directive) => {
+                if (promise !== this.pendingPromise)
+                    return;
                 this.handleDirective(directive);
             });
-            return page.promise;
+            return promise;
         }
         handleDirective(directive, fresh = true) {
             this.triggerDirectiveCallbacks({ directive: directive, new: fresh });
