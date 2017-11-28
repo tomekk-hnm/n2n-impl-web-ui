@@ -34,7 +34,6 @@ namespace Jhtml {
         	
         	if (evt.state && evt.state.jhtmlHistoryIndex !== undefined) {
             	 index = evt.state.jhtmlHistoryIndex;
-            	 console.log("pop " + index + " " + evt.state.jhtmlUrl + " c: " + url)
             }
             
             try {

@@ -98,7 +98,6 @@ namespace Jhtml {
         	this.changeCbr.fire(evt);
         	
         	let nextI = (this._currentIndex === null ? 0 : this._currentIndex + 1);
-        	console.log("push " + nextI + " - " + page.url);
         	for (let i = 0; i < this._entries.length; i++) {
         		let iPage = this._entries[i].page;
         		if ((!iPage.config.frozen && !iPage.config.keep) || i >= nextI) {
