@@ -478,19 +478,33 @@ declare namespace Jhtml.Ui {
     class Link {
         private elem;
         private requestConfig;
+        private ecr;
         private dcr;
         disabled: boolean;
         constructor(elem: HTMLAnchorElement);
         private handle();
+        exec(): void;
         readonly element: HTMLAnchorElement;
         dispose(): void;
-        onDirective(callback: DirectiveCallback): void;
-        offDirective(callback: DirectiveCallback): void;
+        onEvent(callback: Link.EventCallback): void;
+        offEvent(callback: Link.EventCallback): void;
+        onDirective(callback: Link.DirectiveCallback): void;
+        offDirective(callback: Link.DirectiveCallback): void;
         private static readonly KEY;
         static from(element: HTMLAnchorElement): Link;
     }
-    interface DirectiveCallback {
-        (directivePromise: Promise<Directive>): any;
+    namespace Link {
+        class Event {
+            private _execPrevented;
+            readonly execPrevented: boolean;
+            preventExec(): void;
+        }
+        interface EventCallback {
+            (evt: Event): any;
+        }
+        interface DirectiveCallback {
+            (directivePromise: Promise<Directive>): any;
+        }
     }
 }
 declare namespace Jhtml.Ui {

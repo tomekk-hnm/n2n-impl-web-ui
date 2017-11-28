@@ -1,7 +1,8 @@
 namespace Jhtml.Ui {
 	export class Link {
 		private requestConfig: RequestConfig;
-		private dcr: Util.CallbackRegistry<DirectiveCallback> = new Util.CallbackRegistry();
+		private ecr: Util.CallbackRegistry<Link.EventCallback> = new Util.CallbackRegistry();
+		private dcr: Util.CallbackRegistry<Link.DirectiveCallback> = new Util.CallbackRegistry();
 
 		disabled: boolean = false;
 		
@@ -19,6 +20,16 @@ namespace Jhtml.Ui {
 		
 		private handle() {
 			if (this.disabled) return;
+			
+			let event = new Link.Event();
+			this.ecr.fire(event);
+			
+			if (!event.execPrevented) {
+				this.exec();
+			}
+		}
+		
+		exec() {
 			this.dcr.fire(Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
 		}
 		
@@ -32,11 +43,19 @@ namespace Jhtml.Ui {
 			this.dcr.clear();
 		}
 		
-		onDirective(callback: DirectiveCallback) {
+		onEvent(callback: Link.EventCallback) {
+			this.ecr.on(callback);
+		}
+		
+		offEvent(callback: Link.EventCallback) {
+			this.ecr.off(callback);
+		}
+		
+		onDirective(callback: Link.DirectiveCallback) {
 			this.dcr.on(callback);
 		}
 		
-		offDirective(callback: DirectiveCallback) {
+		offDirective(callback: Link.DirectiveCallback) {
 			this.dcr.off(callback);
 		}
 		
@@ -54,8 +73,25 @@ namespace Jhtml.Ui {
 		}
 	}
 	
-	
-	export interface DirectiveCallback {
-		(directivePromise: Promise<Directive>): any;
+	export namespace Link {
+		export class Event {
+			private _execPrevented: boolean = false;
+		
+			get execPrevented(): boolean {
+				return this._execPrevented;
+			}
+			
+			preventExec() {
+				this._execPrevented = true;
+			}
+		}
+		
+		export interface EventCallback {
+			(evt: Event): any;
+		}
+		
+		export interface DirectiveCallback {
+			(directivePromise: Promise<Directive>): any;
+		}
 	}
 }

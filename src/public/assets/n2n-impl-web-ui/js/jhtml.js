@@ -1632,6 +1632,7 @@ var Jhtml;
         class Link {
             constructor(elem) {
                 this.elem = elem;
+                this.ecr = new Jhtml.Util.CallbackRegistry();
                 this.dcr = new Jhtml.Util.CallbackRegistry();
                 this.disabled = false;
                 this.requestConfig = Jhtml.FullRequestConfig.fromElement(this.elem);
@@ -1644,6 +1645,13 @@ var Jhtml;
             handle() {
                 if (this.disabled)
                     return;
+                let event = new Link.Event();
+                this.ecr.fire(event);
+                if (!event.execPrevented) {
+                    this.exec();
+                }
+            }
+            exec() {
                 this.dcr.fire(Jhtml.Monitor.of(this.elem).exec(this.elem.href, this.requestConfig));
             }
             get element() {
@@ -1653,6 +1661,12 @@ var Jhtml;
                 this.elem.remove();
                 this.elem = null;
                 this.dcr.clear();
+            }
+            onEvent(callback) {
+                this.ecr.on(callback);
+            }
+            offEvent(callback) {
+                this.ecr.off(callback);
             }
             onDirective(callback) {
                 this.dcr.on(callback);
@@ -1672,6 +1686,20 @@ var Jhtml;
         }
         Link.KEY = "jhtml-link";
         Ui.Link = Link;
+        (function (Link) {
+            class Event {
+                constructor() {
+                    this._execPrevented = false;
+                }
+                get execPrevented() {
+                    return this._execPrevented;
+                }
+                preventExec() {
+                    this._execPrevented = true;
+                }
+            }
+            Link.Event = Event;
+        })(Link = Ui.Link || (Ui.Link = {}));
     })(Ui = Jhtml.Ui || (Jhtml.Ui = {}));
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
