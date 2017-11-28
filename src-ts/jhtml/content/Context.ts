@@ -57,7 +57,6 @@ namespace Jhtml {
 				
 				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
 						&& !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
-					console.log("name " + name);
 					comp.detach();
 				}
 			}
