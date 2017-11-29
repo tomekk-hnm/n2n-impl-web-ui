@@ -44,8 +44,6 @@ namespace Jhtml {
 				}
 			} else if (page.disposed || config.forceReload || !page.config.keep) {
 				page.promise = this.context.requestor.lookupDirective(url);
-			} else {
-				console.log("do nothing " + page.url)
 			}
 			
 			// page.promise could be changed by history.push callback
