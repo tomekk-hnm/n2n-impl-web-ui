@@ -933,9 +933,6 @@ var Jhtml;
             else if (page.disposed || config.forceReload || !page.config.keep) {
                 page.promise = this.context.requestor.lookupDirective(url);
             }
-            else {
-                console.log("do nothing " + page.url);
-            }
             let promise = this.pendingPromise = page.promise;
             if (config.pushToHistory && page !== this.history.currentPage) {
                 this.pushing = true;
