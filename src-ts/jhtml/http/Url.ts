@@ -17,8 +17,8 @@ namespace Jhtml {
         public extR(pathExt: string = null, queryExt: { [key: string]: any } = null): Url {
         	let newUrlStr = this.urlStr;
         	
-            if (pathExt !== null || pathExt !== undefined) {
-            	newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
+            if (pathExt !== null && pathExt !== undefined) {
+            	newUrlStr = newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
             }
             
             if (queryExt !== null || queryExt !== undefined) {

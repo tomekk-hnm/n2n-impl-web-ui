@@ -219,6 +219,7 @@ var Jhtml;
             this._loaded = false;
             this._config = new Page.Config();
             this.cbr = new Jhtml.Util.CallbackRegistry();
+            this.loadUrl = null;
             this.promise = promise;
         }
         get config() {
@@ -931,7 +932,7 @@ var Jhtml;
                 }
             }
             else if (page.disposed || config.forceReload || !page.config.keep) {
-                page.promise = this.context.requestor.lookupDirective(url);
+                page.promise = this.context.requestor.lookupDirective(page.loadUrl || url);
             }
             let promise = this.pendingPromise = page.promise;
             if (config.pushToHistory && page !== this.history.currentPage) {
@@ -1390,8 +1391,8 @@ var Jhtml;
         }
         extR(pathExt = null, queryExt = null) {
             let newUrlStr = this.urlStr;
-            if (pathExt !== null || pathExt !== undefined) {
-                newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
+            if (pathExt !== null && pathExt !== undefined) {
+                newUrlStr = newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
             }
             if (queryExt !== null || queryExt !== undefined) {
                 let parts = [];

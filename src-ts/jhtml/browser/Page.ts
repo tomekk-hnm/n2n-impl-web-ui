@@ -4,6 +4,7 @@ namespace Jhtml {
     	private _loaded: boolean = false;
     	private _config = new Page.Config();
     	private cbr = new Util.CallbackRegistry<() => any>();
+    	public loadUrl: Url = null;
     
     	constructor(private _url: Url, promise: Promise<Directive>|null) {
     		this.promise = promise;

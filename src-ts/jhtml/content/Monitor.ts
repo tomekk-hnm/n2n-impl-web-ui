@@ -43,7 +43,7 @@ namespace Jhtml {
 					throw new Error("Targed page is frozen and disposed.");
 				}
 			} else if (page.disposed || config.forceReload || !page.config.keep) {
-				page.promise = this.context.requestor.lookupDirective(url);
+				page.promise = this.context.requestor.lookupDirective(page.loadUrl || url);
 			}
 			
 			// page.promise could be changed by history.push callback

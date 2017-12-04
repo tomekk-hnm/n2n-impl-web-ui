@@ -65,6 +65,7 @@ declare namespace Jhtml {
         private _loaded;
         private _config;
         private cbr;
+        loadUrl: Url;
         constructor(_url: Url, promise: Promise<Directive> | null);
         readonly config: Page.Config;
         readonly loaded: boolean;
