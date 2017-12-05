@@ -65,12 +65,10 @@ namespace Jhtml {
 				
 				if (-1 == this.usedElements.indexOf(remainingElement)
 						&& -1 == this.pendingRemoveElements.indexOf(remainingElement)) {
-					console.log("block: " + remainingElement.outerHTML);
 					this.blockedElements.push(remainingElement);
 					continue;
 				}
 				
-				console.log("remove: " + remainingElement.outerHTML);
 				removableElements.push(remainingElement);
 			}
 			

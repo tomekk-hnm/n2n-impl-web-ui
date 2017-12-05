@@ -77,8 +77,6 @@
 				i--;
 			}
 			
-			console.log("import!!");
-			
 			let curElem = curElems.shift();
 			for (let i = 0; i < mergedElems.length; i++) {
 				let mergedElem = mergedElems[i];
