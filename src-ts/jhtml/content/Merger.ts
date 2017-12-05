@@ -44,7 +44,7 @@
 				if (-1 < curElems.indexOf(importedElem)) {
 					continue;
 				}
-
+				
 				this.loadObserver.addElement(importedElem);
 				parentElem.appendChild(importedElem);
 			}
@@ -68,10 +68,16 @@
 			
 			for (let i = 0; i < curElems.length; i++) {
 				if (-1 < mergedElems.indexOf(curElems[i])) continue;
+						
+				if (!Merger.checkIfUnremovable(curElems[i])) {
+					this.removableElements.push(curElems[i]);
+				}
 				
-				this.removableElements.push(curElems[i]);
 				curElems.splice(i, 1);
+				i--;
 			}
+			
+			console.log("import!!");
 			
 			let curElem = curElems.shift();
 			for (let i = 0; i < mergedElems.length; i++) {
@@ -81,7 +87,7 @@
 					curElem = curElems.shift();
 					continue;
 				}
-
+				
 				this.loadObserver.addElement(mergedElem);
 				
 				if (!curElem) {
@@ -149,6 +155,10 @@
 				
 					return this.cloneNewElem(newElem, false);
 			}
+		}
+		
+		private static checkIfUnremovable(elem: Element) {
+			return elem.tagName == "SCRIPT";
 		}
 		
 		private cloneNewElem(newElem: Element, deep: boolean): Element {

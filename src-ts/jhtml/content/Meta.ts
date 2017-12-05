@@ -36,7 +36,8 @@ namespace Jhtml {
     		return this.containerElem;
     	}
     	
-		private usedElements : Array<Element> = [];
+		private usedElements: Array<Element> = [];
+    	private pendingRemoveElements: Array<Element> = [];
     	private blockedElements: Array<Element> = [];
     	
     	public import(newMeta: Meta): LoadObserver {
@@ -62,19 +63,31 @@ namespace Jhtml {
 			while (remainingElement = remainingElements.pop()) {
 				if (this.containsBlocked(remainingElement)) continue;
 				
-				if (-1 == this.usedElements.indexOf(remainingElement)) {
+				if (-1 == this.usedElements.indexOf(remainingElement)
+						&& -1 == this.pendingRemoveElements.indexOf(remainingElement)) {
+					console.log("block: " + remainingElement.outerHTML);
 					this.blockedElements.push(remainingElement);
 					continue;
 				}
 				
+				console.log("remove: " + remainingElement.outerHTML);
 				removableElements.push(remainingElement);
+			}
+			
+			this.usedElements = merger.processedElements;
+			for (let removableElement of removableElements) {
+				if (-1 == this.pendingRemoveElements.indexOf(removableElement)) {
+					this.pendingRemoveElements.push(removableElement);
+				}
 			}
 			
 			merger.loadObserver.whenLoaded(() => {
 				for (let removableElement of removableElements) {
-					if (-1 < this.usedElements.indexOf(removableElement)) {
-						removableElement.remove();
-					}
+					let i = this.pendingRemoveElements.indexOf(removableElement);
+					if (-1 == i) continue;
+					
+					removableElement.remove();
+					this.pendingRemoveElements.splice(i, 1);
 				}
 			});
 
