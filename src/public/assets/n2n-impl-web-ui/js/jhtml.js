@@ -484,8 +484,11 @@ var Jhtml;
             for (let i = 0; i < curElems.length; i++) {
                 if (-1 < mergedElems.indexOf(curElems[i]))
                     continue;
-                this.removableElements.push(curElems[i]);
+                if (!Merger.checkIfUnremovable(curElems[i])) {
+                    this.removableElements.push(curElems[i]);
+                }
                 curElems.splice(i, 1);
+                i--;
             }
             let curElem = curElems.shift();
             for (let i = 0; i < mergedElems.length; i++) {
@@ -549,6 +552,9 @@ var Jhtml;
                     }
                     return this.cloneNewElem(newElem, false);
             }
+        }
+        static checkIfUnremovable(elem) {
+            return elem.tagName == "SCRIPT";
         }
         cloneNewElem(newElem, deep) {
             let mergedElem = this.rootElem.ownerDocument.createElement(newElem.tagName);
@@ -649,6 +655,7 @@ var Jhtml;
             this.bodyElem = bodyElem;
             this.containerElem = containerElem;
             this.usedElements = [];
+            this.pendingRemoveElements = [];
             this.blockedElements = [];
             this.markAsUsed(this.headElements);
             this.markAsUsed(this.bodyElements);
@@ -686,17 +693,26 @@ var Jhtml;
             while (remainingElement = remainingElements.pop()) {
                 if (this.containsBlocked(remainingElement))
                     continue;
-                if (-1 == this.usedElements.indexOf(remainingElement)) {
+                if (-1 == this.usedElements.indexOf(remainingElement)
+                    && -1 == this.pendingRemoveElements.indexOf(remainingElement)) {
                     this.blockedElements.push(remainingElement);
                     continue;
                 }
                 removableElements.push(remainingElement);
             }
+            this.usedElements = merger.processedElements;
+            for (let removableElement of removableElements) {
+                if (-1 == this.pendingRemoveElements.indexOf(removableElement)) {
+                    this.pendingRemoveElements.push(removableElement);
+                }
+            }
             merger.loadObserver.whenLoaded(() => {
                 for (let removableElement of removableElements) {
-                    if (-1 < this.usedElements.indexOf(removableElement)) {
-                        removableElement.remove();
-                    }
+                    let i = this.pendingRemoveElements.indexOf(removableElement);
+                    if (-1 == i)
+                        continue;
+                    removableElement.remove();
+                    this.pendingRemoveElements.splice(i, 1);
                 }
             });
             return merger.loadObserver;

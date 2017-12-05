@@ -149,6 +149,7 @@ declare namespace Jhtml {
         importInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
         mergeInto(newElems: Array<Element>, parentElem: Element, target: Meta.Target): void;
         private mergeElem(preferedElems, newElem, target);
+        private static checkIfUnremovable(elem);
         private cloneNewElem(newElem, deep);
         private attrNames(elem);
         private findExact(matchingElem, checkInner, target?);
@@ -178,6 +179,7 @@ declare namespace Jhtml {
         readonly bodyElements: Array<Element>;
         readonly containerElement: Element;
         private usedElements;
+        private pendingRemoveElements;
         private blockedElements;
         import(newMeta: Meta): LoadObserver;
         replaceWith(newMeta: Meta): LoadObserver;
