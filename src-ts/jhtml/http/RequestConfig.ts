@@ -3,11 +3,13 @@ namespace Jhtml {
 	export interface RequestConfig {
 		forceReload?: boolean; 
 		pushToHistory?: boolean;
+		usePageScrollPos?: boolean;
 	}
 	
 	export class FullRequestConfig implements RequestConfig {
 		forceReload: boolean = false;
 		pushToHistory: boolean = true;
+		usePageScrollPos: boolean = false;
 	
 		static from(requestConfig: RequestConfig): FullRequestConfig {
 			if (requestConfig instanceof FullRequestConfig) {
@@ -26,6 +28,10 @@ namespace Jhtml {
 				config.pushToHistory = requestConfig.pushToHistory;
 			}
 			
+			if (requestConfig.usePageScrollPos !== undefined) {
+				config.usePageScrollPos = requestConfig.usePageScrollPos;
+			}
+			
 			return config;
 		}
 	
@@ -35,6 +41,7 @@ namespace Jhtml {
 			let config = new FullRequestConfig();
 			config.forceReload = reader.readBoolean("force-reload", config.forceReload);
 			config.pushToHistory = reader.readBoolean("push-to-history", config.pushToHistory);
+			config.usePageScrollPos = reader.readBoolean("use-page-scroll-pos", config.usePageScrollPos);
 			return config;
 		}
 	}

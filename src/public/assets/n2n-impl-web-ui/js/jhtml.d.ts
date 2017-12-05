@@ -81,6 +81,7 @@ declare namespace Jhtml {
         class Config {
             frozen: boolean;
             keep: boolean;
+            scrollPos: number;
         }
         type EventType = "disposed" | "promiseAssigned";
     }
@@ -100,7 +101,7 @@ declare namespace Jhtml {
         private getModelState(required);
         import(newModel: Model, montiorCompHandlers?: {
             [compName: string]: CompHandler;
-        }): void;
+        }): LoadObserver;
         importMeta(meta: Meta): LoadObserver;
         private loadObservers;
         private registerLoadObserver(loadObserver);
@@ -256,7 +257,7 @@ declare namespace Jhtml {
         private pushing;
         private pendingPromise;
         exec(urlExpr: Url | string, requestConfig?: RequestConfig): Promise<Directive>;
-        handleDirective(directive: Directive, fresh?: boolean): void;
+        handleDirective(directive: Directive, fresh?: boolean, usePageScrollPos?: boolean): void;
         private triggerDirectiveCallbacks(evt);
         onDirective(callback: (evt: DirectiveEvent) => any): void;
         offDirective(callback: (evt: DirectiveEvent) => any): void;
@@ -385,10 +386,12 @@ declare namespace Jhtml {
     interface RequestConfig {
         forceReload?: boolean;
         pushToHistory?: boolean;
+        usePageScrollPos?: boolean;
     }
     class FullRequestConfig implements RequestConfig {
         forceReload: boolean;
         pushToHistory: boolean;
+        usePageScrollPos: boolean;
         static from(requestConfig: RequestConfig): FullRequestConfig;
         static fromElement(element: Element): FullRequestConfig;
     }

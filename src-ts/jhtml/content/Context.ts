@@ -49,7 +49,7 @@ namespace Jhtml {
 			return this.modelState || null;
 		}
 		
-		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}) {
+		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}): LoadObserver {
 			let boundModelState: ModelState = this.getModelState(true);
 			
 			for (let name in boundModelState.comps) {
@@ -79,6 +79,8 @@ namespace Jhtml {
 					comp.attachTo(boundModelState.container.compElements[name], loadObserver);
 				}
 			}
+			
+			return loadObserver;
 		}
 		
 		importMeta(meta: Meta): LoadObserver {

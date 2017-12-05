@@ -68,6 +68,7 @@ namespace Jhtml {
     	export class Config {
     		frozen: boolean = false;
     		keep: boolean = false;
+    		scrollPos: number = 0;
     	}
     	
     	export type EventType = "disposed" | "promiseAssigned";

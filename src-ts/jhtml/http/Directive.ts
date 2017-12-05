@@ -56,6 +56,7 @@ namespace Jhtml {
                 if (monitor.history.currentEntry.index > 0) {
                 	let entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
                 	monitor.exec(entry.page.url, this.requestConfig);
+                	monitor.history.currentEntry.scrollPos = entry.scrollPos;
                 	return;
                 } 
             default:

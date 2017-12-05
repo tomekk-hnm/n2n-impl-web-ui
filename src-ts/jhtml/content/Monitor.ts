@@ -31,6 +31,10 @@ namespace Jhtml {
 		private pendingPromise: Promise<Directive> = null;
 		
 		exec(urlExpr: Url|string, requestConfig?: RequestConfig): Promise<Directive> {
+			if (this.history.currentEntry) {
+				this.history.currentEntry.scrollPos = this.history.currentPage.config.scrollPos = window.pageYOffset;
+			}
+			
 			let url = Url.create(urlExpr);
 			let config = FullRequestConfig.from(requestConfig);
 			
@@ -58,15 +62,19 @@ namespace Jhtml {
 			promise.then((directive: Directive) => {
 				if (promise !== this.pendingPromise) return;
 				
-				this.handleDirective(directive);	
+				this.handleDirective(directive, true, config.usePageScrollPos);	
 			});
 			
 			return promise;
 		}
 		
-		public handleDirective(directive: Directive, fresh: boolean = true) {
+		public handleDirective(directive: Directive, fresh: boolean = true, usePageScrollPos: boolean = false) {
 			this.triggerDirectiveCallbacks({ directive: directive, new: fresh });
 			directive.exec(this);
+			if (this.history.currentEntry) {
+				window.scroll(0, (usePageScrollPos ? this.history.currentPage.config.scrollPos 
+						: this.history.currentEntry.scrollPos));
+			}
 		}
 		
 		private triggerDirectiveCallbacks(evt: DirectiveEvent) {

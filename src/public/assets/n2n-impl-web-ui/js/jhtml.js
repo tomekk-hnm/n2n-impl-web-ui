@@ -270,6 +270,7 @@ var Jhtml;
             constructor() {
                 this.frozen = false;
                 this.keep = false;
+                this.scrollPos = 0;
             }
         }
         Page.Config = Config;
@@ -338,6 +339,7 @@ var Jhtml;
                     comp.attachTo(boundModelState.container.compElements[name], loadObserver);
                 }
             }
+            return loadObserver;
         }
         importMeta(meta) {
             let boundModelState = this.getModelState(true);
@@ -920,6 +922,9 @@ var Jhtml;
             delete this.compHandlers[compName];
         }
         exec(urlExpr, requestConfig) {
+            if (this.history.currentEntry) {
+                this.history.currentEntry.scrollPos = this.history.currentPage.config.scrollPos = window.pageYOffset;
+            }
             let url = Jhtml.Url.create(urlExpr);
             let config = Jhtml.FullRequestConfig.from(requestConfig);
             let page = this.history.getPageByUrl(url);
@@ -943,13 +948,17 @@ var Jhtml;
             promise.then((directive) => {
                 if (promise !== this.pendingPromise)
                     return;
-                this.handleDirective(directive);
+                this.handleDirective(directive, true, config.usePageScrollPos);
             });
             return promise;
         }
-        handleDirective(directive, fresh = true) {
+        handleDirective(directive, fresh = true, usePageScrollPos = false) {
             this.triggerDirectiveCallbacks({ directive: directive, new: fresh });
             directive.exec(this);
+            if (this.history.currentEntry) {
+                window.scroll(0, (usePageScrollPos ? this.history.currentPage.config.scrollPos
+                    : this.history.currentEntry.scrollPos));
+            }
         }
         triggerDirectiveCallbacks(evt) {
             this.directiveCbr.fire(evt);
@@ -1185,6 +1194,7 @@ var Jhtml;
                     if (monitor.history.currentEntry.index > 0) {
                         let entry = monitor.history.getEntryByIndex(monitor.history.currentEntry.index - 1);
                         monitor.exec(entry.page.url, this.requestConfig);
+                        monitor.history.currentEntry.scrollPos = entry.scrollPos;
                         return;
                     }
                 default:
@@ -1311,6 +1321,7 @@ var Jhtml;
         constructor() {
             this.forceReload = false;
             this.pushToHistory = true;
+            this.usePageScrollPos = false;
         }
         static from(requestConfig) {
             if (requestConfig instanceof FullRequestConfig) {
@@ -1325,6 +1336,9 @@ var Jhtml;
             if (requestConfig.pushToHistory !== undefined) {
                 config.pushToHistory = requestConfig.pushToHistory;
             }
+            if (requestConfig.usePageScrollPos !== undefined) {
+                config.usePageScrollPos = requestConfig.usePageScrollPos;
+            }
             return config;
         }
         static fromElement(element) {
@@ -1332,6 +1346,7 @@ var Jhtml;
             let config = new FullRequestConfig();
             config.forceReload = reader.readBoolean("force-reload", config.forceReload);
             config.pushToHistory = reader.readBoolean("push-to-history", config.pushToHistory);
+            config.usePageScrollPos = reader.readBoolean("use-page-scroll-pos", config.usePageScrollPos);
             return config;
         }
     }
