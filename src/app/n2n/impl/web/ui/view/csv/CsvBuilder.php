@@ -21,8 +21,6 @@
  */
 namespace n2n\impl\web\ui\view\csv;
 
-use n2n\impl\web\ui\view\csv\CsvView;
-
 class CsvBuilder {
 	private $view;
 	private $meta;
@@ -84,7 +82,7 @@ class CsvBuilder {
 	/**
 	 *
 	 * @param array $contents
-	 * @param unknown_type $keysAsHeaders
+	 * @param bool $keysAsHeaders
 	 * @return string
 	 */
 	public function getEncode(array $contents, $keysAsHeaders = true) {
@@ -105,7 +103,7 @@ class CsvBuilder {
 	/**
 	 *
 	 * @param array $contents
-	 * @param unknown_type $keysAsHeaders
+	 * @param bool $keysAsHeaders
 	 */
 	public function encode(array $contents, $keysAsHeaders = true) {
 		$this->view->out($this->getEncode($contents, $keysAsHeaders));
