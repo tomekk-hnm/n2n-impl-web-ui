@@ -26,7 +26,6 @@ use n2n\core\N2N;
 use n2n\web\ui\UiComponent;
 use n2n\web\ui\Raw;
 use n2n\io\ob\OutputBuffer;
-use n2n\impl\web\ui\view\html\HtmlView;
 use n2n\web\ui\UiException;
 use n2n\impl\web\ui\view\html\img\ImgComposer;
 use n2n\reflection\ArgUtils;
@@ -232,7 +231,7 @@ class HtmlBuilder {
 	 * @param string $murl
 	 * @param mixed $label
 	 * @param array $attrs
-	 * @throws UnavailableUrlException
+	 * @throws \n2n\util\uri\UnavailableUrlException
 	 * @return \n2n\impl\web\ui\view\html\Link
 	 */
 	public function getLink($murl, $label = null, array $attrs = null, string $alternateTagName = null, 
@@ -328,7 +327,7 @@ class HtmlBuilder {
 
 	/**
 	 * @param mixed $pathExt
-	 * @param unknown $label
+	 * @param string|UiComponent $label
 	 * @param array $attrs
 	 * @param array $query
 	 * @param string $fragment
@@ -390,21 +389,21 @@ class HtmlBuilder {
 	
 	/**
 	 * 
-	 * @param unknown $email
-	 * @param unknown $label
+	 * @param string $email
+	 * @param string|UiComponent $label
 	 * @param array $attrs
 	 */
-	public function linkEmail($email, $label = null, array $attrs = null) {
+	public function linkEmail(string $email, $label = null, array $attrs = null) {
 		$this->view->out($this->getLinkEmail($email, $label, $attrs));
 	}
 	
 	/** 
-	 * @param unknown $email
-	 * @param unknown $label
+	 * @param string $email
+	 * @param string|UiComponent $label
 	 * @param array $attrs
 	 * @return \n2n\web\ui\Raw
 	 */
-	public function getLinkEmail($email, $label = null, array $attrs = null) {
+	public function getLinkEmail(string $email, $label = null, array $attrs = null) {
 		$uriHtml = HtmlUtils::encodedEmailUrl($email);
 		HtmlUtils::validateCustomAttrs((array) $attrs, array('href'));
 		return new HtmlSnippet(
@@ -454,23 +453,39 @@ class HtmlBuilder {
 	 */
 	
 	/**
-	 * @param unknown $code
+	 * @param string $code
 	 * @param array $args
 	 * @param string $num
 	 * @param array $replacements
-	 * @param string $module
+	 * @param string|\n2n\core\module\Module $module
 	 */
-	public function text($code, array $args = null, $num = null, array $replacements = null, 
+	public function text(string $code, array $args = null, int $num = null, array $replacements = null, 
 			$module = null) {
 		$this->l10nText($code, $args, $num, $replacements, $module);
 	}
 	
-	public function getText($code, array $args = null, $num = null, array $replacements = null, 
+	/**
+	 * @param string $code
+	 * @param array $args
+	 * @param int $num
+	 * @param int $replacements
+	 * @param string|\n2n\core\module\Module $module
+	 * @return \n2n\web\ui\Raw
+	 */
+	public function getText(string $code, array $args = null, int $num = null, array $replacements = null, 
 			$module = null) {
 		return $this->getL10nText($code, $args, $num, $replacements, $module);
 	}
 		
-	public function getL10nText($key, array $args = null, $num = null, array $replacements = null, $module = null) {
+	/**
+	 * @param string $key
+	 * @param array $args
+	 * @param int $num
+	 * @param array $replacements
+	 * @param string|\n2n\core\module\Module $module
+	 * @return \n2n\web\ui\Raw
+	 */
+	public function getL10nText(string $key, array $args = null, int $num = null, array $replacements = null, $module = null) {
 		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, null, $module));
 		if (empty($replacements)) return $textRaw;
 		
@@ -482,7 +497,15 @@ class HtmlBuilder {
 		return new Raw($textHtml);
 	}
 	
-	public function l10nText($key, array $args = null, $num = null, array $replacements = null, $module = null) {
+	/**
+	 * @param string $key
+	 * @param array $args
+	 * @param int $num
+	 * @param array $replacements
+	 * @param string|\n2n\core\module\Module $module
+	 * @return \n2n\web\ui\Raw
+	 */
+	public function l10nText(string $key, array $args = null, int $num = null, array $replacements = null, $module = null) {
 		$this->view->out($this->getL10nText($key, $args, $num, $replacements, $module));
 	}
 	

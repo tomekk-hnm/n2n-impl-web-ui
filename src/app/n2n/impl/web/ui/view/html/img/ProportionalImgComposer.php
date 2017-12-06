@@ -53,7 +53,7 @@ class ProportionalImgComposer implements ImgComposer {
 
 	/**
 	 * @param int $width
-	 * @return ProportiaonalThumbStrategyComposer
+	 * @return ProportionalImgComposer
 	 */
 	public function toWidth(int $width) {
 		if ($width > $this->maxWidth) {
@@ -69,6 +69,10 @@ class ProportionalImgComposer implements ImgComposer {
 		return $this;
 	}
 
+	/**
+	 * @param int ...$widths
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
+	 */
 	public function widths(int ...$widths) {
 		foreach ($widths as $width) {
 			$this->fixedWidths[$width] = $width;
@@ -76,6 +80,10 @@ class ProportionalImgComposer implements ImgComposer {
 		return $this;
 	}
 
+	/**
+	 * @param float ...$factors
+	 * @return \n2n\impl\web\ui\view\html\img\ProportionalImgComposer
+	 */
 	public function factors(float ...$factors) {
 		foreach ($factors as $factor) {
 			$width = (int) ceil($this->width * $factor);
@@ -84,10 +92,16 @@ class ProportionalImgComposer implements ImgComposer {
 		return $this;
 	}
 	
+	/**
+	 * @return int
+	 */
 	public function getWidth() {
 		return $this->width;
 	}
 
+	/**
+	 * @return int[]
+	 */
 	public function getWidths() {
 		$widths = $this->fixedWidths;
 		$widths[$this->minWidth] = $this->minWidth;
@@ -97,6 +111,9 @@ class ProportionalImgComposer implements ImgComposer {
 		return $widths;
 	}
 		
+	/**
+	 * @return \n2n\impl\web\ui\view\html\img\ImgSet
+	 */
 	private function createPlaceholderImgSet() {
 		$widths = $this->getWidths();
 		$largestWidth = reset($widths);
@@ -106,6 +123,10 @@ class ProportionalImgComposer implements ImgComposer {
 				UiComponentFactory::INVALID_IMG_DEFAULT_ALT, $largestWidth, $largestHeight, array());
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 * @see \n2n\impl\web\ui\view\html\img\ImgComposer::createImgSet()
+	 */
 	public function createImgSet(File $file = null, N2nContext $n2nContext): ImgSet {
 		if ($file === null || !$file->isValid()) {
 			return $this->createPlaceholderImgSet();
@@ -156,6 +177,11 @@ class ProportionalImgComposer implements ImgComposer {
 
 	const MIN_SIZE_GAB = 51200;
 
+	/**
+	 * @param int $largerSize
+	 * @param int $size
+	 * @return boolean
+	 */
 	private function isSizeGabTooLarge($largerSize, $size) {
 		$diff = $largerSize - $size;
 		if ($diff <= self::MIN_SIZE_GAB) return false;
@@ -163,6 +189,11 @@ class ProportionalImgComposer implements ImgComposer {
 		return ($largerSize / 3 < $diff);
 	}
 
+	/**
+	 * @param int $largerWidth
+	 * @param int $width
+	 * @return number|NULL
+	 */
 	private function calcGabWidth($largerWidth, $width) {
 		$diff = $largerWidth - $width;
 
@@ -173,20 +204,39 @@ class ProportionalImgComposer implements ImgComposer {
 		return null;
 	}
 	
+	/**
+	 * @param int $width
+	 * @return number
+	 */
 	private function calcHeight($width) {
 		return ceil($this->height / $this->width * $width);
 	}
 
+	/**
+	 * @param int $width
+	 * @return \n2n\io\managed\img\impl\ProportionalThumbStrategy
+	 */
 	private function createStrategy($width) {
 		$height = $this->calcHeight($width);
 
 		return new ProportionalThumbStrategy($width, $height, $this->autoCropMode, $this->scaleUpAllowed);
 	}
 
+	/**
+	 * @param ImageFile $imageFile
+	 * @param int $width
+	 * @return \n2n\io\managed\img\ImageFile
+	 */
 	private function createThumb(ImageFile $imageFile, int $width) {
 		return $imageFile->getOrCreateThumb($this->createStrategy($width));
 	}
 
+	/**
+	 * @param ImageFile $imageFile
+	 * @param int $width
+	 * @param ImageFile $orgImageFile
+	 * @return NULL|\n2n\io\managed\img\ImageFile
+	 */
 	private function buildVariation(ImageFile $imageFile, int $width, ImageFile $orgImageFile = null) {
 		$strategy = $this->createStrategy($width);
 		if ($strategy->matches($imageFile->getImageSource())) {

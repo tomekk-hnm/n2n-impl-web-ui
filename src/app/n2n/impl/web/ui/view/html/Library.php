@@ -21,8 +21,6 @@
  */
 namespace n2n\impl\web\ui\view\html;
 
-use n2n\impl\web\ui\view\html\HtmlView;
-
 interface Library {
 	/**
 	 * @param HtmlView $view
