@@ -380,7 +380,6 @@ var Jhtml;
                 let snippetReadyCallback = () => {
                     snippet.off("attached", snippetReadyCallback);
                     this.importMeta(model.meta).whenLoaded(() => {
-                        console.log("attached snippet");
                         this.readyCbr.fire(snippet.elements, { snippet: snippet });
                         Jhtml.Ui.Scanner.scanArray(snippet.elements);
                     });
