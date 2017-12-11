@@ -16,7 +16,6 @@ namespace Jhtml {
 		}
 		
 		private readyBound: boolean = false;
-	
 		
 		get requestor(): Requestor {
 			return this._requestor;
@@ -107,7 +106,7 @@ namespace Jhtml {
 					container.off("attached", containerReadyCallback)
 					container.loadObserver.whenLoaded(() => {
 						this.readyCbr.fire(container.elements, { container: container });
-						Ui.Scanner.scanArray(container.elements);
+						this.triggerAndScan(container.elements);
 					});
 				};
 				container.on("attached", containerReadyCallback);
@@ -118,7 +117,7 @@ namespace Jhtml {
 					comp.off("attached", compReadyCallback);
 					comp.loadObserver.whenLoaded(() => {
 						this.readyCbr.fire(comp.elements, { comp: Comp });
-						Ui.Scanner.scanArray(comp.elements);
+						this.triggerAndScan(comp.elements);
 					});
 				};
 				comp.on("attached", compReadyCallback);
@@ -130,11 +129,19 @@ namespace Jhtml {
 					snippet.off("attached", snippetReadyCallback)
 					this.importMeta(model.meta).whenLoaded(() => {
 						this.readyCbr.fire(snippet.elements, { snippet: snippet });
-						Ui.Scanner.scanArray(snippet.elements);
+						this.triggerAndScan(snippet.elements);
 					});
 				};
 				snippet.on("attached", snippetReadyCallback);
 			}
+		}
+		
+		private triggerAndScan(elements: Element[]) {
+			let w: any = window;
+			if (w.n2n && w.n2n.dispatch) {
+				w.n2n.dispatch.update();
+			}
+			Ui.Scanner.scanArray(elements);
 		}
 		
 		replace(text: string, mimeType: string, replace: boolean) {
