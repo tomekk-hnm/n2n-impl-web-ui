@@ -48,7 +48,7 @@ namespace Jhtml {
 			return this.modelState || null;
 		}
 		
-		import(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}): LoadObserver {
+		replaceModel(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}): LoadObserver {
 			let boundModelState: ModelState = this.getModelState(true);
 			
 			for (let name in boundModelState.comps) {

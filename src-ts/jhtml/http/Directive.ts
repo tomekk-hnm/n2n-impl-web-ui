@@ -19,7 +19,7 @@ namespace Jhtml {
     	}
     	
     	exec(monitor: Monitor) {
-    		monitor.context.import(this.model, monitor.compHandlerReg);
+    		monitor.context.replaceModel(this.model, monitor.compHandlerReg);
     	}
     }
     

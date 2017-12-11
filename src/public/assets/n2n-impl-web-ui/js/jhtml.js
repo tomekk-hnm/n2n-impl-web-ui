@@ -316,7 +316,7 @@ var Jhtml;
             }
             return this.modelState || null;
         }
-        import(newModel, montiorCompHandlers = {}) {
+        replaceModel(newModel, montiorCompHandlers = {}) {
             let boundModelState = this.getModelState(true);
             for (let name in boundModelState.comps) {
                 let comp = boundModelState.comps[name];
@@ -360,7 +360,7 @@ var Jhtml;
                     container.off("attached", containerReadyCallback);
                     container.loadObserver.whenLoaded(() => {
                         this.readyCbr.fire(container.elements, { container: container });
-                        Jhtml.Ui.Scanner.scanArray(container.elements);
+                        this.triggerAndScan(container.elements);
                     });
                 };
                 container.on("attached", containerReadyCallback);
@@ -370,7 +370,7 @@ var Jhtml;
                     comp.off("attached", compReadyCallback);
                     comp.loadObserver.whenLoaded(() => {
                         this.readyCbr.fire(comp.elements, { comp: Jhtml.Comp });
-                        Jhtml.Ui.Scanner.scanArray(comp.elements);
+                        this.triggerAndScan(comp.elements);
                     });
                 };
                 comp.on("attached", compReadyCallback);
@@ -381,11 +381,18 @@ var Jhtml;
                     snippet.off("attached", snippetReadyCallback);
                     this.importMeta(model.meta).whenLoaded(() => {
                         this.readyCbr.fire(snippet.elements, { snippet: snippet });
-                        Jhtml.Ui.Scanner.scanArray(snippet.elements);
+                        this.triggerAndScan(snippet.elements);
                     });
                 };
                 snippet.on("attached", snippetReadyCallback);
             }
+        }
+        triggerAndScan(elements) {
+            let w = window;
+            if (w.n2n && w.n2n.dispatch) {
+                w.n2n.dispatch.update();
+            }
+            Jhtml.Ui.Scanner.scanArray(elements);
         }
         replace(text, mimeType, replace) {
             this.document.open(mimeType, replace ? "replace" : null);
@@ -1169,7 +1176,7 @@ var Jhtml;
             return this.model.additionalData;
         }
         exec(monitor) {
-            monitor.context.import(this.model, monitor.compHandlerReg);
+            monitor.context.replaceModel(this.model, monitor.compHandlerReg);
         }
     }
     Jhtml.FullModelDirective = FullModelDirective;

@@ -99,13 +99,14 @@ declare namespace Jhtml {
         readonly document: Document;
         isJhtml(): boolean;
         private getModelState(required);
-        import(newModel: Model, montiorCompHandlers?: {
+        replaceModel(newModel: Model, montiorCompHandlers?: {
             [compName: string]: CompHandler;
         }): LoadObserver;
         importMeta(meta: Meta): LoadObserver;
         private loadObservers;
         private registerLoadObserver(loadObserver);
         registerNewModel(model: Model): void;
+        private triggerAndScan(elements);
         replace(text: string, mimeType: string, replace: boolean): void;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
