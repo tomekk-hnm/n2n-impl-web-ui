@@ -85,7 +85,7 @@ namespace Jhtml {
 		importMeta(meta: Meta): LoadObserver {
 			let boundModelState = this.getModelState(true);
 			
-			let loadObserver = boundModelState.metaState.import(meta);
+			let loadObserver = boundModelState.metaState.import(meta, true);
 			this.registerLoadObserver(loadObserver);
 			return loadObserver;
 		}

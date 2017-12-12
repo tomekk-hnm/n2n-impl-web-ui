@@ -7,7 +7,7 @@ namespace Jhtml {
 		private compHandlers: CompHandlerReg = {};
 		private directiveCbr = new Util.CallbackRegistry<(evt: DirectiveEvent) => any>();
 		
-		constructor(private container: Element, history: History) {
+		constructor(private container: Element, history: History, private _pseudo: boolean) {
 			this.context = Context.from(container.ownerDocument);
 			this.history = history;
 			this.history.onChanged(() => {
@@ -17,6 +17,10 @@ namespace Jhtml {
 		
 		get compHandlerReg(): CompHandlerReg {
 			return this.compHandlers;
+		}
+		
+		get pseudo(): boolean {
+			return this._pseudo;
 		}
 		
 		registerCompHandler(compName: string, compHandler: CompHandler) {
@@ -138,7 +142,7 @@ namespace Jhtml {
 			return null;
 		}
 		
-		static create(container: Element, history: History): Monitor {
+		static create(container: Element, history: History, pseudo: boolean): Monitor {
 			let monitor = Monitor.test(container);
 			
 			if (monitor) {
@@ -147,7 +151,7 @@ namespace Jhtml {
 			
 			container.classList.add(Monitor.CSS_CLASS);
 			
-			monitor = new Monitor(container, history);
+			monitor = new Monitor(container, history, pseudo);
 			Util.bindElemData(container, Monitor.KEY, monitor);
 			
 			return monitor;

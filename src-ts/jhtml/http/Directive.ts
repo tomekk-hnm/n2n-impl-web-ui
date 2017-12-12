@@ -19,7 +19,19 @@ namespace Jhtml {
     	}
     	
     	exec(monitor: Monitor) {
-    		monitor.context.replaceModel(this.model, monitor.compHandlerReg);
+    		if (!monitor.pseudo) {
+    			monitor.context.replaceModel(this.model, monitor.compHandlerReg);
+    			return;
+    		}
+    		
+    		let loadObserver = monitor.context.importMeta(this.model.meta);
+    		
+    		for (let name in this.model.comps) {
+    			if (!monitor.compHandlerReg[name]) continue;
+    			
+    			monitor.compHandlerReg[name].attachComp(this.model.comps[name], loadObserver)
+			}
+    		
     	}
     }
     

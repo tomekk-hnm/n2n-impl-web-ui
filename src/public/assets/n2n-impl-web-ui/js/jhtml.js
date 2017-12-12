@@ -14,7 +14,7 @@ var Jhtml;
             return null;
         let history = new Jhtml.History();
         browser = new Jhtml.Browser(window, history);
-        monitor = Jhtml.Monitor.create(context.document.documentElement, history);
+        monitor = Jhtml.Monitor.create(context.document.documentElement, history, false);
         return browser;
     }
     Jhtml.getOrCreateBrowser = getOrCreateBrowser;
@@ -343,7 +343,7 @@ var Jhtml;
         }
         importMeta(meta) {
             let boundModelState = this.getModelState(true);
-            let loadObserver = boundModelState.metaState.import(meta);
+            let loadObserver = boundModelState.metaState.import(meta, true);
             this.registerLoadObserver(loadObserver);
             return loadObserver;
         }
@@ -683,10 +683,16 @@ var Jhtml;
         get containerElement() {
             return this.containerElem;
         }
-        import(newMeta) {
+        import(newMeta, curModelDependent) {
             let merger = new Jhtml.Merger(this.rootElem, this.headElem, this.bodyElem, this.containerElem, newMeta.containerElement);
             merger.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
             merger.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+            if (!curModelDependent) {
+                return merger.loadObserver;
+            }
+            for (let element of merger.processedElements) {
+                this.usedElements.push(element);
+            }
             return merger.loadObserver;
         }
         replaceWith(newMeta) {
@@ -921,8 +927,9 @@ var Jhtml;
 var Jhtml;
 (function (Jhtml) {
     class Monitor {
-        constructor(container, history) {
+        constructor(container, history, _pseudo) {
             this.container = container;
+            this._pseudo = _pseudo;
             this.active = true;
             this.compHandlers = {};
             this.directiveCbr = new Jhtml.Util.CallbackRegistry();
@@ -936,6 +943,9 @@ var Jhtml;
         }
         get compHandlerReg() {
             return this.compHandlers;
+        }
+        get pseudo() {
+            return this._pseudo;
         }
         registerCompHandler(compName, compHandler) {
             this.compHandlers[compName] = compHandler;
@@ -1030,13 +1040,13 @@ var Jhtml;
             }
             return null;
         }
-        static create(container, history) {
+        static create(container, history, pseudo) {
             let monitor = Monitor.test(container);
             if (monitor) {
                 throw new Error("Element is already monitored.");
             }
             container.classList.add(Monitor.CSS_CLASS);
-            monitor = new Monitor(container, history);
+            monitor = new Monitor(container, history, pseudo);
             Jhtml.Util.bindElemData(container, Monitor.KEY, monitor);
             return monitor;
         }
@@ -1176,7 +1186,16 @@ var Jhtml;
             return this.model.additionalData;
         }
         exec(monitor) {
-            monitor.context.replaceModel(this.model, monitor.compHandlerReg);
+            if (!monitor.pseudo) {
+                monitor.context.replaceModel(this.model, monitor.compHandlerReg);
+                return;
+            }
+            let loadObserver = monitor.context.importMeta(this.model.meta);
+            for (let name in this.model.comps) {
+                if (!monitor.compHandlerReg[name])
+                    continue;
+                monitor.compHandlerReg[name].attachComp(this.model.comps[name], loadObserver);
+            }
         }
     }
     Jhtml.FullModelDirective = FullModelDirective;

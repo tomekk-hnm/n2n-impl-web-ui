@@ -40,13 +40,21 @@ namespace Jhtml {
     	private pendingRemoveElements: Array<Element> = [];
     	private blockedElements: Array<Element> = [];
     	
-    	public import(newMeta: Meta): LoadObserver {
+    	public import(newMeta: Meta, curModelDependent: boolean): LoadObserver {
     		let merger = new Merger(this.rootElem, this.headElem, this.bodyElem,
     				this.containerElem, newMeta.containerElement);
 			
     		merger.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
     		merger.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
 			
+    		if (!curModelDependent) {
+    			return merger.loadObserver;
+    		}
+    		
+    		for (let element of merger.processedElements) {
+    			this.usedElements.push(element);
+    		}
+    		
 			return merger.loadObserver;
     	}
     	

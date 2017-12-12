@@ -182,7 +182,7 @@ declare namespace Jhtml {
         private usedElements;
         private pendingRemoveElements;
         private blockedElements;
-        import(newMeta: Meta): LoadObserver;
+        import(newMeta: Meta, curModelDependent: boolean): LoadObserver;
         replaceWith(newMeta: Meta): LoadObserver;
         private containsBlocked(element);
     }
@@ -248,13 +248,15 @@ declare namespace Jhtml {
 declare namespace Jhtml {
     class Monitor {
         private container;
+        private _pseudo;
         context: Context;
         history: History;
         active: boolean;
         private compHandlers;
         private directiveCbr;
-        constructor(container: Element, history: History);
+        constructor(container: Element, history: History, _pseudo: boolean);
         readonly compHandlerReg: CompHandlerReg;
+        readonly pseudo: boolean;
         registerCompHandler(compName: string, compHandler: CompHandler): void;
         unregisterCompHandler(compName: string): void;
         private pushing;
@@ -270,7 +272,7 @@ declare namespace Jhtml {
         private static readonly CSS_CLASS;
         static of(element: Element, selfIncluded?: boolean): Monitor | null;
         static test(element: Element): Monitor | null;
-        static create(container: Element, history: History): Monitor;
+        static create(container: Element, history: History, pseudo: boolean): Monitor;
     }
     interface DirectiveEvent {
         directive: Directive;

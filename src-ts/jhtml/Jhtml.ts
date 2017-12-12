@@ -15,7 +15,7 @@ namespace Jhtml {
 		
 		let history = new History();
 		browser = new Browser(window, history);
-		monitor = Monitor.create(context.document.documentElement, history);
+		monitor = Monitor.create(context.document.documentElement, history, false);
 
 		return browser;
 	}
