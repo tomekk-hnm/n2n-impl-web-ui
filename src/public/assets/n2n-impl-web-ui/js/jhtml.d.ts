@@ -254,6 +254,7 @@ declare namespace Jhtml {
         active: boolean;
         private compHandlers;
         private directiveCbr;
+        private directiveExecutedCbr;
         constructor(container: Element, history: History, _pseudo: boolean);
         readonly compHandlerReg: CompHandlerReg;
         readonly pseudo: boolean;
@@ -266,6 +267,9 @@ declare namespace Jhtml {
         private triggerDirectiveCallbacks(evt);
         onDirective(callback: (evt: DirectiveEvent) => any): void;
         offDirective(callback: (evt: DirectiveEvent) => any): void;
+        private triggerDirectiveExecutedCallbacks(evt);
+        onDirectiveExecuted(callback: (evt: DirectiveEvent) => any): void;
+        offDirectiveExecuted(callback: (evt: DirectiveEvent) => any): void;
         lookupModel(url: Url): Promise<Model>;
         private historyChanged();
         private static readonly KEY;

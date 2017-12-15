@@ -933,6 +933,7 @@ var Jhtml;
             this.active = true;
             this.compHandlers = {};
             this.directiveCbr = new Jhtml.Util.CallbackRegistry();
+            this.directiveExecutedCbr = new Jhtml.Util.CallbackRegistry();
             this.pushing = false;
             this.pendingPromise = null;
             this.context = Jhtml.Context.from(container.ownerDocument);
@@ -991,6 +992,7 @@ var Jhtml;
                 window.scroll(0, (usePageScrollPos ? this.history.currentPage.config.scrollPos
                     : this.history.currentEntry.scrollPos));
             }
+            this.triggerDirectiveExecutedCallbacks({ directive: directive, new: fresh });
         }
         triggerDirectiveCallbacks(evt) {
             this.directiveCbr.fire(evt);
@@ -1000,6 +1002,15 @@ var Jhtml;
         }
         offDirective(callback) {
             this.directiveCbr.off(callback);
+        }
+        triggerDirectiveExecutedCallbacks(evt) {
+            this.directiveExecutedCbr.fire(evt);
+        }
+        onDirectiveExecuted(callback) {
+            this.directiveExecutedCbr.on(callback);
+        }
+        offDirectiveExecuted(callback) {
+            this.directiveExecutedCbr.off(callback);
         }
         lookupModel(url) {
             return new Promise(resolve => {

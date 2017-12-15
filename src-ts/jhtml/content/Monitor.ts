@@ -6,6 +6,7 @@ namespace Jhtml {
 		public active: boolean = true;
 		private compHandlers: CompHandlerReg = {};
 		private directiveCbr = new Util.CallbackRegistry<(evt: DirectiveEvent) => any>();
+		private directiveExecutedCbr = new Util.CallbackRegistry<(evt: DirectiveEvent) => any>();
 		
 		constructor(private container: Element, history: History, private _pseudo: boolean) {
 			this.context = Context.from(container.ownerDocument);
@@ -79,6 +80,7 @@ namespace Jhtml {
 				window.scroll(0, (usePageScrollPos ? this.history.currentPage.config.scrollPos 
 						: this.history.currentEntry.scrollPos));
 			}
+			this.triggerDirectiveExecutedCallbacks({ directive: directive, new: fresh });
 		}
 		
 		private triggerDirectiveCallbacks(evt: DirectiveEvent) {
@@ -91,6 +93,18 @@ namespace Jhtml {
 		
 		public offDirective(callback: (evt: DirectiveEvent) => any) {
 			this.directiveCbr.off(callback);
+		}
+		
+		private triggerDirectiveExecutedCallbacks(evt: DirectiveEvent) {
+			this.directiveExecutedCbr.fire(evt);
+		}
+		
+		public onDirectiveExecuted(callback: (evt: DirectiveEvent) => any) {
+			this.directiveExecutedCbr.on(callback);
+		}
+		
+		public offDirectiveExecuted(callback: (evt: DirectiveEvent) => any) {
+			this.directiveExecutedCbr.off(callback);
 		}
 		
 		public lookupModel(url: Url): Promise<Model> {
