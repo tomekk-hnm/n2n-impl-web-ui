@@ -41,7 +41,7 @@ namespace Jhtml {
         		this.history.go(index, url);
         		this.poping = false;
         	} catch (e) {
-        	    alert("err " + e.message);
+//        	    alert("err " + e.message);
         	    this.window.location.href = url.toString();
         	}
         }

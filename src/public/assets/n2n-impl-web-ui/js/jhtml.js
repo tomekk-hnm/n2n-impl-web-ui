@@ -70,7 +70,6 @@ var Jhtml;
                 this.poping = false;
             }
             catch (e) {
-                alert("err " + e.message);
                 this.window.location.href = url.toString();
             }
         }
