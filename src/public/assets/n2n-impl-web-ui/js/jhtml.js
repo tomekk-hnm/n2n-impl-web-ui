@@ -1483,6 +1483,9 @@ var Jhtml;
                     name = key;
                 }
                 let value = queryExt[key];
+                if (value === null || value === undefined) {
+                    continue;
+                }
                 if (value instanceof Array || value instanceof Object) {
                     this.compileQueryParts(parts, value, name);
                 }
