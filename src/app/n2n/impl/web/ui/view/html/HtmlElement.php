@@ -21,6 +21,7 @@
  */
 namespace n2n\impl\web\ui\view\html;
 
+use n2n\util\StringUtils;
 use n2n\web\ui\UiComponent;
 use n2n\web\ui\BuildContext;
 use n2n\web\ui\SimpleBuildContext;
@@ -117,7 +118,13 @@ class HtmlElement implements UiComponent {
 		$html = '';
 		foreach ((array) $attrs as $name => $value) {
 			if ($value === null) continue;
-			
+
+			try {
+				$value = StringUtils::strOf($value);
+			} catch (\InvalidArgumentException $e) {
+				throw new \InvalidArgumentException('Invalid attrs field ' . $name, null, $e);
+			}
+
 			if (is_numeric($name)) {
 				$html .= ' ' . htmlspecialchars((string) $value);
 			} else {
