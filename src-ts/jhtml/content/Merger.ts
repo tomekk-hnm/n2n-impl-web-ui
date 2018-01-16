@@ -265,5 +265,19 @@
 			
 			return true;
 		}
+		
+		private removableAttrs: Attr[] = [];
+		
+		mergeAttrsInto(newElem: Element, elem: Element) {
+//			let attrs: Attr[] = [];
+//			for (let i = 0; i < elem.attributes.length; i++) {
+//				attrs.push(elem.attributes.item(i));
+//			}
+//			
+//			for (let i = 0; i < newElem.attributes.length; i++) {
+//				let newAttr = newElem.attributes.getNamedItem(name)
+//				newElem.getAttribute(name)
+//			}
+		}
     }  
  }

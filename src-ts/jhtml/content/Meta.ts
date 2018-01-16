@@ -3,6 +3,7 @@ namespace Jhtml {
 	export class Meta {
 		public headElements: Array<Element> = []; 
 		public bodyElements: Array<Element> = []; 
+		public bodyElement: Element|null = null;
 		public containerElement: Element|null = null;
 	}
 	
@@ -64,6 +65,10 @@ namespace Jhtml {
     		
 			merger.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
 			merger.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+			
+			if (newMeta.bodyElement) {
+				merger.mergeAttrsInto(newMeta.bodyElement, this.bodyElem);
+			}
 			
 			let removableElements = new Array<Element>();
 			let remainingElements = merger.remainingElements;

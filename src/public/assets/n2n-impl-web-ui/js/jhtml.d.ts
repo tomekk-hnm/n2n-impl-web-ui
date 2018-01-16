@@ -161,12 +161,15 @@ declare namespace Jhtml {
         private filter(elems, matchingElem, attrNames, checkInner, checkAttrNum);
         private compareExact(elem1, elem2, checkInner);
         private compare(elem1, elem2, attrNames, checkInner, checkAttrNum);
+        private removableAttrs;
+        mergeAttrsInto(newElem: Element, elem: Element): void;
     }
 }
 declare namespace Jhtml {
     class Meta {
         headElements: Array<Element>;
         bodyElements: Array<Element>;
+        bodyElement: Element | null;
         containerElement: Element | null;
     }
     class MetaState {

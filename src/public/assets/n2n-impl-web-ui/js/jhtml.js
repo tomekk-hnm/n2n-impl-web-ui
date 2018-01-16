@@ -445,6 +445,7 @@ var Jhtml;
             this._processedElements = [];
             this._blockedElements = [];
             this.removableElements = [];
+            this.removableAttrs = [];
         }
         get loadObserver() {
             return this._loadObserver;
@@ -640,6 +641,8 @@ var Jhtml;
             }
             return true;
         }
+        mergeAttrsInto(newElem, elem) {
+        }
     }
     Jhtml.Merger = Merger;
 })(Jhtml || (Jhtml = {}));
@@ -649,6 +652,7 @@ var Jhtml;
         constructor() {
             this.headElements = [];
             this.bodyElements = [];
+            this.bodyElement = null;
             this.containerElement = null;
         }
     }
@@ -698,6 +702,9 @@ var Jhtml;
             let merger = new Jhtml.Merger(this.rootElem, this.headElem, this.bodyElem, this.containerElem, newMeta.containerElement);
             merger.mergeInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
             merger.mergeInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
+            if (newMeta.bodyElement) {
+                merger.mergeAttrsInto(newMeta.bodyElement, this.bodyElem);
+            }
             let removableElements = new Array();
             let remainingElements = merger.remainingElements;
             let remainingElement;
