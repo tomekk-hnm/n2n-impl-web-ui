@@ -821,6 +821,10 @@ var Jhtml;
             if (meta.containerElement) {
                 model.container = ModelFactory.compileContainer(meta.containerElement, model);
                 model.comps = ModelFactory.compileComps(model.container, meta.containerElement, model);
+                model.container.detach();
+                for (let comp of Object.values(model.comps)) {
+                    comp.detach();
+                }
             }
             else if (jsonObj.content) {
                 rootElem = document.createElement("div");
