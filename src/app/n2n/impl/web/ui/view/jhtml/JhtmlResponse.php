@@ -56,7 +56,7 @@ class JhtmlResponse extends BufferedPayload {
 	public function prepareForResponse(Response $response) {
 	    if ('application/json' == $response->getRequest()->getAcceptRange()
 	               ->bestMatch(['text/html', 'application/json'])) {
-	        $this->ajahResponse = new JhtmlJsonResponse($this->htmlView);
+	        $this->ajahResponse = new JhtmlJsonResponse($this->htmlView, $this->additionalAttrs);
 	        $this->ajahResponse->prepareForResponse($response);
 	        return;
 	    }
