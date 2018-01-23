@@ -47,8 +47,6 @@ namespace Jhtml {
 	}
 	
 	
-	
-	
 	window.document.addEventListener("DOMContentLoaded", () => {
 		getOrCreateBrowser();
 	}, false);
