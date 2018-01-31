@@ -10,7 +10,7 @@ var Jhtml;
         if (browser)
             return browser;
         let context = getOrCreateContext();
-        if (!context.isJhtml())
+        if (!context.isBrowsable())
             return null;
         let history = new Jhtml.History();
         browser = new Jhtml.Browser(window, history);
@@ -309,17 +309,25 @@ var Jhtml;
         isJhtml() {
             return this.getModelState(false) ? true : false;
         }
+        isBrowsable() {
+            if (!this.isJhtml())
+                return false;
+            return this.getModelState(false).metaState.browsable;
+        }
         getModelState(required) {
-            if (!this.modelState) {
-                try {
-                    this.modelState = Jhtml.ModelFactory.createStateFromDocument(this.document);
+            if (this.modelState) {
+                return this.modelState;
+            }
+            try {
+                this.modelState = Jhtml.ModelFactory.createStateFromDocument(this.document);
+                if (this.modelState.metaState.browsable) {
                     Jhtml.Ui.Scanner.scan(this.document.documentElement);
                 }
-                catch (e) {
-                    if (e instanceof Jhtml.ParseError)
-                        return null;
-                    throw e;
-                }
+            }
+            catch (e) {
+                if (e instanceof Jhtml.ParseError)
+                    return null;
+                throw e;
             }
             if (!this.modelState && required) {
                 throw new Error("No jhtml context");
@@ -674,11 +682,17 @@ var Jhtml;
             this.headElem = headElem;
             this.bodyElem = bodyElem;
             this.containerElem = containerElem;
+            this._browsable = false;
             this.usedElements = [];
             this.pendingRemoveElements = [];
             this.blockedElements = [];
             this.markAsUsed(this.headElements);
             this.markAsUsed(this.bodyElements);
+            let reader = new Jhtml.Util.ElemConfigReader(containerElem);
+            this._browsable = reader.readBoolean("browsable", false);
+        }
+        get browsable() {
+            return this._browsable;
         }
         markAsUsed(elements) {
             for (let element of elements) {
@@ -1284,6 +1298,19 @@ var Jhtml;
             Type[Type["BACK"] = 2] = "BACK";
         })(Type = RedirectDirective.Type || (RedirectDirective.Type = {}));
     })(RedirectDirective = Jhtml.RedirectDirective || (Jhtml.RedirectDirective = {}));
+    class DataDirective {
+        constructor(srcUrl, additionalData) {
+            this.srcUrl = srcUrl;
+            this.additionalData = additionalData;
+        }
+        getAdditionalData() {
+            return this.additionalData;
+        }
+        exec(monitor) {
+            throw new Error(this.srcUrl + "; can not exec data only directive.");
+        }
+    }
+    Jhtml.DataDirective = DataDirective;
 })(Jhtml || (Jhtml = {}));
 var Jhtml;
 (function (Jhtml) {
@@ -1359,6 +1386,9 @@ var Jhtml;
                 case "redirectBack":
                     return new Jhtml.RedirectDirective(url, Jhtml.RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 default:
+                    if (jsonObj.additional !== undefined && !jsonObj.content) {
+                        return new Jhtml.DataDirective(url, jsonObj.additional);
+                    }
                     return null;
             }
         }

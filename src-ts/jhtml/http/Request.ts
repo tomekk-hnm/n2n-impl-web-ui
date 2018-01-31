@@ -83,6 +83,10 @@ namespace Jhtml {
 				return new RedirectDirective(url, RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location),
 						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			default:
+				if (jsonObj.additional !== undefined && !jsonObj.content) {
+					return new DataDirective(url, jsonObj.additional);
+				}
+			
 				return null;
 			}
 			
