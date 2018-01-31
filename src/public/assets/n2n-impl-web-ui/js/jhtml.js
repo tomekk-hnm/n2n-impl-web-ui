@@ -1563,7 +1563,7 @@ var Jhtml;
             }
             var urlStr = urlExpression;
             if (!/^(?:\/|[a-z]+:\/\/)/.test(urlStr)) {
-                return window.location.toString().replace(/\/+$/, "") + "/" + urlStr;
+                return window.location.toString().replace(/(\/+)?((\?|#).*)?$/, "") + "/" + urlStr;
             }
             if (!/^(?:[a-z]+:)?\/\//.test(urlStr)) {
                 return window.location.protocol + "//" + window.location.host + urlStr;
