@@ -41,8 +41,9 @@ namespace Jhtml {
 								}
 							}
 							
-							if (model && model.isFull()) {
-								directive = new FullModelDirective(model);
+							if (model) {
+								directive = model.isFull() ? new FullModelDirective(model) : 
+									new SnippetDirective(this.url, model);
 							}
 							
 							let response = {url: this.url, model: model, directive: directive };
@@ -83,7 +84,7 @@ namespace Jhtml {
 				return new RedirectDirective(url, RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location),
 						FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
 			default:
-				if (jsonObj.additional !== undefined && !jsonObj.content) {
+				if (/*jsonObj.additional !== undefined && */!jsonObj.content) {
 					return new DataDirective(url, jsonObj.additional);
 				}
 			

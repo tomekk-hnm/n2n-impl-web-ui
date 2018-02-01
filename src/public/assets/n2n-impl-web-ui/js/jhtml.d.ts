@@ -378,6 +378,13 @@ declare namespace Jhtml {
             BACK = 2,
         }
     }
+    class SnippetDirective implements Directive {
+        srcUrl: Url;
+        model: Model;
+        constructor(srcUrl: Url, model: Model);
+        getAdditionalData(): any;
+        exec(monitor: Monitor): void;
+    }
     class DataDirective implements Directive {
         srcUrl: Url;
         additionalData: any;

@@ -1298,6 +1298,19 @@ var Jhtml;
             Type[Type["BACK"] = 2] = "BACK";
         })(Type = RedirectDirective.Type || (RedirectDirective.Type = {}));
     })(RedirectDirective = Jhtml.RedirectDirective || (Jhtml.RedirectDirective = {}));
+    class SnippetDirective {
+        constructor(srcUrl, model) {
+            this.srcUrl = srcUrl;
+            this.model = model;
+        }
+        getAdditionalData() {
+            return this.model.additionalData;
+        }
+        exec(monitor) {
+            throw new Error(this.srcUrl + "; can not exec snippet only directive.");
+        }
+    }
+    Jhtml.SnippetDirective = SnippetDirective;
     class DataDirective {
         constructor(srcUrl, additionalData) {
             this.srcUrl = srcUrl;
@@ -1351,8 +1364,9 @@ var Jhtml;
                                     model = this.createModelFromJson(this.url, jsonObj);
                                 }
                             }
-                            if (model && model.isFull()) {
-                                directive = new Jhtml.FullModelDirective(model);
+                            if (model) {
+                                directive = model.isFull() ? new Jhtml.FullModelDirective(model) :
+                                    new Jhtml.SnippetDirective(this.url, model);
                             }
                             let response = { url: this.url, model: model, directive: directive };
                             if (model) {
@@ -1386,7 +1400,7 @@ var Jhtml;
                 case "redirectBack":
                     return new Jhtml.RedirectDirective(url, Jhtml.RedirectDirective.Type.BACK, Jhtml.Url.create(jsonObj.location), Jhtml.FullRequestConfig.from(jsonObj.requestConfig), jsonObj.additional);
                 default:
-                    if (jsonObj.additional !== undefined && !jsonObj.content) {
+                    if (!jsonObj.content) {
                         return new Jhtml.DataDirective(url, jsonObj.additional);
                     }
                     return null;

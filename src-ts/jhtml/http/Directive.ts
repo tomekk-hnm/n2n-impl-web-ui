@@ -83,6 +83,19 @@ namespace Jhtml {
         }
     }
     
+    export class SnippetDirective implements Directive {
+    	constructor(public srcUrl: Url, public model: Model) {
+    	}
+    	
+    	getAdditionalData(): any {
+        	return this.model.additionalData;
+        }
+    	
+    	exec(monitor: Monitor) {
+    		throw new Error(this.srcUrl + "; can not exec snippet only directive.");
+        }
+    }
+    
     export class DataDirective implements Directive {
     	constructor(public srcUrl: Url, public additionalData: any) {
     	}
