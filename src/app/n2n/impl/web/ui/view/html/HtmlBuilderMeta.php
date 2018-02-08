@@ -230,19 +230,21 @@ class HtmlBuilderMeta {
 	/**
 	 * @param array $attrs
 	 * @param string $uniqueAttrName
+	 * @param bool $prepend
 	 */
-	public function addMeta(array $attrs, string $uniqueAttrName = null) {
+	public function addMeta(array $attrs, string $uniqueAttrName = null, bool $prepend = false) {
 		$this->htmlProperties->add(self::HEAD_META_KEY, $this->buildKey($attrs, $uniqueAttrName),
-				new HtmlElement('meta', $attrs));
+				new HtmlElement('meta', $attrs), $prepend);
 	}
 	
 	/**
 	 * @param array $attrs
 	 * @param string $uniqueAttrName
+	 * @param bool $prepend
 	 */
-	public function addLink(array $attrs, string $uniqueAttrName = null) {
+	public function addLink(array $attrs, string $uniqueAttrName = null, bool $prepend = false) {
 		$this->htmlProperties->add(self::HEAD_LINK_KEY, $this->buildKey($attrs, $uniqueAttrName),
-				new HtmlElement('link', $attrs));
+				new HtmlElement('link', $attrs), $prepend);
 	}
 	
 	const HEAD_TITLE_KEY = 'head.title';
@@ -435,16 +437,30 @@ class HtmlBuilderMeta {
 
 class HeadBuilderMeta extends BodyBuilderMeta {
 	
+	/**
+	 * @param string $title
+	 * @param bool $includePageName
+	 */
 	public function setTitle(string $title, bool $includePageName = false) {
 		$this->meta->setTitle($title, $includePageName);
 	}
 	
-	public function addMeta(array $attrs) {
-		$this->meta->addMeta($attrs);
+	/**
+	 * @param array $attrs
+	 * @param string $uniqueAttrName
+	 * @param bool $prepend
+	 */
+	public function addMeta(array $attrs, string $uniqueAttrName = null, bool $prepend = false) {
+		$this->meta->addMeta($attrs, $uniqueAttrName, $prepend);
 	}
 	
-	public function addLink(array $attrs) {
-		$this->meta->addLink($attrs);
+	/**
+	 * @param array $attrs
+	 * @param string $uniqueAttrName
+	 * @param bool $prepend
+	 */
+	public function addLink(array $attrs, string $uniqueAttrName = null, bool $prepend = false) {
+		$this->meta->addLink($attrs, $uniqueAttrName, $prepend);
 	}
 }
 
@@ -452,6 +468,10 @@ class BodyBuilderMeta {
 	protected $target;
 	protected $meta;
 	
+	/**
+	 * @param HtmlBuilderMeta $htmlBuilderMeta
+	 * @param string $target
+	 */
 	public function __construct(HtmlBuilderMeta $htmlBuilderMeta, string $target) {
 		$this->target = $target;
 		$this->meta = $htmlBuilderMeta;

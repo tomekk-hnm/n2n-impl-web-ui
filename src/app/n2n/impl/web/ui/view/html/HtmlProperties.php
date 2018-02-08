@@ -98,7 +98,7 @@ class HtmlProperties {
 // 		}
 	}
 	
-	public function add($name, $key, UiComponent $value, $prepend = false) {
+	public function add(string $name, string $key, UiComponent $value, bool $prepend = false) {
 		if ($prepend) {
 			if ($this->prependedAttributes->hasKey($name, $key)) return;
 			$this->prependedAttributes->add($name, $key, $value);
