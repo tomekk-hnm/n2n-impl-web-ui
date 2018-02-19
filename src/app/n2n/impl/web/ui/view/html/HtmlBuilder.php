@@ -489,11 +489,13 @@ class HtmlBuilder {
 		$textRaw = $this->getEsc($this->view->getL10nText($key, $args, $num, null, $module));
 		if (empty($replacements)) return $textRaw;
 		
-		$textHtml = (string) $textRaw;
-		foreach ($replacements as $key => $replacement) {
-			$textHtml = str_replace(DynamicTextCollection::REPLACEMENT_PREFIX . $key . DynamicTextCollection::REPLACEMENT_SUFFIX, 
-					HtmlUtils::contentsToHtml($replacement, $this->view->getContentsBuildContext()), $textHtml);
-		}
+// 		$textHtml = (string) $textRaw;
+// 		foreach ($replacements as $key => $replacement) {
+// 			$textHtml = str_replace(DynamicTextCollection::REPLACEMENT_PREFIX . $key . DynamicTextCollection::REPLACEMENT_SUFFIX, 
+// 					HtmlUtils::contentsToHtml($replacement, $this->view->getContentsBuildContext()), $textHtml);
+// 		}
+
+		$textHtml = HtmlBuilderMeta::replace((string) $textRaw, $replacements, $this->view);
 		return new Raw($textHtml);
 	}
 	
