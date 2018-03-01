@@ -45,7 +45,7 @@ class HtmlSnippet implements UiComponent {
 	 * @param mixed ...$contents
 	 * @return \n2n\impl\web\ui\view\html\HtmlSnippet
 	 */
-	public function append($contents) {
+	public function append(...$contents) {
 		array_push($this->contents, ...$contents);
 		return $this;
 	}
