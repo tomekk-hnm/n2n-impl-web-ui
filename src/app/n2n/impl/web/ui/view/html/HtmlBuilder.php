@@ -262,6 +262,10 @@ class HtmlBuilder {
 		$this->view->out($this->getLinkStart($murl, $attrs, $alternateTagName, $alternateAttrs, $required));
 	}
 	
+	/**
+	 * @param array $attrs
+	 * @return array
+	 */
 	private function secureLinkAttrs(array $attrs) {
 		if ($attrs['target'] == '_blank' && !array_key_exists('rel', $attrs)) {
 			$attrs['rel'] = 'noopener';
@@ -280,10 +284,12 @@ class HtmlBuilder {
 		if ($murl !== null) {
 			$href = $this->view->buildUrlStr($murl, $required, $suggestedLabel);
 		}
-		$attrs = (array) $attrs;
+		
+		$attrs = $this->secureLinkAttrs((array) $attrs);
+		
 		if ($href !== null) {
 			$this->linkStartedData = array('tagNameHtml' => 'a', 'href' =>  $href, 'suggestedLabel' => $suggestedLabel);
-			$attrs = $this->secureLinkAttrs(HtmlUtils::mergeAttrs(array('href' =>  $href), $attrs));
+			$attrs = HtmlUtils::mergeAttrs(array('href' =>  $href), $attrs);
 			return new Raw('<a ' . HtmlElement::buildAttrsHtml($attrs) . '>');
 		} 
 		
