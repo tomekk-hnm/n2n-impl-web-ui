@@ -9,9 +9,11 @@ namespace Jhtml {
 	
     export class MetaState {
     	private _browsable: boolean = false;
+    	private mergeQueue: MetaQueue;
     	
     	constructor(private rootElem: Element, private headElem: Element, private bodyElem: Element,
     			private containerElem: Element) {
+    		this.mergeQueue = new MetaQueue();
     		this.markAsUsed(this.headElements);
     		this.markAsUsed(this.bodyElements);
     		
@@ -27,7 +29,7 @@ namespace Jhtml {
     		for (let element of elements) {
     			if (element === this.containerElement) continue;
     			
-    			this.usedElements.push(element);
+    			this.mergeQueue.addUsedElement(element);
     			
     			this.markAsUsed(Util.array(element.children));
     		}
@@ -45,9 +47,6 @@ namespace Jhtml {
     		return this.containerElem;
     	}
     	
-		private usedElements: Array<Element> = [];
-    	private pendingRemoveElements: Array<Element> = [];
-    	private blockedElements: Array<Element> = [];
     	
     	public import(newMeta: Meta, curModelDependent: boolean): LoadObserver {
     		let merger = new Merger(this.rootElem, this.headElem, this.bodyElem,
@@ -67,7 +66,7 @@ namespace Jhtml {
 			return merger.loadObserver;
     	}
     	
-    	public replaceWith(newMeta: Meta): LoadObserver {
+    	public replaceWith(newMeta: Meta): MergeObserver {
     		let merger = new Merger(this.rootElem, this.headElem, this.bodyElem,
     				this.containerElem, newMeta.containerElement);
     		
@@ -78,7 +77,26 @@ namespace Jhtml {
 				merger.mergeAttrsInto(newMeta.bodyElement, this.bodyElem);
 			}
 			
-			let removableElements = new Array<Element>();
+			return this.mergeQueue.finalizeMerge(merger);
+		}
+    }
+    
+    class MetaQueue {
+		private usedElements: Array<Element> = [];
+    	private pendingRemoveElements: Array<Element> = [];
+    	private blockedElements: Array<Element> = [];
+    	private curObserver: MergeObserverImpl|null = null;
+    
+    	addUsedElement(usedElement: Element) {
+    		this.usedElements.push(usedElement);
+    	}
+    	
+    	containsBlocked(element: Element) {
+    		return -1 < this.blockedElements.indexOf(element);
+    	}
+    	
+    	finalizeMerge(merger: Merger) {
+    		let removableElements = new Array<Element>();
 			let remainingElements = merger.remainingElements;
 			let remainingElement;
 			while (remainingElement = remainingElements.pop()) {
@@ -100,7 +118,16 @@ namespace Jhtml {
 				}
 			}
 			
+			let observer = this.curObserver = new MergeObserverImpl;
+			
 			merger.loadObserver.whenLoaded(() => {
+				if (this.curObserver !== observer) {
+					observer.abort();
+					return;
+				} 
+				
+				observer.complete();
+				
 				for (let removableElement of removableElements) {
 					let i = this.pendingRemoveElements.indexOf(removableElement);
 					if (-1 == i) continue;
@@ -109,12 +136,49 @@ namespace Jhtml {
 					this.pendingRemoveElements.splice(i, 1);
 				}
 			});
-
-			return merger.loadObserver;
-		}
+			
+			return observer;
+    	}
+    }
+    
+    export interface MergeObserver {
+    	done(callback: () => any): MergeObserver;
+    	aborted(callback: () => any): MergeObserver;
+    }
+    
+    class MergeObserverImpl implements MergeObserver {
+    	private successCallback: () => any;
+    	private abortedCallback: () => any;
     	
-    	private containsBlocked(element: Element) {
-    		return -1 < this.blockedElements.indexOf(element);
+    	complete() {
+    		if (this.successCallback) {
+    			this.successCallback();
+    		}
+    		
+    		this.reset();
+    	}
+    	
+    	abort() {
+    		if (this.abortedCallback) {
+    			this.abortedCallback();
+    		}
+    		
+    		this.reset();
+    	}
+    	
+    	private reset() {
+    		this.successCallback = null;
+    		this.abortedCallback = null;
+    	}
+    	
+    	done(callback: () => any): MergeObserver {
+    		this.successCallback = callback;
+    		return this;
+    	}
+    	
+    	aborted(callback: () => any): MergeObserver {
+    		this.abortedCallback = callback;
+    		return this;
     	}
     }
     
