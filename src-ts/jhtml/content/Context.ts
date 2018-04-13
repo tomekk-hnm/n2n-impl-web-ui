@@ -61,25 +61,23 @@ namespace Jhtml {
 		replaceModel(newModel: Model, montiorCompHandlers: { [compName: string]: CompHandler } = {}): void {
 			let boundModelState: ModelState = this.getModelState(true);
 			
-			for (let name in boundModelState.comps) {
-				let comp = boundModelState.comps[name];
-				
-				if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
-						&& !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
-					comp.detach();
-				}
-			}
-
-			boundModelState.container.detach();
 			let mergeObserver = boundModelState.metaState.replaceWith(newModel.meta);
 			
-			
 			mergeObserver.done(() => {
+				for (let name in boundModelState.comps) {
+					let comp = boundModelState.comps[name];
+					
+					if (!(montiorCompHandlers[name] && montiorCompHandlers[name].detachComp(comp))
+							&& !(this.compHandlers[name] && this.compHandlers[name].detachComp(comp))) {
+						comp.detach();
+					}
+				}
+				
 				if (!boundModelState.container.matches(newModel.container)) {
+					boundModelState.container.detach();
 					boundModelState.container = newModel.container;
-				} 
-	
-				boundModelState.container.attachTo(boundModelState.metaState.containerElement);
+					boundModelState.container.attachTo(boundModelState.metaState.containerElement);
+				}
 				
 				for (let name in newModel.comps) {
 					let comp = boundModelState.comps[name] = newModel.comps[name];

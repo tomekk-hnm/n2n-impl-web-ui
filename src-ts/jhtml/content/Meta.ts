@@ -9,11 +9,11 @@ namespace Jhtml {
 	
     export class MetaState {
     	private _browsable: boolean = false;
-    	private mergeQueue: MetaQueue;
+    	private mergeQueue: ElementMergeQueue;
     	
     	constructor(private rootElem: Element, private headElem: Element, private bodyElem: Element,
     			private containerElem: Element) {
-    		this.mergeQueue = new MetaQueue();
+    		this.mergeQueue = new ElementMergeQueue();
     		this.markAsUsed(this.headElements);
     		this.markAsUsed(this.bodyElements);
     		
@@ -29,7 +29,7 @@ namespace Jhtml {
     		for (let element of elements) {
     			if (element === this.containerElement) continue;
     			
-    			this.mergeQueue.addUsedElement(element);
+    			this.mergeQueue.addUsed(element);
     			
     			this.markAsUsed(Util.array(element.children));
     		}
@@ -59,10 +59,6 @@ namespace Jhtml {
     			return merger.loadObserver;
     		}
     		
-    		for (let element of merger.processedElements) {
-    			this.usedElements.push(element);
-    		}
-    		
 			return merger.loadObserver;
     	}
     	
@@ -81,60 +77,105 @@ namespace Jhtml {
 		}
     }
     
-    class MetaQueue {
+    class ElementMergeQueue {
 		private usedElements: Array<Element> = [];
-    	private pendingRemoveElements: Array<Element> = [];
+    	private unnecessaryElements: Array<Element> = [];
     	private blockedElements: Array<Element> = [];
     	private curObserver: MergeObserverImpl|null = null;
     
-    	addUsedElement(usedElement: Element) {
+    	addUsed(usedElement: Element) {
+    		if (this.containsUsed(usedElement)) return;
+    		
     		this.usedElements.push(usedElement);
+    	}
+    	
+    	containsUsed(element: Element) {
+    		return -1 < this.usedElements.indexOf(element);
+    	}
+    	
+    	/**
+    	 * Blocked elements are added outside of the 
+    	 * @param blockedElement
+    	 */
+    	private addBlocked(blockedElement: Element) {
+    		if (this.containsBlocked(blockedElement)) return;
+    		
+    		this.blockedElements.push(blockedElement);
     	}
     	
     	containsBlocked(element: Element) {
     		return -1 < this.blockedElements.indexOf(element);
     	}
     	
+    	private addUnnecessary(unnecessaryElement: Element) {
+    		if (this.containsUnnecessary(unnecessaryElement)) return;
+    		
+    		this.unnecessaryElements.push(unnecessaryElement);
+    	}
+    	
+//    	private clearUnnecessaries() {
+//    		this.unnecessaryElements.splice(0);
+//    	}
+    	
+    	containsUnnecessary(element: Element) {
+    		return -1 < this.unnecessaryElements.indexOf(element);
+    	}
+    	
+    	private removeUnnecessary(element: Element) {
+    		this.unnecessaryElements.splice(
+    				this.unnecessaryElements.indexOf(element), 1);
+    	}
+    	
+    	private approveRemove() {
+    		let removeElement;
+    		while (removeElement = this.unnecessaryElements.pop()) {
+    			removeElement.remove();
+    		}
+    	}
+    	
+    	finalizeImport(merger: Merger) {
+    		for (let element of merger.processedElements) {
+				this.removeUnnecessary(element);
+    			this.addUsed(element);
+    		}
+    	}
+    	
     	finalizeMerge(merger: Merger) {
-    		let removableElements = new Array<Element>();
-			let remainingElements = merger.remainingElements;
+    		let removableElements: Element[] = [];
+    		
+    		let remainingElements = merger.remainingElements;
 			let remainingElement;
 			while (remainingElement = remainingElements.pop()) {
 				if (this.containsBlocked(remainingElement)) continue;
 				
-				if (-1 == this.usedElements.indexOf(remainingElement)
-						&& -1 == this.pendingRemoveElements.indexOf(remainingElement)) {
-					this.blockedElements.push(remainingElement);
+				if (!this.containsUsed(remainingElement)
+						&& !this.containsUnnecessary(remainingElement)) {
+					this.addBlocked(remainingElement);
 					continue;
 				}
 				
-				removableElements.push(remainingElement);
+				this.addUnnecessary(remainingElement);
 			}
 			
-			this.usedElements = merger.processedElements;
-			for (let removableElement of removableElements) {
-				if (-1 == this.pendingRemoveElements.indexOf(removableElement)) {
-					this.pendingRemoveElements.push(removableElement);
-				}
+			for (let processedElement of merger.processedElements) {
+				this.removeUnnecessary(processedElement);
+				this.addUsed(processedElement);
 			}
 			
-			let observer = this.curObserver = new MergeObserverImpl;
+			if (this.curObserver !== null) {
+				this.curObserver.abort();
+			}
+			
+			let observer = this.curObserver = new MergeObserverImpl();
 			
 			merger.loadObserver.whenLoaded(() => {
 				if (this.curObserver !== observer) {
-					observer.abort();
 					return;
-				} 
+				}
 				
 				observer.complete();
 				
-				for (let removableElement of removableElements) {
-					let i = this.pendingRemoveElements.indexOf(removableElement);
-					if (-1 == i) continue;
-					
-					removableElement.remove();
-					this.pendingRemoveElements.splice(i, 1);
-				}
+				this.approveRemove();
 			});
 			
 			return observer;
@@ -205,7 +246,11 @@ namespace Jhtml {
 			}
     		this.loadCallbacks.push(loadCallback)
 			elem.addEventListener("load", loadCallback, false);
-    		tn = setTimeout(loadCallback, 5000);
+    		tn = setTimeout(() => {
+    			console.warn("Jhtml continues; following resource could not be loaded in time: " 
+    					+ elem.outerHTML);
+    			loadCallback();
+    		}, 2000);
     	}
     	
     	private unregisterLoadCallback(callback: () => any) {
