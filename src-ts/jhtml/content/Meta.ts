@@ -140,7 +140,7 @@ namespace Jhtml {
     		}
     	}
     	
-    	finalizeMerge(merger: Merger) {
+    	finalizeMerge(merger: Merger): MergeObserver {
     		let removableElements: Element[] = [];
     		
     		let remainingElements = merger.remainingElements;
@@ -173,6 +173,7 @@ namespace Jhtml {
 					return;
 				}
 				
+				this.curObserver = null;
 				observer.complete();
 				
 				this.approveRemove();
@@ -188,37 +189,60 @@ namespace Jhtml {
     }
     
     class MergeObserverImpl implements MergeObserver {
-    	private successCallback: () => any;
-    	private abortedCallback: () => any;
+    	private success: boolean = null;
+    	private successCallbacks: Array<() => any> = [];
+    	private abortedCallbacks: Array<() => any> = [];
+    	
+    	private ensure() {
+    		if (this.success === null) return;
+    		
+    		throw new Error("already finished");
+    	}
     	
     	complete() {
-    		if (this.successCallback) {
-    			this.successCallback();
+    		this.ensure();
+    		this.success = true;
+    		
+    		let successCallback;
+    		while (successCallback = this.successCallbacks.pop()) {
+    			successCallback();
     		}
     		
     		this.reset();
     	}
     	
     	abort() {
-    		if (this.abortedCallback) {
-    			this.abortedCallback();
+    		this.ensure();
+    		this.success = false;
+    		
+    		let abortedCallback;
+    		while (abortedCallback = this.abortedCallbacks.pop()) {
+    			abortedCallback();
     		}
     		
     		this.reset();
     	}
     	
     	private reset() {
-    		this.successCallback = null;
-    		this.abortedCallback = null;
+    		this.successCallbacks = [];
+    		this.abortedCallbacks = [];
     	}
     	
     	done(callback: () => any): MergeObserver {
-    		this.successCallback = callback;
+    		if (this.success === null) {
+    			this.successCallbacks.push(callback);
+    		} else if (this.success) {
+    			callback();
+    		}
     		return this;
     	}
     	
     	aborted(callback: () => any): MergeObserver {
-    		this.abortedCallback = callback;
+    		if (this.success === null) {
+    			this.abortedCallbacks.push(callback);
+    		} else if (!this.success) {
+    			callback();
+    		}
     		return this;
     	}
     }
