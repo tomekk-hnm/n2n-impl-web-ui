@@ -46,7 +46,19 @@ namespace Jhtml {
     	get containerElement(): Element {
     		return this.containerElem;
     	}
-    	
+
+    	private loadObservers: Array<LoadObserver> = [];
+		
+		private registerLoadObserver(loadObserver: LoadObserver) {
+			this.loadObservers.push(loadObserver);
+			loadObserver.whenLoaded(() => {
+				this.loadObservers.splice(this.loadObservers.indexOf(loadObserver), 1);
+			});
+		}
+		
+		get busy(): boolean {
+			return this.loadObservers.length > 0;
+		}
     	
     	public import(newMeta: Meta, curModelDependent: boolean): LoadObserver {
     		let merger = new Merger(this.rootElem, this.headElem, this.bodyElem,
@@ -55,9 +67,13 @@ namespace Jhtml {
     		merger.importInto(newMeta.headElements, this.headElem, Meta.Target.HEAD);
     		merger.importInto(newMeta.bodyElements, this.bodyElem, Meta.Target.BODY);
 			
+    		this.registerLoadObserver(merger.loadObserver);
+    		
     		if (!curModelDependent) {
     			return merger.loadObserver;
     		}
+    		
+    		this.mergeQueue.finalizeImport(merger);
     		
 			return merger.loadObserver;
     	}
@@ -72,6 +88,8 @@ namespace Jhtml {
 			if (newMeta.bodyElement) {
 				merger.mergeAttrsInto(newMeta.bodyElement, this.bodyElem);
 			}
+			
+			this.registerLoadObserver(merger.loadObserver);
 			
 			return this.mergeQueue.finalizeMerge(merger);
 		}

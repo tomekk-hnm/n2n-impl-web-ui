@@ -98,15 +98,6 @@ namespace Jhtml {
 			return loadObserver;
 		}
 		
-		private loadObservers: Array<LoadObserver> = [];
-		
-		private registerLoadObserver(loadObserver: LoadObserver) {
-			this.loadObservers.push(loadObserver);
-			loadObserver.whenLoaded(() => {
-				this.loadObservers.splice(this.loadObservers.indexOf(loadObserver), 1);
-			});
-		}
-		
 		registerNewModel(model: Model) {
 			let container = model.container;
 			if (container) {
@@ -170,7 +161,7 @@ namespace Jhtml {
 			this.readyCbr.on(readyCallback);
 
 			if ((this._document.readyState === "complete" || this._document.readyState === "interactive") 
-					 && this.loadObservers.length == 0) {
+					 && !this.modelState.metaState.busy) {
 				readyCallback([this.document.documentElement], {});	
 			}
 		}
