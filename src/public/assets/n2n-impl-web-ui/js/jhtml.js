@@ -1526,7 +1526,7 @@ var Jhtml;
             for (var name_5 in this.model.comps) {
                 if (!monitor.compHandlerReg[name_5])
                     continue;
-                monitor.compHandlerReg[name_5].attachComp(this.model.comps[name_5], loadObserver);
+                monitor.compHandlerReg[name_5].attachComp(this.model.comps[name_5]);
             }
         };
         return FullModelDirective;
