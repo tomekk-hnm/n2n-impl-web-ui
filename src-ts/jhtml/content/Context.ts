@@ -103,6 +103,7 @@ namespace Jhtml {
 			if (container) {
 				let containerReadyCallback = () => {
 					container.off("attached", containerReadyCallback)
+					console.log("container attached");
 //					container.loadObserver.whenLoaded(() => {
 						this.readyCbr.fire(container.elements, { container: container });
 						this.triggerAndScan(container.elements);
