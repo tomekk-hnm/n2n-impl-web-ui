@@ -1870,9 +1870,13 @@ var Jhtml;
         Url.prototype.extR = function (pathExt, queryExt) {
             if (pathExt === void 0) { pathExt = null; }
             if (queryExt === void 0) { queryExt = null; }
-            var newUrlStr = this.urlStr;
+            var urlParts = this.urlStr.split("?");
+            var newUrlStr = urlParts[0];
             if (pathExt !== null && pathExt !== undefined) {
                 newUrlStr = newUrlStr.replace(/\/+$/, "") + "/" + encodeURI(pathExt);
+            }
+            if (urlParts[1]) {
+                newUrlStr += "?" + urlParts[1];
             }
             if (queryExt !== null || queryExt !== undefined) {
                 var parts = [];
@@ -2275,7 +2279,9 @@ var Jhtml;
                 if (!this.callbacks[type])
                     return;
                 var i = this.callbacks[type].indexOf(callback);
-                this.callbacks[type].splice(i, 1);
+                if (i > -1) {
+                    this.callbacks[type].splice(i, 1);
+                }
             };
             CallbackRegistry.prototype.fire = function () {
                 var args = [];
