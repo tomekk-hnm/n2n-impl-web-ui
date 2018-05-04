@@ -498,7 +498,7 @@ var Jhtml;
         Context.prototype.onReady = function (readyCallback) {
             this.readyCbr.on(readyCallback);
             if ((this._document.readyState === "complete" || this._document.readyState === "interactive")
-                && !this.modelState.metaState.busy) {
+                && (!this.modelState || !this.modelState.metaState.busy)) {
                 readyCallback([this.document.documentElement], {});
             }
         };
