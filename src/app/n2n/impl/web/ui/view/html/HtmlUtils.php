@@ -61,12 +61,25 @@ class HtmlUtils {
 		return $attrs;
 	}
 	
+	/**
+	 * @param string $str
+	 * @return string
+	 */
+	public static function hsc(string $str) {
+		return htmlspecialchars($str, ENT_QUOTES | ENT_HTML5 | ENT_SUBSTITUTE);
+	}
+	
+	/**
+	 * @param mixed $contents
+	 * @param BuildContext $buildContext
+	 * @return string
+	 */
 	public static function contentsToHtml($contents, BuildContext $buildContext) {
 		if ($contents instanceof UiComponent) {
 			return $contents->build($buildContext);
 		}
 		
-		return htmlspecialchars(StringUtils::strOf($contents, true));
+		return self::hsc(StringUtils::strOf($contents, true));
 	}
 	
 	/**
@@ -78,10 +91,10 @@ class HtmlUtils {
 	public static function escape($contents, \Closure $pcf = null) {
 		$html;
 		if ($contents instanceof UiComponent) {
-			$html = htmlspecialchars($contents->build(new SimpleBuildContext()));
+			$html = self::hsc($contents->build(new SimpleBuildContext()));
 		} else {
 			try {
-				$html = htmlspecialchars(StringUtils::strOf($contents));
+				$html = self::hsc(StringUtils::strOf($contents));
 			} catch (\InvalidArgumentException $e) {
 				throw new \InvalidArgumentException('Could not convert type to escaped string: '
 						. ReflectionUtils::getTypeInfo($contents));
