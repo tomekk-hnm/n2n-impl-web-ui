@@ -66,7 +66,7 @@ class HtmlUtils {
 			return $contents->build($buildContext);
 		}
 		
-		return htmlspecialchars(StringUtils::strOf($contents, true), ENT_SUBSTITUTE);
+		return htmlspecialchars(StringUtils::strOf($contents, true));
 	}
 	
 	/**
@@ -78,10 +78,10 @@ class HtmlUtils {
 	public static function escape($contents, \Closure $pcf = null) {
 		$html;
 		if ($contents instanceof UiComponent) {
-			$html = htmlspecialchars($contents->build(new SimpleBuildContext()), ENT_SUBSTITUTE);
+			$html = htmlspecialchars($contents->build(new SimpleBuildContext()));
 		} else {
 			try {
-				$html = htmlspecialchars(StringUtils::strOf($contents), ENT_SUBSTITUTE);
+				$html = htmlspecialchars(StringUtils::strOf($contents));
 			} catch (\InvalidArgumentException $e) {
 				throw new \InvalidArgumentException('Could not convert type to escaped string: '
 						. ReflectionUtils::getTypeInfo($contents));

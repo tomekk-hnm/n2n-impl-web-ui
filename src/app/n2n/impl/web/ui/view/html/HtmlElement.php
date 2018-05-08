@@ -105,11 +105,11 @@ class HtmlElement implements UiComponent {
 	}
 	
 	public function build(BuildContext $buildContext): string {
-		$html = '<' . htmlspecialchars($this->tagName , ENT_SUBSTITUTE) . self::buildAttrsHtml($this->attrs);
+		$html = '<' . htmlspecialchars($this->tagName ) . self::buildAttrsHtml($this->attrs);
 		
 		if (!$this->isEmpty()) {
 			$html .= '>' . $this->buildContentHtml($buildContext) . '</' 
-					. htmlspecialchars($this->tagName, ENT_SUBSTITUTE) . '>';
+					. htmlspecialchars($this->tagName) . '>';
 		} else {
 			$html .= ' />';
 		}
@@ -140,9 +140,9 @@ class HtmlElement implements UiComponent {
 			}
 
 			if (is_numeric($name)) {
-				$html .= ' ' . htmlspecialchars($value, ENT_SUBSTITUTE);
+				$html .= ' ' . htmlspecialchars($value);
 			} else {
-				$html .= ' ' . htmlspecialchars((string) $name, ENT_SUBSTITUTE) . '="' . htmlspecialchars($value, ENT_SUBSTITUTE) . '"';
+				$html .= ' ' . htmlspecialchars((string) $name) . '="' . htmlspecialchars($value) . '"';
 			}
 		}
 		return $html;
