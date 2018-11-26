@@ -432,6 +432,31 @@ class HtmlBuilder {
 				($label !== null ? $label : new Raw(HtmlUtils::encode($email))),
 				new Raw('</a>'));
 	}
+	/**
+	 * 
+	 * @param string $email
+	 * @param string|UiComponent $label
+	 * @param array $attrs
+	 */
+	public function linkTel(string $tel, $label = null, array $attrs = null) {
+		$this->view->out($this->getLinkTel($tel, $label, $attrs));
+	}
+	
+	/** 
+	 * @param string $email
+	 * @param string|UiComponent $label
+	 * @param array $attrs
+	 * @return \n2n\web\ui\Raw
+	 */
+	public function getLinkTel(string $tel, $label = null, array $attrs = null) {
+		HtmlUtils::validateCustomAttrs((array) $attrs, array('href'));
+
+		return new HtmlSnippet(
+				new Raw('<a href="tel:' . preg_replace('/[^0-9\\+]/', '', str_replace('(0)', '', $tel)) . '"' 
+						. HtmlElement::buildAttrsHtml($attrs) . '>'),
+				($label !== null ? $label : new Raw($tel)),
+				new Raw('</a>'));
+	}
 	
 	/*
 	 * MESSAGE CONTAINER UTILS 
