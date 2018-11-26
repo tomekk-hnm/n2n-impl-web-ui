@@ -465,7 +465,8 @@ class HtmlBuilder {
 	public function getMessageList(string $groupName = null, int $severity = null, array $attrs = null, array $errorAttrs = null, 
 			array $warnAttrs = null, array $infoAttrs = null, array $successAttrs = null) {
 		
-		return new MessageList($this->meta->getMessages($groupName, $severity), $attrs, 
+		return new MessageList($this->view->getDynamicTextCollection(), 
+				$this->meta->getMessages($groupName, $severity), $attrs, 
 				$errorAttrs, $warnAttrs, $infoAttrs, $successAttrs);
 	}
 	

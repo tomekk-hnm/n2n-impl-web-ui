@@ -21,14 +21,12 @@
  */
 namespace n2n\impl\web\ui\view\html;
 
-use n2n\l10n\MessageTranslator;
 use n2n\reflection\ArgUtils;
 use n2n\web\ui\Raw;
 use n2n\util\uri\Url;
 use n2n\web\http\nav\Murl;
 use n2n\l10n\DynamicTextCollection;
 use n2n\l10n\MessageContainer;
-use n2n\l10n\N2nLocale;
 use n2n\core\config\GeneralConfig;
 use n2n\web\http\ServerPushDirective;
 use n2n\web\ui\UiComponent;
@@ -361,15 +359,11 @@ class HtmlBuilderMeta {
 		$this->view->getHtmlProperties()->addServerPushDirective(new ServerPushDirective($url, $as));
 	}
 	
-	public function getMessages($groupName = null, $severity = null, $translate = true) {
+	public function getMessages($groupName = null, $severity = null) {
 		$n2nContext = $this->view->getN2nContext();
 		$messages = $n2nContext->lookup(MessageContainer::class)->getAll($groupName, $severity);
 		
-		if (!$translate) return $messages;
-		
-		$messageTranslator = new MessageTranslator($this->view->getModuleNamespace(),
-				array($n2nContext->getN2nLocale(), N2nLocale::getFallback()));
-		return $messageTranslator->translateAll($messages);
+		return $messages;
 	}
 	
 	public function getContextUrl($pathExt, $query = null, $fragment = null, $ssl = null, $subsystem = null) {
