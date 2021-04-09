@@ -602,7 +602,7 @@ class BodyBuilderMeta {
 	
 	public function addJs($relativeUrl, string $moduleNamespace = null, bool $defer = false, bool $prepend = false,
 			array $attrs = null) {
-				$this->meta->addJs($relativeUrl, $moduleNamespace, $defer, $prepend, $attrs, $this->target);
+		$this->meta->addJs($relativeUrl, $moduleNamespace, $defer, $prepend, $attrs, $this->target);
 	}
 	
 	public function addJsUrl($src, bool $defer = false, bool $prepend = false, array $attrs = null) {
