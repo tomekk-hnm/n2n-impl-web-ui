@@ -15,7 +15,12 @@
 			"email" : "a@von-burg.net",
 			"homepage" : "https://www.von-burg.net/"
 		}
-	],
+	],	
+	"minimum-stability" : "dev",
+	"prefer-stable": true,
+	"config" : {
+		"vendor-dir" : "src/vendor"
+	},
 	"require" : {
 		"php" : ">=7.0",
 		"n2n/n2n-composer-module-installer" : "^7.1",
@@ -29,5 +34,13 @@
 		"psr-4" : {
 			"n2n\\impl\\web\\ui\\" : "src/app/n2n/impl/web/ui"
 		}
+	},
+	"autoload-dev" : {
+		"psr-4" : {
+			"n2n\\impl\\web\\ui\\" : "src/test/n2n/impl/web/ui"
+		}
+	},
+	"require-dev" : {
+		"phpunit/phpunit" : "^9.5"
 	}
 }
