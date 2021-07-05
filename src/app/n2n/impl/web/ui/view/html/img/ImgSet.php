@@ -21,82 +21,217 @@
  */
 namespace n2n\impl\web\ui\view\html\img;
 
-use n2n\util\type\ArgUtils;
+use n2n\io\managed\File;
+use n2n\io\managed\img\ThumbStrategy;
+use n2n\io\managed\img\ImageFile;
+use n2n\io\managed\img\ImageDimension;
+use n2n\impl\web\ui\view\html\HtmlElement;
+use n2n\impl\web\ui\view\html\HtmlUtils;
 
-class ImgSet {
-	private $defaultSrcAttr;
-	private $defaultAltAttr;
-	private $defaultWidthAttr;
-	private $defaultHeightAttr;
-	private $imageSourceSets;
-	
-	public function __construct(string $defaultSrcAttr, string $defaultAltAttr, int $defaultWidthAttr, 
-			int $defaultHeightAttr, array $imageSourceSets) {
-		ArgUtils::valArray($imageSourceSets, ImageSourceSet::class);
-		$this->defaultSrcAttr = $defaultSrcAttr;
-		$this->defaultAltAttr = $defaultAltAttr;
-		$this->defaultWidthAttr = $defaultWidthAttr;
-		$this->defaultHeightAttr = $defaultHeightAttr;
-		$this->setImageSourceSets($imageSourceSets);
-	}
-	
-	public function getDefaultSrcAttr() {
-		return $this->defaultSrcAttr;
-	}
-	
-	public function setDefaultSrcAttr(string $defaultImageSrc) {
-		$this->defaultSrcAttr = $defaultImageSrc;
-	}
-	
-	public function getDefaultAltAttr() {
-		return $this->defaultAltAttr;
-	}
-	
-	public function setDefaultAltAttr(string $defaultAltAttr) {
-		$this->defaultAltAttr = $defaultAltAttr;
-	}
-	
-	public function getDefaultWidthAttr() {
-		return $this->defaultWidthAttr;
-	}
-	
-	public function setDefaultWidthAttr(int $defaultWidthAttr) {
-		$this->defaultWidthAttr = $defaultWidthAttr;
-	}
-	
-	public function getDefaultHeightAttr() {
-		return $this->defaultHeightAttr;
-	}
-	
-	public function setDefaultHeightAttr(int $defaultHeightAttr) {
-		$this->defaultHeightAttr = $defaultHeightAttr;
-	}
-	
+class UiComponentFactory {
 	/**
-	 * @return ImageSourceSet[]
+	 * @param File $file
+	 * @param ThumbStrategy $thumbStrategy
+	 * @param array $attrs
+	 * @param bool $addWidthAttr
+	 * @param bool $addHeightAttr
+	 * @return \n2n\impl\web\ui\view\html\HtmlElement
 	 */
-	public function getImageSourceSets() {
-		return $this->imageSourceSets;
-	}
-
-	/**
-	 * @param array $imageSourceSets
-	 */
-	public function setImageSourceSets(array $imageSourceSets) {
-		ArgUtils::valArray($imageSourceSets, ImageSourceSet::class);
-		$this->imageSourceSets = $imageSourceSets;
-	}
-	
-	/**
-	 * @return boolean
-	 */
-	public function isPictureRequired() {
-		if (count($this->imageSourceSets) > 1) return true;
+	public static function createImgFromThSt(File $file = null, ThumbStrategy $thumbStrategy = null, 
+			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
 		
-		foreach ($this->imageSourceSets as $imageSourceSet) {
-			if (null !== $imageSourceSet->getMediaAttr()) return true;
+		if ($file === null || !$file->isValid()) {
+			return self::createInvalidImg($thumbStrategy !== null ? $thumbStrategy->getImageDimension() : null, 
+					$attrs, $addWidthAttr, $addHeightAttr);
 		}
 		
-		return false;
+		$imageFile = new ImageFile($file);
+		
+		$thumbImageFile = null;
+		if ($thumbStrategy === null) {
+			$thumbImageFile = $imageFile;
+		} else {
+			$thumbImageFile = $imageFile->getOrCreateThumb($thumbStrategy);
+		}
+				
+		$elemAttrs = array('src' => self::createImgSrc($thumbImageFile));
+		if ($addWidthAttr) $elemAttrs['width'] = $thumbImageFile->getWidth();
+		if ($addHeightAttr) $elemAttrs['height'] = $thumbImageFile->getHeight();
+		$attrs = HtmlUtils::mergeAttrs($elemAttrs, (array) $attrs);
+		if (!isset($attrs['alt'])) $attrs['alt'] = $file->getOriginalName();
+		
+		return new HtmlElement('img', $attrs);
+	}
+	
+	
+	public static function createPicture(ImgSet $imgSet, array $attrs = null, $defaultAlt = null) {
+		$htmlElement = new HtmlElement('picture', $attrs);
+		
+		foreach ($imgSet->getImageSourceSets() as $imageSourceSet) {
+			$htmlElement->appendLn(new HtmlElement('source', HtmlUtils::mergeAttrs(
+					array('media' => $imageSourceSet->getMediaAttr(), 'srcset' => $imageSourceSet->getSrcsetAttr()), 
+					$imageSourceSet->getAttrs())));
+		}
+		
+		$htmlElement->appendLn(new HtmlElement('img', array('src' => $imgSet->getDefaultSrcAttr(), 
+				'alt' => ($defaultAlt !== null ? $defaultAlt : $imgSet->getDefaultAltAttr()))));
+		
+		return $htmlElement;
+	}
+	
+	public static function createImg(ImgSet $imgSet, array $customAttrs = null, bool $addWidthAttr = true, 
+			bool $addHeightAttr = true) {
+		
+		$attrs = array('src' => $imgSet->getDefaultSrcAttr());
+		$customAttrs = (array) $customAttrs;
+		
+		if (!array_key_exists('alt', $customAttrs)) {
+			$attrs['alt'] = $imgSet->getDefaultAltAttr();
+		}
+		
+		$imageSourceSets = $imgSet->getImageSourceSets();
+		if (empty($imageSourceSets) || (count($imageSourceSets) == 1 && count($imageSourceSets[0]->getImgSrcs()) <= 1)) {
+// 			if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
+// 			if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
+		} else {
+			$imageSourceSet = current($imageSourceSets);
+			$attrs['srcset'] = $imageSourceSet->getSrcsetAttr();
+			$attrs = HtmlUtils::mergeAttrs($attrs, $imageSourceSet->getAttrs());
+		}
+		// @tomekk: 05.07.2021 --> moved to top. Needs to be set for both, single img tag and img tag with imgSets. See: https://web.dev/optimize-cls/#modern-best-practice
+		if ($addWidthAttr) $attrs['width'] = $imgSet->getDefaultWidthAttr();
+		if ($addHeightAttr) $attrs['height'] = $imgSet->getDefaultHeightAttr();
+
+		return new HtmlElement('img', HtmlUtils::mergeAttrs($attrs, $customAttrs));
+	}
+	
+// 	public static function createImgFromDim(File $file, ImageDimension $imageDimension,
+// 			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
+// 		if (!$file->isValid()) {
+// 			return self::createInvalidImg($imageDimension, $attrs, $addWidthAttr, $addHeightAttr);
+// 		}
+		
+		
+// 	}
+	
+	public static function createImgSrc(ImageFile $imageFile): string {
+		$fileSource = $imageFile->getFile()->getFileSource();
+		if ($fileSource->isHttpaccessible()) {
+			return $fileSource->getUrl();
+		}
+		
+		return 'data: ' . $imageFile->getImageSource()->getMimeType() . ';base64,'
+				. base64_encode($fileSource->createInputStream()->read());
+	}
+	
+	const INVALID_IMG_DEFAULT_ALT = 'missing image';
+	const INVALID_IMG_DEFAULT_WIDTH = 200;
+	const INVALID_IMG_DEFAULT_HEIGHT = 200;
+	
+	public static function createInvalidImg(ImageDimension $imageDimension = null, 
+			array $attrs = null, bool $addWidthAttr = true, bool $addHeightAttr = true) {
+		$width = self::INVALID_IMG_DEFAULT_WIDTH;
+		$height = self::INVALID_IMG_DEFAULT_HEIGHT;
+		
+		if ($imageDimension !== null) {
+			$width = $imageDimension->getWidth();
+			$height = $imageDimension->getHeight();
+		}
+
+		$elemAttrs = array('src' => self::createInvalidImgSrc($width, $height));
+		if ($addWidthAttr) $elemAttrs['width'] = $width;
+		if ($addHeightAttr) $elemAttrs['height'] = $height;
+		$attrs = HtmlUtils::mergeAttrs($elemAttrs, (array) $attrs);
+		if (!isset($attrs['alt'])) $attrs['alt'] = self::INVALID_IMG_DEFAULT_ALT;
+		
+		return new HtmlElement('img', $attrs);
+	}
+	
+	public static function createInvalidImgSrc(int $width, int $height) {
+		return 'data:image/svg+xml;base64,' . base64_encode(self::createInvalidImgSvg($width, $height));
+
+		// return 'data:image/svg+xml;base64,'
+		//		. base64_encode('<svg xmlns="http://www.w3.org/2000/svg" version="1.1" baseProfile="full"'
+		//		. '		width="' . $width . 'px" height="' . $height . 'px" style="background: #EEE">'
+		//		. '	<line x1="0%" y1="0%" x2="100%" y2="100%" stroke="#CCC" stroke-width="2px"/>'
+		//		. '	<line x1="100%" y1="0%" x2="0%" y2="100%" stroke="#CCC" stroke-width="2px"/>'
+		//		. '</svg>');
+	}
+
+	public static function createInvalidImgSvg(int $width, int $height) {
+		$topMargin = ($height / 2) - 100;
+		$leftMargin = ($width / 2) - 100;
+
+		$picturesHeight = 200;
+		$picturesWidth = 200;
+		if ($height < 200) {
+			$picturesHeight = $height;
+			$topMargin = 1;
+		}
+
+		if ($width < 200) {
+			$picturesWidth = $width;
+			$leftMargin = 1;
+		}
+
+		$svg = '
+				<svg id="placeholder" xmlns="http://www.w3.org/2000/svg" width="' . $width . '" height="' . $height . '">
+					<title>rocket-placeholder-image</title>
+						<defs>
+							<style>
+								#background {
+									fill: #E6E6E6;
+									stroke-opacity: 0.9;
+								}
+					
+								.cross-line {
+									fill: none;
+									stroke: #CCCCCC;
+									stroke-linecap: round;
+									stroke-width: 3px;
+								}
+					
+								#picture-front {
+									fill: #E6E6E6;
+								}
+					
+								.picture-frame {
+									fill: #B3B3B3;
+									stroke: #b3b3b3;
+								}
+							</style>
+						</defs>
+						<rect id="background" width="100%" height="100%" />';
+
+		if ($height > 70 && $width > 70) {
+			$svg .= '
+					<line class="cross-line" x1="10%" y1="10%" x2="30%" y2="30%"/>
+					<line class="cross-line" x1="90%" y1="10%" x2="70%" y2="30%"/>
+					<line class="cross-line" x1="90%" y1="90%" x2="70%" y2="70%"/>
+					<line class="cross-line" x1="10%" y1="90%" x2="30%" y2="70%"/>';
+		}
+
+		$svg .= '
+					<svg viewBox="0 0 200 200" y="' . $topMargin . '" x="' . $leftMargin . '" width="' . $picturesWidth . 'px" height="' . $picturesHeight . 'px">
+						<rect height="100%" width="100%" fill="#E6E6E6"/>
+						<g>
+							<rect fill="#E6E6E6" width="200" height="200"/>
+							
+							<path class="picture-frame" d="M7,50.8l19.5,91.7l121.3-25.8l-19.5-91.7L7,50.8z M138,110.4L32.8,132.7l-16-75.5l105.2-22.4
+								L138,110.4z"/>
+							
+							<g>
+								<rect x="43" y="58" class="picture-frame" width="124" height="93"/>
+								<rect x="51" y="66" class="picture-frame" id="picture-front" width="108" height="77"/>
+							</g>
+							<g>
+								<path fill="#B3B3B3" d="M80.1,78.4c0-1.9-0.3-4.4-1-5.4H58v20.9c2,0.6,3.6,1,5.5,1C72.7,94.9,80.1,87.5,80.1,78.4z"/>
+								<polygon fill="#B3B3B3" points="134.4,97.6 122.2,81.3 90,113.4 80.1,103.5 58,126.8 58,136 152,136 152,102.5 142.5,90.5"/>
+							</g>
+						</g>
+					</svg>
+				</svg>';
+
+		return $svg;
 	}
 }
